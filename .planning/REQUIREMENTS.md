@@ -102,13 +102,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| — | — | Populated by roadmap |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| SONG-01 | Phase 2 | Pending |
+| SONG-02 | Phase 2 | Pending |
+| SONG-03 | Phase 2 | Pending |
+| SONG-04 | Phase 2 | Pending |
+| SET-01 | Phase 3 | Pending |
+| SET-02 | Phase 3 | Pending |
+| SET-03 | Phase 3 | Pending |
+| SET-04 | Phase 3 | Pending |
+| SET-05 | Phase 3 | Pending |
+| SET-06 | Phase 3 | Pending |
+| SET-07 | Phase 3 | Pending |
+| SET-08 | Phase 3 | Pending |
+| SET-09 | Phase 3 | Pending |
+| SET-10 | Phase 3 | Pending |
+| SHARE-01 | Phase 3 | Pending |
+| SHARE-02 | Phase 3 | Pending |
+| BAND-01 | Phase 4 | Pending |
+| BAND-02 | Phase 4 | Pending |
+| BAND-03 | Phase 4 | Pending |
+| BAND-04 | Phase 4 | Pending |
+| UX-01 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22
+- Mapped to phases: 22
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-17*
-*Last updated: 2026-02-17 after initial definition*
+*Last updated: 2026-02-17 after roadmap creation*
