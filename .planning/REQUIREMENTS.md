@@ -9,9 +9,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can sign in with Google OAuth
-- [ ] **AUTH-02**: User session persists across browser refresh
-- [ ] **AUTH-03**: User can log out from any page
+- [x] **AUTH-01**: User can sign in with Google OAuth
+- [x] **AUTH-02**: User session persists across browser refresh
+- [x] **AUTH-03**: User can log out from any page
 
 ### Song Library
 
@@ -102,9 +102,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
 | SONG-01 | Phase 2 | Pending |
 | SONG-02 | Phase 2 | Pending |
 | SONG-03 | Phase 2 | Pending |
