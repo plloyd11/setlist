@@ -5,38 +5,40 @@
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** Musicians can build a setlist from their songs and instantly see how long the set runs, so they can nail the timing for a show.
-**Current focus:** Phase 1 - Foundation and Auth
+**Current focus:** Phase 2 - Song Library
 
 ## Current Position
 
-Phase: 1 of 4 (Foundation and Auth) -- COMPLETE
-Plan: 2 of 2 in current phase (all plans complete)
-Status: Phase Complete
-Last activity: 2026-02-17 -- Completed 01-02 (App Shell and Theme)
+Phase: 2 of 4 (Song Library)
+Plan: 1 of 2 in current phase
+Status: In Progress
+Last activity: 2026-02-18 -- Completed 02-01 (Add Song Foundation)
 
-Progress: [██░░░░░░░░] 25%
+Progress: [████░░░░░░] 38%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 13.5min
-- Total execution time: ~0.45 hours
+- Total plans completed: 3
+- Average duration: 10min
+- Total execution time: ~0.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 2 | 27min | 13.5min |
+| 02 | 1 | 2min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 15min, 12min
-- Trend: stable
+- Last 5 plans: 15min, 12min, 2min
+- Trend: accelerating
 
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 01 P01 | 15min | 4 tasks | 9 files |
 | Phase 01 P02 | 12min | 3 tasks | 11 files |
+| Phase 02 P01 | 2min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -53,6 +55,8 @@ Recent decisions affecting current work:
 - 01-02: DOM-based theme functions instead of Svelte stores for simplicity
 - 01-02: Inline script in app.html for FOUC prevention (reads localStorage before render)
 - 01-02: Google Fonts via link tags for Righteous (headings) and Nunito (body)
+- 02-01: parseDuration returns null for 0:00 since DB has check > 0 constraint
+- 02-01: Songs page updated with Add Song button in header and CTA in empty state
 
 ### Pending Todos
 
@@ -66,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-17
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-song-library/02-CONTEXT.md
+Last session: 2026-02-18
+Stopped at: Completed 02-01-PLAN.md
+Resume file: .planning/phases/02-song-library/02-01-SUMMARY.md
