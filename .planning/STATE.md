@@ -9,31 +9,34 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 
 ## Current Position
 
-Phase: 1 of 4 (Foundation and Auth)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-02-17 -- Completed 01-01 (Supabase Auth Infrastructure)
+Phase: 1 of 4 (Foundation and Auth) -- COMPLETE
+Plan: 2 of 2 in current phase (all plans complete)
+Status: Phase Complete
+Last activity: 2026-02-17 -- Completed 01-02 (App Shell and Theme)
 
-Progress: [█░░░░░░░░░] 12%
+Progress: [██░░░░░░░░] 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 15min
-- Total execution time: ~0.25 hours
+- Total plans completed: 2
+- Average duration: 13.5min
+- Total execution time: ~0.45 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01 | 1 | 15min | 15min |
+| 01 | 2 | 27min | 13.5min |
 
 **Recent Trend:**
-- Last 5 plans: 15min
-- Trend: baseline
+- Last 5 plans: 15min, 12min
+- Trend: stable
 
-*Updated after each plan completion*
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 01 P01 | 15min | 4 tasks | 9 files |
+| Phase 01 P02 | 12min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -47,6 +50,9 @@ Recent decisions affecting current work:
 - 01-01: Used @supabase/ssr createServerClient with cookie handlers for SSR auth
 - 01-01: safeGetSession pattern (getUser first for JWT validation, then getSession)
 - 01-01: Auth guard centralized in hooks.server.ts for all non-/auth routes
+- 01-02: DOM-based theme functions instead of Svelte stores for simplicity
+- 01-02: Inline script in app.html for FOUC prevention (reads localStorage before render)
+- 01-02: Google Fonts via link tags for Righteous (headings) and Nunito (body)
 
 ### Pending Todos
 
@@ -61,5 +67,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 01-01-PLAN.md
+Stopped at: Completed 01-02-PLAN.md (Phase 1 complete)
 Resume file: None
