@@ -43,11 +43,11 @@ Plans:
   2. User can edit a song's name and duration inline or via form
   3. User can delete a song and it disappears from their library
   4. User can search/filter their song library by title and see results update as they type
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — Database migration (songs table + RLS), Song type, duration utilities, add-song page with form action
+- [ ] 02-02-PLAN.md — Song library list page with search/filter, inline editing, context menu, delete with confirmation
 
 ### Phase 3: Setlist Builder
 **Goal**: Users can build timed setlists from their songs via drag-and-drop and share them via public link
