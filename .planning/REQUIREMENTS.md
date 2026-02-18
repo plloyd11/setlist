@@ -16,9 +16,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Song Library
 
 - [x] **SONG-01**: User can add a song with name and duration
-- [ ] **SONG-02**: User can edit a song's name and duration
-- [ ] **SONG-03**: User can delete a song from their library
-- [ ] **SONG-04**: User can search/filter their song library by title
+- [x] **SONG-02**: User can edit a song's name and duration
+- [x] **SONG-03**: User can delete a song from their library
+- [x] **SONG-04**: User can search/filter their song library by title
 
 ### Setlist Builder
 
@@ -106,9 +106,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-02 | Phase 1 | Complete |
 | AUTH-03 | Phase 1 | Complete |
 | SONG-01 | Phase 2 | Complete |
-| SONG-02 | Phase 2 | Pending |
-| SONG-03 | Phase 2 | Pending |
-| SONG-04 | Phase 2 | Pending |
+| SONG-02 | Phase 2 | Complete |
+| SONG-03 | Phase 2 | Complete |
+| SONG-04 | Phase 2 | Complete |
 | SET-01 | Phase 3 | Pending |
 | SET-02 | Phase 3 | Pending |
 | SET-03 | Phase 3 | Pending |
