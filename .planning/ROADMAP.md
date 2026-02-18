@@ -28,11 +28,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. User can refresh the browser and remain logged in (session persists)
   3. User can log out from any page and is redirected to the login screen
   4. Unauthenticated users cannot access any app routes (redirected to login)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Supabase auth infrastructure, Google OAuth, login page, session management
+- [ ] 01-02-PLAN.md — App shell (sidebar, bottom nav), theme system, dashboard, logout
 
 ### Phase 2: Song Library
 **Goal**: Users can build and manage a personal library of songs with durations
@@ -88,7 +88,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Auth | 0/? | Not started | - |
+| 1. Foundation and Auth | 0/2 | Not started | - |
 | 2. Song Library | 0/? | Not started | - |
 | 3. Setlist Builder | 0/? | Not started | - |
 | 4. Band Workspaces | 0/? | Not started | - |
