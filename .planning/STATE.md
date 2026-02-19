@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Phase: 3 of 4 (Setlist Builder)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In Progress
-Last activity: 2026-02-18 -- Completed 03-01 (Database Foundation)
+Last activity: 2026-02-18 -- Completed 03-02 (Setlist List Page)
 
-Progress: [██████░░░░] 62%
+Progress: [███████░░░] 69%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 7min
+- Total plans completed: 6
+- Average duration: 6min
 - Total execution time: ~0.6 hours
 
 **By Phase:**
@@ -29,10 +29,10 @@ Progress: [██████░░░░] 62%
 |-------|-------|-------|----------|
 | 01 | 2 | 27min | 13.5min |
 | 02 | 2 | 5min | 2.5min |
-| 03 | 1 | 1min | 1min |
+| 03 | 2 | 3min | 1.5min |
 
 **Recent Trend:**
-- Last 5 plans: 15min, 12min, 2min, 3min, 1min
+- Last 5 plans: 12min, 2min, 3min, 1min, 2min
 - Trend: accelerating
 
 | Plan | Duration | Tasks | Files |
@@ -42,6 +42,7 @@ Progress: [██████░░░░] 62%
 | Phase 02 P01 | 2min | 2 tasks | 7 files |
 | Phase 02 P02 | 3min | 2 tasks | 7 files |
 | Phase 03 P01 | 1min | 2 tasks | 5 files |
+| Phase 03 P02 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,10 @@ Recent decisions affecting current work:
 - 03-01: Separate RLS policies per operation for setlists, matching songs table pattern
 - 03-01: Anon role gets SELECT-only on profiles and shared setlists for public share view
 - 03-01: Storage bucket 'logos' is public-read with authenticated user-scoped write via foldername
+- 03-02: Stats aggregation via separate setlist_songs query with embedded songs select
+- 03-02: Inline name editing on cards (click to edit) instead of modal
+- 03-02: Rename as server form action for progressive enhancement
+- 03-02: Three-dot menu on cards for Duplicate/Delete (better mobile UX than context menu)
 
 ### Pending Todos
 
@@ -81,5 +86,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 03-01-PLAN.md
-Resume file: .planning/phases/03-setlist-builder/03-01-SUMMARY.md
+Stopped at: Completed 03-02-PLAN.md
+Resume file: .planning/phases/03-setlist-builder/03-02-SUMMARY.md

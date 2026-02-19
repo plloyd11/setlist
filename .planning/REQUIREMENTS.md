@@ -22,16 +22,16 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Setlist Builder
 
-- [ ] **SET-01**: User can create a new setlist with a name
+- [x] **SET-01**: User can create a new setlist with a name
 - [ ] **SET-02**: User can drag songs from their library into a setlist
 - [ ] **SET-03**: User can reorder songs in a setlist via drag-and-drop
 - [ ] **SET-04**: User can remove a song from a setlist
 - [ ] **SET-05**: User can see a live-updating running time total for their setlist
 - [ ] **SET-06**: User can set a target time and see over/under indicator
 - [ ] **SET-07**: User can set a global transition time between songs that adds to the total
-- [ ] **SET-08**: User can duplicate an existing setlist
-- [ ] **SET-09**: User can delete a setlist
-- [ ] **SET-10**: User can edit a setlist's name
+- [x] **SET-08**: User can duplicate an existing setlist
+- [x] **SET-09**: User can delete a setlist
+- [x] **SET-10**: User can edit a setlist's name
 
 ### Sharing
 
@@ -109,16 +109,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SONG-02 | Phase 2 | Complete |
 | SONG-03 | Phase 2 | Complete |
 | SONG-04 | Phase 2 | Complete |
-| SET-01 | Phase 3 | Pending |
+| SET-01 | Phase 3 | Complete |
 | SET-02 | Phase 3 | Pending |
 | SET-03 | Phase 3 | Pending |
 | SET-04 | Phase 3 | Pending |
 | SET-05 | Phase 3 | Pending |
 | SET-06 | Phase 3 | Pending |
 | SET-07 | Phase 3 | Pending |
-| SET-08 | Phase 3 | Pending |
-| SET-09 | Phase 3 | Pending |
-| SET-10 | Phase 3 | Pending |
+| SET-08 | Phase 3 | Complete |
+| SET-09 | Phase 3 | Complete |
+| SET-10 | Phase 3 | Complete |
 | SHARE-01 | Phase 3 | Pending |
 | SHARE-02 | Phase 3 | Pending |
 | BAND-01 | Phase 4 | Pending |
