@@ -204,6 +204,52 @@
 			toast?.show('Failed to update setlist');
 		}
 	}
+
+	// Share toggle state
+	let shareLoading = $state(false);
+	let copiedShareLink = $state(false);
+	let isShared = $derived(!!data.setlist.share_token);
+	let shareUrl = $derived.by(() => {
+		if (!data.setlist.share_token) return '';
+		const origin = typeof window !== 'undefined' ? window.location.origin : '';
+		return `${origin}/share/${data.setlist.share_token}`;
+	});
+
+	async function toggleShare() {
+		shareLoading = true;
+		try {
+			const formData = new FormData();
+			if (isShared) {
+				// Turn off sharing
+				formData.set('share_token', '');
+			} else {
+				// Turn on sharing - generate UUID
+				formData.set('share_token', crypto.randomUUID());
+			}
+			const response = await fetch('?/toggleShare', {
+				method: 'POST',
+				body: formData
+			});
+			if (response.ok) {
+				await invalidateAll();
+			}
+		} catch {
+			toast?.show('Failed to update sharing');
+		} finally {
+			shareLoading = false;
+		}
+	}
+
+	async function copyShareLink() {
+		if (!shareUrl) return;
+		try {
+			await navigator.clipboard.writeText(shareUrl);
+			copiedShareLink = true;
+			setTimeout(() => (copiedShareLink = false), 2000);
+		} catch {
+			toast?.show('Failed to copy link');
+		}
+	}
 </script>
 
 <div class="flex h-full flex-col">
@@ -285,6 +331,43 @@
 					profile={data.profile}
 					onUpdate={handleUpdateSetlist}
 				/>
+
+				<!-- Share toggle -->
+				<div class="mb-4 flex flex-col items-center gap-2">
+					<button
+						onclick={toggleShare}
+						disabled={shareLoading}
+						class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {isShared
+							? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50'
+							: 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-400 dark:hover:bg-stone-700'}"
+					>
+						{#if shareLoading}
+							<svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25" />
+								<path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" class="opacity-75" />
+							</svg>
+						{:else}
+							<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+							</svg>
+						{/if}
+						{isShared ? 'Sharing On' : 'Share'}
+					</button>
+
+					{#if isShared && shareUrl}
+						<div class="flex items-center gap-2 rounded-lg bg-stone-100 px-3 py-1.5 dark:bg-stone-800">
+							<span class="max-w-[200px] truncate text-xs text-stone-500 dark:text-stone-400 md:max-w-sm">
+								{shareUrl}
+							</span>
+							<button
+								onclick={copyShareLink}
+								class="shrink-0 rounded px-2 py-0.5 text-xs font-medium text-amber-600 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/30"
+							>
+								{copiedShareLink ? 'Copied!' : 'Copy'}
+							</button>
+						</div>
+					{/if}
+				</div>
 
 				<!-- Setlist DnD zone -->
 				<div

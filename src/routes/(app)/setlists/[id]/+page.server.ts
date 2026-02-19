@@ -146,6 +146,23 @@ export const actions: Actions = {
 		return { added: true, setlistSong: newRow };
 	},
 
+	toggleShare: async ({ params, request, locals: { supabase, safeGetSession } }) => {
+		const { session } = await safeGetSession();
+		if (!session) return fail(401, { error: 'Not authenticated' });
+
+		const formData = await request.formData();
+		const share_token = (formData.get('share_token') as string) || null;
+
+		const { error: updateError } = await supabase
+			.from('setlists')
+			.update({ share_token })
+			.eq('id', params.id)
+			.eq('user_id', session.user.id);
+
+		if (updateError) return fail(500, { error: 'Failed to update sharing' });
+		return { toggled: true };
+	},
+
 	removeSong: async ({ params, request, locals: { supabase, safeGetSession } }) => {
 		const { session } = await safeGetSession();
 		if (!session) return fail(401, { error: 'Not authenticated' });
