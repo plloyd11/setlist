@@ -4,6 +4,7 @@
 	import SetlistSongRow from '$lib/components/setlists/SetlistSongRow.svelte';
 	import LibrarySongRow from '$lib/components/setlists/LibrarySongRow.svelte';
 	import SetlistHeader from '$lib/components/setlists/SetlistHeader.svelte';
+	import TimingBar from '$lib/components/setlists/TimingBar.svelte';
 	import Toast from '$lib/components/ui/Toast.svelte';
 	import type { Song } from '$lib/types/database';
 
@@ -174,6 +175,16 @@
 		}
 	}
 
+	// Update target time
+	async function handleTargetChange(seconds: number | null) {
+		await handleUpdateSetlist({ target_seconds: seconds });
+	}
+
+	// Update transition time
+	async function handleTransitionChange(seconds: number) {
+		await handleUpdateSetlist({ transition_seconds: seconds });
+	}
+
 	// Update setlist metadata
 	async function handleUpdateSetlist(updates: Record<string, unknown>) {
 		const formData = new FormData();
@@ -306,6 +317,15 @@
 			</div>
 		</div>
 	</div>
+
+	<!-- Timing bar (sticky bottom, always visible) -->
+	<TimingBar
+		{setlistItems}
+		targetSeconds={data.setlist.target_seconds}
+		transitionSeconds={data.setlist.transition_seconds}
+		onTargetChange={handleTargetChange}
+		onTransitionChange={handleTransitionChange}
+	/>
 </div>
 
 <Toast bind:this={toast} />
