@@ -35,8 +35,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Sharing
 
-- [ ] **SHARE-01**: User can generate a read-only shareable link for a setlist
-- [ ] **SHARE-02**: Anyone with the link can view the setlist without an account
+- [x] **SHARE-01**: User can generate a read-only shareable link for a setlist
+- [x] **SHARE-02**: Anyone with the link can view the setlist without an account
 
 ### Band Workspaces
 
@@ -119,8 +119,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SET-08 | Phase 3 | Complete |
 | SET-09 | Phase 3 | Complete |
 | SET-10 | Phase 3 | Complete |
-| SHARE-01 | Phase 3 | Pending |
-| SHARE-02 | Phase 3 | Pending |
+| SHARE-01 | Phase 3 | Complete |
+| SHARE-02 | Phase 3 | Complete |
 | BAND-01 | Phase 4 | Pending |
 | BAND-02 | Phase 4 | Pending |
 | BAND-03 | Phase 4 | Pending |
