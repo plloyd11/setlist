@@ -45,6 +45,9 @@ importers:
       svelte-check:
         specifier: ^4.3.6
         version: 4.4.0(picomatch@4.0.3)(svelte@5.51.3)(typescript@5.9.3)
+      svelte-dnd-action:
+        specifier: ^0.9.69
+        version: 0.9.69(svelte@5.51.3)
       tailwindcss:
         specifier: ^4.1.18
         version: 4.1.18
@@ -1023,6 +1026,11 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       typescript: '>=5.0.0'
 
+  svelte-dnd-action@0.9.69:
+    resolution: {integrity: sha512-NAmSOH7htJoYraTQvr+q5whlIuVoq88vEuHr4NcFgscDRUxfWPPxgie2OoxepBCQCikrXZV4pqV86aun60wVyw==}
+    peerDependencies:
+      svelte: '>=3.23.0 || ^5.0.0-next.0'
+
   svelte@5.51.3:
     resolution: {integrity: sha512-3+ni7BMjiEQeMCa1fDQzHy2ESAebgQDVOTuE4jlj2/QOAB2grRta8ew80p95miWE+ZmimpL7B3t9SSO4rv0aqQ==}
     engines: {node: '>=18'}
@@ -1813,6 +1821,10 @@ snapshots:
       typescript: 5.9.3
     transitivePeerDependencies:
       - picomatch
+
+  svelte-dnd-action@0.9.69(svelte@5.51.3):
+    dependencies:
+      svelte: 5.51.3
 
   svelte@5.51.3:
     dependencies:
