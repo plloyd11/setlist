@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Phase: 3 of 4 (Setlist Builder)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In Progress
-Last activity: 2026-02-18 -- Completed 03-02 (Setlist List Page)
+Last activity: 2026-02-18 -- Completed 03-03 (Setlist Builder Page)
 
-Progress: [███████░░░] 69%
+Progress: [████████░░] 77%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: 6min
-- Total execution time: ~0.6 hours
+- Total execution time: ~0.7 hours
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [███████░░░] 69%
 |-------|-------|-------|----------|
 | 01 | 2 | 27min | 13.5min |
 | 02 | 2 | 5min | 2.5min |
-| 03 | 2 | 3min | 1.5min |
+| 03 | 3 | 7min | 2.3min |
 
 **Recent Trend:**
-- Last 5 plans: 12min, 2min, 3min, 1min, 2min
+- Last 5 plans: 2min, 3min, 1min, 2min, 4min
 - Trend: accelerating
 
 | Plan | Duration | Tasks | Files |
@@ -43,6 +43,7 @@ Progress: [███████░░░] 69%
 | Phase 02 P02 | 3min | 2 tasks | 7 files |
 | Phase 03 P01 | 1min | 2 tasks | 5 files |
 | Phase 03 P02 | 2min | 2 tasks | 3 files |
+| Phase 03 P03 | 4min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,11 @@ Recent decisions affecting current work:
 - 03-02: Inline name editing on cards (click to edit) instead of modal
 - 03-02: Rename as server form action for progressive enhancement
 - 03-02: Three-dot menu on cards for Duplicate/Delete (better mobile UX than context menu)
+- 03-03: Copy-on-drag pattern for library panel (songs reset after drag to setlist)
+- 03-03: New items from library get crypto.randomUUID() as setlist_songs ID to prevent duplicates
+- 03-03: Delete-all-reinsert pattern for position persistence avoids unique constraint issues
+- 03-03: Optimistic UI updates with background DB sync via fetch + invalidateAll()
+- 03-03: TimingBar sticky at bottom of entire builder for always-visible timing
 
 ### Pending Todos
 
@@ -86,5 +92,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 03-02-PLAN.md
-Resume file: .planning/phases/03-setlist-builder/03-02-SUMMARY.md
+Stopped at: Completed 03-03-PLAN.md
+Resume file: .planning/phases/03-setlist-builder/03-03-SUMMARY.md

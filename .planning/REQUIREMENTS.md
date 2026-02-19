@@ -23,12 +23,12 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Setlist Builder
 
 - [x] **SET-01**: User can create a new setlist with a name
-- [ ] **SET-02**: User can drag songs from their library into a setlist
-- [ ] **SET-03**: User can reorder songs in a setlist via drag-and-drop
-- [ ] **SET-04**: User can remove a song from a setlist
-- [ ] **SET-05**: User can see a live-updating running time total for their setlist
-- [ ] **SET-06**: User can set a target time and see over/under indicator
-- [ ] **SET-07**: User can set a global transition time between songs that adds to the total
+- [x] **SET-02**: User can drag songs from their library into a setlist
+- [x] **SET-03**: User can reorder songs in a setlist via drag-and-drop
+- [x] **SET-04**: User can remove a song from a setlist
+- [x] **SET-05**: User can see a live-updating running time total for their setlist
+- [x] **SET-06**: User can set a target time and see over/under indicator
+- [x] **SET-07**: User can set a global transition time between songs that adds to the total
 - [x] **SET-08**: User can duplicate an existing setlist
 - [x] **SET-09**: User can delete a setlist
 - [x] **SET-10**: User can edit a setlist's name
@@ -47,7 +47,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Mobile & UX
 
-- [ ] **UX-01**: App is fully usable on mobile devices (responsive design)
+- [x] **UX-01**: App is fully usable on mobile devices (responsive design)
 
 ## v2 Requirements
 
@@ -110,12 +110,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SONG-03 | Phase 2 | Complete |
 | SONG-04 | Phase 2 | Complete |
 | SET-01 | Phase 3 | Complete |
-| SET-02 | Phase 3 | Pending |
-| SET-03 | Phase 3 | Pending |
-| SET-04 | Phase 3 | Pending |
-| SET-05 | Phase 3 | Pending |
-| SET-06 | Phase 3 | Pending |
-| SET-07 | Phase 3 | Pending |
+| SET-02 | Phase 3 | Complete |
+| SET-03 | Phase 3 | Complete |
+| SET-04 | Phase 3 | Complete |
+| SET-05 | Phase 3 | Complete |
+| SET-06 | Phase 3 | Complete |
+| SET-07 | Phase 3 | Complete |
 | SET-08 | Phase 3 | Complete |
 | SET-09 | Phase 3 | Complete |
 | SET-10 | Phase 3 | Complete |
@@ -125,7 +125,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BAND-02 | Phase 4 | Pending |
 | BAND-03 | Phase 4 | Pending |
 | BAND-04 | Phase 4 | Pending |
-| UX-01 | Phase 3 | Pending |
+| UX-01 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 22 total
