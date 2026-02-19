@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** Musicians can build a setlist from their songs and instantly see how long the set runs, so they can nail the timing for a show.
-**Current focus:** Phase 2 - Song Library
+**Current focus:** Phase 3 - Setlist Builder
 
 ## Current Position
 
-Phase: 2 of 4 (Song Library) -- COMPLETE
-Plan: 2 of 2 in current phase
-Status: Phase Complete
-Last activity: 2026-02-18 -- Completed 02-02 (Song Library List Page)
+Phase: 3 of 4 (Setlist Builder)
+Plan: 1 of 4 in current phase
+Status: In Progress
+Last activity: 2026-02-18 -- Completed 03-01 (Database Foundation)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 62%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 8min
-- Total execution time: ~0.5 hours
+- Total plans completed: 5
+- Average duration: 7min
+- Total execution time: ~0.6 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [█████░░░░░] 50%
 |-------|-------|-------|----------|
 | 01 | 2 | 27min | 13.5min |
 | 02 | 2 | 5min | 2.5min |
+| 03 | 1 | 1min | 1min |
 
 **Recent Trend:**
-- Last 5 plans: 15min, 12min, 2min, 3min
+- Last 5 plans: 15min, 12min, 2min, 3min, 1min
 - Trend: accelerating
 
 | Plan | Duration | Tasks | Files |
@@ -40,6 +41,7 @@ Progress: [█████░░░░░] 50%
 | Phase 01 P02 | 12min | 3 tasks | 11 files |
 | Phase 02 P01 | 2min | 2 tasks | 7 files |
 | Phase 02 P02 | 3min | 2 tasks | 7 files |
+| Phase 03 P01 | 1min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -62,6 +64,9 @@ Recent decisions affecting current work:
 - 02-02: Inline editing uses Supabase client-side update + invalidateAll()
 - 02-02: Single ContextMenu and ConfirmDialog at page level, shared across rows
 - 02-02: Hidden form with use:enhance for delete action (progressive enhancement)
+- 03-01: Separate RLS policies per operation for setlists, matching songs table pattern
+- 03-01: Anon role gets SELECT-only on profiles and shared setlists for public share view
+- 03-01: Storage bucket 'logos' is public-read with authenticated user-scoped write via foldername
 
 ### Pending Todos
 
@@ -76,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 02-02-PLAN.md (Phase 2 complete)
-Resume file: .planning/phases/02-song-library/02-02-SUMMARY.md
+Stopped at: Completed 03-01-PLAN.md
+Resume file: .planning/phases/03-setlist-builder/03-01-SUMMARY.md
