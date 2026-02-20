@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Phase: 3 of 4 (Setlist Builder) -- COMPLETE
-Plan: 5 of 5 in current phase
-Status: Phase Complete (gap closure done)
-Last activity: 2026-02-20 -- Completed 03-05 (DnD and Remove Bug Fixes)
+Plan: 6 of 6 in current phase
+Status: Phase Complete (all gap closures done)
+Last activity: 2026-02-20 -- Completed 03-06 (Library Drag Persistence Fix)
 
 Progress: [████████░░] 85%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 5min
+- Total plans completed: 9
+- Average duration: 4min
 - Total execution time: ~0.7 hours
 
 **By Phase:**
@@ -29,10 +29,10 @@ Progress: [████████░░] 85%
 |-------|-------|-------|----------|
 | 01 | 2 | 27min | 13.5min |
 | 02 | 2 | 5min | 2.5min |
-| 03 | 4 | 9min | 2.3min |
+| 03 | 6 | 10min | 1.7min |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 1min, 2min, 4min, 2min
+- Last 5 plans: 1min, 2min, 4min, 2min, 1min
 - Trend: accelerating
 
 | Plan | Duration | Tasks | Files |
@@ -46,6 +46,7 @@ Progress: [████████░░] 85%
 | Phase 03 P03 | 4min | 2 tasks | 7 files |
 | Phase 03 P04 | 3min | 2 tasks | 7 files |
 | Phase 03 P05 | 2min | 2 tasks | 2 files |
+| Phase 03 P06 | 1min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Recent decisions affecting current work:
 - 03-05: isMutating $state guard on $effect rather than debounce to prevent race conditions
 - 03-05: No re-normalization on removeSong -- positions can have gaps, client assigns contiguous on next save
 - 03-05: song_id field presence used for new-item detection (library items lack song_id, setlist items have it)
+- 03-06: isNew boolean flag for new-item detection instead of heuristic song_id check
+- 03-06: Parse raw fetch response for SvelteKit action data to sync server UUIDs without invalidateAll
 
 ### Pending Todos
 
@@ -101,5 +104,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 03-05-PLAN.md
-Resume file: .planning/phases/03-setlist-builder/03-05-SUMMARY.md
+Stopped at: Completed 03-06-PLAN.md
+Resume file: .planning/phases/03-setlist-builder/03-06-SUMMARY.md
