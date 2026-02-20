@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { dndzone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
 	import { invalidateAll } from '$app/navigation';
+	import { deserialize } from '$app/forms';
 	import SetlistSongRow from '$lib/components/setlists/SetlistSongRow.svelte';
 	import LibrarySongRow from '$lib/components/setlists/LibrarySongRow.svelte';
 	import SetlistHeader from '$lib/components/setlists/SetlistHeader.svelte';
@@ -66,10 +68,10 @@
 	});
 
 	$effect(() => {
-		// Read data.setlistSongs to track the dependency
+		// Track only data.setlistSongs — NOT isMutating (untracked read-time guard)
 		const serverItems = data.setlistSongs;
-		// Only sync if we're not in the middle of an optimistic mutation
-		if (isMutating) return;
+		// Don't overwrite during optimistic mutations (untracked so changing isMutating won't re-trigger)
+		if (untrack(() => isMutating)) return;
 		setlistItems = serverItems.map((ss: any) => ({
 			id: ss.id,
 			song_id: ss.song_id,
@@ -144,25 +146,24 @@
 				toast?.show('Failed to save order');
 			} else {
 				// Parse the response to get server-generated IDs
+				// SvelteKit form actions use devalue serialization, not plain JSON
 				const text = await response.text();
 				try {
-					const result = JSON.parse(text);
-					// SvelteKit form action responses are wrapped: { type: 'success', status: 200, data: [...] }
-					const actionData = result?.data;
-					// actionData is a serialized array; the first element holds the return value
-					const returnValue = Array.isArray(actionData) ? actionData[0] : actionData;
-					const savedItems = returnValue?.items;
-					if (Array.isArray(savedItems) && savedItems.length > 0) {
-						setlistItems = savedItems.map((ss: any) => ({
-							id: ss.id,
-							song_id: ss.song_id,
-							title: (ss.songs as any)?.title ?? ss.title ?? 'Unknown',
-							duration_seconds: (ss.songs as any)?.duration_seconds ?? ss.duration_seconds ?? 0,
-							position: ss.position
-						}));
+					const result = deserialize(text);
+					if (result.type === 'success' && result.data) {
+						const savedItems = (result.data as any).items;
+						if (Array.isArray(savedItems) && savedItems.length > 0) {
+							setlistItems = savedItems.map((ss: any) => ({
+								id: ss.id,
+								song_id: ss.song_id,
+								title: (ss.songs as any)?.title ?? ss.title ?? 'Unknown',
+								duration_seconds: (ss.songs as any)?.duration_seconds ?? ss.duration_seconds ?? 0,
+								position: ss.position
+							}));
+						}
 					}
 				} catch {
-					// Response parsing failed - not critical, optimistic state remains
+					// Response parsing failed — not critical, optimistic state remains
 				}
 			}
 		} catch {
@@ -184,14 +185,15 @@
 				body: formData
 			});
 			if (response.ok) {
+				isMutating = false;
 				await invalidateAll();
 				toast?.show(`Added "${song.title}"`);
+				return;
 			}
 		} catch {
 			toast?.show('Failed to add song');
-		} finally {
-			isMutating = false;
 		}
+		isMutating = false;
 	}
 
 	// Remove song from setlist
@@ -209,19 +211,20 @@
 				body: formData
 			});
 			if (!response.ok) {
-				// Revert: let $effect re-sync from server
+				// Revert: release guard then invalidate so $effect syncs from server
 				isMutating = false;
 				await invalidateAll();
 				return;
 			}
 		} catch {
 			toast?.show('Failed to remove song');
-			// Revert: let $effect re-sync from server
 			isMutating = false;
 			await invalidateAll();
 			return;
 		}
+		// Release guard then refresh — $effect will sync from fresh data (song gone)
 		isMutating = false;
+		await invalidateAll();
 	}
 
 	// Update target time
