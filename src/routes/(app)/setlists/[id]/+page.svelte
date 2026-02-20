@@ -32,6 +32,9 @@
 		[SHADOW_ITEM_MARKER_PROPERTY_NAME]?: boolean;
 	};
 
+	// Mutation guard: prevents $effect from overwriting optimistic state during async operations
+	let isMutating = $state(false);
+
 	// State for DnD zones
 	let libraryItems = $state<LibraryItem[]>(
 		data.songs.map((s: Song) => ({ ...s, id: s.id }))
@@ -62,7 +65,11 @@
 	});
 
 	$effect(() => {
-		setlistItems = data.setlistSongs.map((ss: any) => ({
+		// Read data.setlistSongs to track the dependency
+		const serverItems = data.setlistSongs;
+		// Only sync if we're not in the middle of an optimistic mutation
+		if (isMutating) return;
+		setlistItems = serverItems.map((ss: any) => ({
 			id: ss.id,
 			song_id: ss.song_id,
 			title: (ss.songs as any).title,
@@ -89,13 +96,11 @@
 	function handleSetlistFinalize(e: CustomEvent<{ items: SetlistItem[] }>) {
 		const items = e.detail.items;
 
-		// Check for new items from library (their id will be a song.id, not a setlist_songs.id)
-		const existingSetlistSongIds = new Set(
-			data.setlistSongs.map((ss: any) => ss.id)
-		);
-
+		// Detect new items from library: library items have no song_id field (they ARE the song)
+		// Setlist items always have song_id set
 		const processed = items.map((item, index) => {
-			if (!existingSetlistSongIds.has(item.id) && !item[SHADOW_ITEM_MARKER_PROPERTY_NAME]) {
+			const isNewFromLibrary = !item.song_id && !item[SHADOW_ITEM_MARKER_PROPERTY_NAME];
+			if (isNewFromLibrary) {
 				// This is a new song from the library - assign new setlist_songs id
 				const songData = data.songs.find((s: Song) => s.id === item.id);
 				return {
@@ -115,10 +120,20 @@
 
 	// Persist order to DB
 	async function persistOrder(items: SetlistItem[]) {
+		isMutating = true;
 		const formData = new FormData();
 		formData.set(
 			'items',
-			JSON.stringify(items.map((item, index) => ({ song_id: item.song_id, position: index })))
+			JSON.stringify(
+				items.map((item, index) => {
+					const isNewFromLibrary = !item.song_id || item.id === item.song_id;
+					return {
+						id: isNewFromLibrary ? undefined : item.id,
+						song_id: item.song_id,
+						position: index
+					};
+				})
+			)
 		);
 
 		try {
@@ -126,16 +141,19 @@
 				method: 'POST',
 				body: formData
 			});
-			if (response.ok) {
-				await invalidateAll();
+			if (!response.ok) {
+				toast?.show('Failed to save order');
 			}
 		} catch {
 			toast?.show('Failed to save order');
+		} finally {
+			isMutating = false;
 		}
 	}
 
 	// Add song via tap (mobile)
 	async function handleAddSong(song: Song) {
+		isMutating = true;
 		const formData = new FormData();
 		formData.set('song_id', song.id);
 
@@ -150,11 +168,14 @@
 			}
 		} catch {
 			toast?.show('Failed to add song');
+		} finally {
+			isMutating = false;
 		}
 	}
 
 	// Remove song from setlist
 	async function handleRemoveSong(setlistSongId: string) {
+		isMutating = true;
 		// Optimistic removal
 		setlistItems = setlistItems.filter((s) => s.id !== setlistSongId);
 
@@ -166,13 +187,20 @@
 				method: 'POST',
 				body: formData
 			});
-			if (response.ok) {
+			if (!response.ok) {
+				// Revert: let $effect re-sync from server
+				isMutating = false;
 				await invalidateAll();
+				return;
 			}
 		} catch {
 			toast?.show('Failed to remove song');
+			// Revert: let $effect re-sync from server
+			isMutating = false;
 			await invalidateAll();
+			return;
 		}
+		isMutating = false;
 	}
 
 	// Update target time
@@ -371,7 +399,7 @@
 
 				<!-- Setlist DnD zone -->
 				<div
-					class="min-h-[120px] rounded-lg"
+					class="min-h-[120px] rounded-lg {setlistItems.length === 0 ? 'border-2 border-dashed border-stone-300 p-8 dark:border-stone-700' : ''}"
 					use:dndzone={{
 						items: setlistItems,
 						flipDurationMs,
@@ -385,18 +413,17 @@
 							<SetlistSongRow {song} onRemove={handleRemoveSong} />
 						</div>
 					{/each}
+					{#if setlistItems.length === 0}
+						<div class="pointer-events-none text-center">
+							<p class="text-sm text-stone-500 dark:text-stone-400">
+								Drag songs here to build your setlist
+							</p>
+							<p class="mt-1 text-xs text-stone-400 dark:text-stone-500">
+								or tap + on mobile to add songs
+							</p>
+						</div>
+					{/if}
 				</div>
-
-				{#if setlistItems.length === 0}
-					<div class="rounded-lg border-2 border-dashed border-stone-300 p-8 text-center dark:border-stone-700">
-						<p class="text-sm text-stone-500 dark:text-stone-400">
-							Drag songs here to build your setlist
-						</p>
-						<p class="mt-1 text-xs text-stone-400 dark:text-stone-500">
-							or tap + on mobile to add songs
-						</p>
-					</div>
-				{/if}
 			</div>
 		</div>
 	</div>
