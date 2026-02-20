@@ -29,6 +29,7 @@
 		title: string;
 		duration_seconds: number;
 		position: number;
+		isNew?: boolean;
 		[SHADOW_ITEM_MARKER_PROPERTY_NAME]?: boolean;
 	};
 
@@ -108,7 +109,8 @@
 					song_id: item.id,
 					title: songData?.title ?? item.title ?? 'Unknown',
 					duration_seconds: songData?.duration_seconds ?? item.duration_seconds ?? 0,
-					position: index
+					position: index,
+					isNew: true
 				};
 			}
 			return { ...item, position: index };
@@ -125,14 +127,11 @@
 		formData.set(
 			'items',
 			JSON.stringify(
-				items.map((item, index) => {
-					const isNewFromLibrary = !item.song_id || item.id === item.song_id;
-					return {
-						id: isNewFromLibrary ? undefined : item.id,
-						song_id: item.song_id,
-						position: index
-					};
-				})
+				items.map((item, index) => ({
+					id: item.isNew ? undefined : item.id,
+					song_id: item.song_id,
+					position: index
+				}))
 			)
 		);
 
@@ -143,6 +142,28 @@
 			});
 			if (!response.ok) {
 				toast?.show('Failed to save order');
+			} else {
+				// Parse the response to get server-generated IDs
+				const text = await response.text();
+				try {
+					const result = JSON.parse(text);
+					// SvelteKit form action responses are wrapped: { type: 'success', status: 200, data: [...] }
+					const actionData = result?.data;
+					// actionData is a serialized array; the first element holds the return value
+					const returnValue = Array.isArray(actionData) ? actionData[0] : actionData;
+					const savedItems = returnValue?.items;
+					if (Array.isArray(savedItems) && savedItems.length > 0) {
+						setlistItems = savedItems.map((ss: any) => ({
+							id: ss.id,
+							song_id: ss.song_id,
+							title: (ss.songs as any)?.title ?? ss.title ?? 'Unknown',
+							duration_seconds: (ss.songs as any)?.duration_seconds ?? ss.duration_seconds ?? 0,
+							position: ss.position
+						}));
+					}
+				} catch {
+					// Response parsing failed - not critical, optimistic state remains
+				}
 			}
 		} catch {
 			toast?.show('Failed to save order');
