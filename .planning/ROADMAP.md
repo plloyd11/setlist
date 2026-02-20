@@ -59,13 +59,14 @@ Plans:
   3. User can set a target time and see a clear over/under indicator (e.g., "+5:00" in red or "-3:00" in green)
   4. User can set a global transition time between songs and see it reflected in the total
   5. User can generate a shareable link and anyone with that link can view the setlist without logging in
-**Plans**: 4 plans
+**Plans**: 5 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Database schema (setlists, setlist_songs, profiles, storage), types, svelte-dnd-action, auth guard
-- [ ] 03-02-PLAN.md — Setlist list page with card grid, create, delete, duplicate, edit name
-- [ ] 03-03-PLAN.md — Builder page with drag-and-drop, timing bar, progress indicator, responsive layout
-- [ ] 03-04-PLAN.md — Public sharing toggle, shared view with print styles, logo upload in settings
+- [x] 03-01-PLAN.md — Database schema (setlists, setlist_songs, profiles, storage), types, svelte-dnd-action, auth guard
+- [x] 03-02-PLAN.md — Setlist list page with card grid, create, delete, duplicate, edit name
+- [x] 03-03-PLAN.md — Builder page with drag-and-drop, timing bar, progress indicator, responsive layout
+- [x] 03-04-PLAN.md — Public sharing toggle, shared view with print styles, logo upload in settings
+- [ ] 03-05-PLAN.md — Gap closure: fix DnD reorder jank/duplication and song removal race condition
 
 ### Phase 4: Band Workspaces
 **Goal**: Musicians can form bands, share a common song library, and collaborate on setlists
@@ -91,5 +92,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Foundation and Auth | 2/2 | Complete | 2026-02-17 |
 | 2. Song Library | 1/2 | In Progress | - |
-| 3. Setlist Builder | 0/4 | Not started | - |
+| 3. Setlist Builder | 4/5 | In Progress | - |
 | 4. Band Workspaces | 0/? | Not started | - |
