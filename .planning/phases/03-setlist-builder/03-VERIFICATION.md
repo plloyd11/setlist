@@ -1,31 +1,138 @@
 ---
 phase: 03-setlist-builder
-verified: 2026-02-18T03:00:00Z
-status: passed
+verified: 2026-02-20T22:00:00Z
+status: human_needed
 score: 5/5 must-haves verified
-re_verification: false
+re_verification:
+  previous_status: gaps_found
+  previous_score: 4/5
+  gaps_closed:
+    - "Drag songs from library to setlist (SET-02) — isNew flag fix and server ID sync close the persistence regression introduced by Plan 05"
+  gaps_remaining: []
+  regressions: []
+human_verification:
+  - test: "Drag a song from library to an empty setlist. Wait for DnD animation to complete. Refresh the page."
+    expected: "Song is still present in the setlist after refresh."
+    why_human: "Static analysis confirms the code path is correct; runtime is needed to confirm the DB INSERT executes and SvelteKit serializes the action response in the expected format for client-side JSON parsing."
+  - test: "Drag-and-drop reorder — drag two songs to new positions in a setlist with 3+ songs. Refresh the page."
+    expected: "No jank, no crash, no song duplication. Order persists after refresh."
+    why_human: "Animation smoothness, crash absence, and optimistic state timing require runtime verification."
+  - test: "Click X to remove a song 5 times in quick succession on 5 different songs."
+    expected: "Every removal is immediate and permanent. No song flashes back after removal."
+    why_human: "Race condition elimination requires real async timing to confirm."
 ---
 
 # Phase 3: Setlist Builder Verification Report
 
 **Phase Goal:** Users can build timed setlists from their songs via drag-and-drop and share them via public link
-**Verified:** 2026-02-18T03:00:00Z
-**Status:** PASSED
-**Re-verification:** No — initial verification
+**Verified:** 2026-02-20T22:00:00Z
+**Status:** HUMAN NEEDED (all automated checks pass)
+**Re-verification:** Yes — after Plan 06 gap closure (commit `48910d7`)
 
 ---
 
-## Goal Achievement
+## Re-verification Context
 
-### Observable Truths (Success Criteria)
+This is the third verification pass for Phase 3:
+
+1. **Initial verification (2026-02-18):** Passed — 5/5 truths verified
+2. **Re-verification after UAT (2026-02-20T14:45Z):** Gaps found — 4/5 truths. UAT tests 9 (reorder jank/crash) and 10 (song removal flash-back) failed. Plan 05 fixes addressed those but introduced a SET-02 regression: `persistOrder`'s `isNewFromLibrary` heuristic broke under the new upsert pattern, so library-dragged songs appeared in the UI but were never INSERTed to the database.
+3. **This verification (2026-02-20T22:00Z):** Plan 06 fix (commit `48910d7`) closes the SET-02 gap. All automated checks pass. Runtime human verification is the only remaining gate.
+
+---
+
+## Plan 06 Gap Closure Assessment
+
+### What Changed (commit `48910d7`)
+
+**File:** `src/routes/(app)/setlists/[id]/+page.svelte`
+
+**Change 1 — `SetlistItem` type gains `isNew?: boolean` (line 32):**
+
+```typescript
+type SetlistItem = {
+  id: string;
+  song_id: string;
+  title: string;
+  duration_seconds: number;
+  position: number;
+  isNew?: boolean;
+  [SHADOW_ITEM_MARKER_PROPERTY_NAME]?: boolean;
+};
+```
+
+**Change 2 — `handleSetlistFinalize` sets `isNew: true` on newly dragged items (lines 107-114):**
+
+```typescript
+return {
+  id: crypto.randomUUID(),
+  song_id: item.id,
+  title: songData?.title ?? item.title ?? 'Unknown',
+  duration_seconds: songData?.duration_seconds ?? item.duration_seconds ?? 0,
+  position: index,
+  isNew: true
+};
+```
+
+**Change 3 — `persistOrder` uses `item.isNew` flag instead of the broken heuristic (line 131):**
+
+```typescript
+id: item.isNew ? undefined : item.id,
+```
+
+`JSON.stringify({ id: undefined })` omits the `id` key entirely, so the server receives the item without an `id` field. The server's `items.filter(item => !item.id)` correctly classifies it as a new item and runs `INSERT`.
+
+**Change 4 — `persistOrder` reads server response and syncs real UUIDs back to `setlistItems` (lines 146-163):**
+
+```typescript
+const text = await response.text();
+const result = JSON.parse(text);
+const actionData = result?.data;
+const returnValue = Array.isArray(actionData) ? actionData[0] : actionData;
+const savedItems = returnValue?.items;
+if (Array.isArray(savedItems) && savedItems.length > 0) {
+  setlistItems = savedItems.map((ss: any) => ({
+    id: ss.id,
+    song_id: ss.song_id,
+    title: (ss.songs as any)?.title ?? ss.title ?? 'Unknown',
+    duration_seconds: (ss.songs as any)?.duration_seconds ?? ss.duration_seconds ?? 0,
+    position: ss.position
+  }));
+}
+```
+
+This replaces the entire client `setlistItems` with authoritative server data, including real DB-generated UUIDs for newly dragged songs. The `isNew` flag is implicitly cleared (new objects are constructed without it).
+
+**Critical verification — `undefined` is omitted by JSON.stringify:**
+
+Confirmed via Node.js:
+```
+JSON.stringify({ id: undefined, song_id: 'abc', position: 0 })
+// → {"song_id":"abc","position":0}
+```
+
+The server's `items.filter(item => !item.id)` evaluates `!undefined` = `true`. New items are correctly routed to INSERT.
+
+### What Was NOT Changed (regression check)
+
+- `isMutating` guard on `$effect` (line 72): intact — `if (isMutating) return` still in place
+- `handleRemoveSong` success path: still no `invalidateAll()` — `isMutating = false` at line 224 is the final statement
+- `saveOrder` server action: upsert pattern unchanged from Plan 05 — returns `{ saved: true, items: savedRows }` at line 143
+- `removeSong` server action: single-row `.delete().eq('id', ...)` unchanged
+
+No regressions detected.
+
+---
+
+## Observable Truths
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | User can create a setlist, drag songs into it, reorder via drag-and-drop, and remove songs | VERIFIED | `dndzone` directive active on both library and setlist panels in `[id]/+page.svelte`; `saveOrder`, `addSong`, `removeSong` server actions fully implemented with DB persistence |
-| 2 | User sees a live-updating running time total that recalculates as songs are added, removed, or reordered | VERIFIED | `TimingBar.svelte` uses `$derived` runes: `totalSongSeconds`, `totalTransitionSeconds`, `totalSeconds` all react to the `setlistItems` array passed from the builder page |
-| 3 | User can set a target time and see a clear over/under indicator (e.g., "+5:00" in red or "-3:00" in green) | VERIFIED | `overUnderLabel` derived in `TimingBar.svelte` shows `+mm:ss` in `text-red-500` or `-mm:ss` in `text-emerald-500`; `ProgressBar.svelte` fills amber when under, red when over |
-| 4 | User can set a global transition time between songs and see it reflected in the total | VERIFIED | Stepper (+/-5s) in `TimingBar.svelte` calls `onTransitionChange`; `totalTransitionSeconds = (setlistItems.length - 1) * transitionSeconds` computed via `$derived` and added to `totalSeconds` |
-| 5 | User can generate a shareable link and anyone with that link can view the setlist without logging in | VERIFIED | `toggleShare` action in `[id]/+page.server.ts` sets/clears `share_token`; `/share/[token]` route outside `(app)` group; hooks.server.ts exempts `/share` from auth guard; shared view returns only safe data (no ids/user_id) |
+| 1 | User can drag songs from their library into a setlist and they persist after page refresh (SET-02) | VERIFIED | `handleSetlistFinalize` sets `isNew: true` (line 113); `persistOrder` sends `id: undefined` for new items (line 131); server INSERTs items without `id`; client syncs real server UUIDs from response (lines 147-163) |
+| 2 | User can reorder songs via drag-and-drop without jank or crashes, and order persists (SET-03) | VERIFIED | `isMutating` guard on `$effect` (line 72) prevents mid-animation reset; upsert pattern preserves UUIDs; `persistOrder` does not call `invalidateAll()` |
+| 3 | User can remove a song from a setlist reliably with no flash-back (SET-04) | VERIFIED | `handleRemoveSong` sets `isMutating = true` before optimistic filter; success path sets `isMutating = false` without `invalidateAll()` — `$effect` cannot restore removed item |
+| 4 | User sees a live-updating running time total that recalculates as songs change (SET-05/06/07) | VERIFIED | `TimingBar.svelte` uses `$derived` runes from `setlistItems`; optimistic state updates drive timing bar in real time; unchanged from original verification |
+| 5 | User can generate a shareable link and anyone with that link can view the setlist without logging in (SHARE-01/02) | VERIFIED | `toggleShare` wired to `?/toggleShare`; public route `/share/[token]` present; unchanged from original verification |
 
 **Score: 5/5 truths verified**
 
@@ -33,39 +140,18 @@ re_verification: false
 
 ## Required Artifacts
 
-### Plan 01 — Database Foundation
+### Plan 06 Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `supabase/migrations/20260218100000_create_setlist_tables.sql` | Schema for setlists, setlist_songs, profiles, storage | VERIFIED | 153 lines; all 3 tables with full RLS (4 policies each for authenticated owner + anon SELECT), partial index on share_token, logos storage bucket with scoped write policies |
-| `src/lib/types/database.ts` | TypeScript interfaces for Setlist, SetlistSong, Profile | VERIFIED | Exports `Song`, `Profile`, `Setlist`, `SetlistSong` interfaces; all fields match schema |
-| `src/hooks.server.ts` | Auth guard exemption for /share routes | VERIFIED | Line 32: `!event.url.pathname.startsWith('/share')` added to guard condition |
+| `src/routes/(app)/setlists/[id]/+page.svelte` | `isNew?: boolean` on `SetlistItem`; `isNew: true` in `handleSetlistFinalize`; `item.isNew` in `persistOrder`; response body parsed for server UUID sync | VERIFIED | All four changes confirmed at lines 32, 113, 131, 147-163 |
 
-### Plan 02 — Setlist List Page
+### Plan 05 Artifacts (regression check)
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `src/routes/(app)/setlists/+page.server.ts` | Server load + create/delete/duplicate/rename actions | VERIFIED | 191 lines; load aggregates stats via dual-query pattern; all 4 actions implemented with proper auth checks and DB queries |
-| `src/routes/(app)/setlists/+page.svelte` | Setlist list page with card grid | VERIFIED | Imports `SetlistCard`; responsive grid `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`; create form with `use:enhance`; empty state with CTA |
-| `src/lib/components/setlists/SetlistCard.svelte` | Setlist card with song count display | VERIFIED | Shows song count via `songLabel` derived; shows `timeLabel` via `formatDuration`; three-dot menu for duplicate/delete; inline name editing |
-
-### Plan 03 — Builder Page
-
-| Artifact | Expected | Status | Details |
-|----------|----------|--------|---------|
-| `src/routes/(app)/setlists/[id]/+page.server.ts` | Server load + updateSetlist/saveOrder/addSong/removeSong/toggleShare actions | VERIFIED | 197 lines; 5 actions fully implemented; saveOrder uses delete-all-reinsert pattern; removeSong re-normalizes positions |
-| `src/routes/(app)/setlists/[id]/+page.svelte` | Two-panel builder with dndzone | VERIFIED | `use:dndzone` on both library and setlist panels; copy-on-drag pattern for library; `crypto.randomUUID()` for new setlist_song IDs; mobile tab toggle; search input |
-| `src/lib/components/setlists/TimingBar.svelte` | Sticky timing bar with ProgressBar | VERIFIED | Imports `ProgressBar`; sticky bottom via `sticky bottom-0`; all timing calculations via `$derived`; dual layout for desktop/mobile |
-| `src/lib/components/ui/ProgressBar.svelte` | Over/under progress bar | VERIFIED | `role="progressbar"` with aria attributes; amber/red color based on `isOver`; `transition-all duration-300` for smooth updates |
-
-### Plan 04 — Sharing and Settings
-
-| Artifact | Expected | Status | Details |
-|----------|----------|--------|---------|
-| `src/routes/share/[token]/+page.server.ts` | Public load by share_token (no auth) | VERIFIED | Queries `setlists` with `.eq('share_token', params.token)`; returns only `name`, `gig_date`, `venue` (no id or user_id); songs fetched with titles only |
-| `src/routes/share/[token]/+page.svelte` | Clean performance view with print styles | VERIFIED | No app chrome; centered max-w-2xl layout; ordered `<ol>` with numbered songs; `@media print` block forces white background; `print:hidden` on footer |
-| `src/routes/(app)/settings/+page.svelte` | Settings page with LogoUpload | VERIFIED | Imports `LogoUpload`; display name form with `use:enhance`; passes `currentLogoUrl` and `userId` from layout data |
-| `src/lib/components/ui/LogoUpload.svelte` | Logo upload with Supabase Storage | VERIFIED | Uses `supabase.storage.from('logos').upload()`; validates file type and size (2MB max); upserts `logo_url` to profiles; preview and remove functionality |
+| `src/routes/(app)/setlists/[id]/+page.svelte` | `isMutating` guard on `$effect`; no `invalidateAll()` in `persistOrder`; no `invalidateAll()` in `handleRemoveSong` success path | VERIFIED | Guard at line 72; no `invalidateAll` in `persistOrder`; `handleRemoveSong` success path ends at `isMutating = false` (line 224) |
+| `src/routes/(app)/setlists/[id]/+page.server.ts` | Upsert-based `saveOrder`; simplified `removeSong` | VERIFIED | Lines 99-143 confirm upsert; line 205 confirms single-row delete |
 
 ---
 
@@ -73,99 +159,83 @@ re_verification: false
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| `20260218100000_create_setlist_tables.sql` | `20260218000000_create_songs_table.sql` | `song_id uuid references public.songs(id)` | WIRED | Line 81 of migration confirmed |
-| `setlists/+page.server.ts` | `supabase.from('setlists')` | Supabase query | WIRED | Multiple queries: load, create, delete, duplicate, rename all query `setlists` table |
-| `setlists/+page.svelte` | `SetlistCard.svelte` | `import SetlistCard` | WIRED | Line 2 imports; rendered in grid loop with stats props |
-| `[id]/+page.svelte` | `svelte-dnd-action` | `use:dndzone` directive | WIRED | Two `use:dndzone` blocks (library + setlist panels); `SHADOW_ITEM_MARKER_PROPERTY_NAME` also imported |
-| `[id]/+page.svelte` | `?/saveOrder` action | `fetch('?/saveOrder', ...)` | WIRED | `persistOrder()` function POSTs to `saveOrder` with serialized items array; called in `handleSetlistFinalize` |
-| `TimingBar.svelte` | `ProgressBar.svelte` | `import ProgressBar` | WIRED | Line 3 imports; rendered conditionally when `targetSeconds` is set, on both desktop and mobile layouts |
-| `share/[token]/+page.server.ts` | `supabase.from('setlists')` | `.eq('share_token', params.token)` | WIRED | Line 9 confirmed |
-| `share/[token]/+page.svelte` | `@media print` CSS | `<style>` block | WIRED | Lines 84-95 contain `@media print` with body, nav, aside overrides; Tailwind `print:` utilities also used |
-| `LogoUpload.svelte` | `supabase.storage.from('logos')` | Supabase Storage upload | WIRED | Line 58 `.from('logos').upload()`; line 67 `.from('logos').getPublicUrl()` |
-
-All 9 key links: WIRED
+| `handleSetlistFinalize` | `SetlistItem.isNew` | `isNew: true` set on new library items | WIRED | Line 113 confirmed |
+| `persistOrder` | `?/saveOrder` | `id: item.isNew ? undefined : item.id` sends new items without id | WIRED | Line 131 confirmed; JSON.stringify omits `undefined` keys |
+| `?/saveOrder` | DB INSERT | `items.filter(item => !item.id)` routes no-id items to insert | WIRED | Lines 100, 125-134 in `+page.server.ts` |
+| `persistOrder` | `setlistItems` | Parses `response.text()` and assigns server rows | WIRED | Lines 147-163; `setlistItems = savedItems.map(...)` |
+| `$effect` | `setlistItems` | `if (isMutating) return` guard prevents overwrite during mutations | WIRED | Line 72 confirmed |
+| `handleRemoveSong` | `?/removeSong` | `fetch('?/removeSong', ...)` | WIRED | Line 207 confirmed |
 
 ---
 
 ## Requirements Coverage
 
-| Requirement | Source Plan | Description | Status | Evidence |
-|-------------|-------------|-------------|--------|----------|
-| SET-01 | 03-02 | User can create a new setlist with a name | SATISFIED | `create` action in `setlists/+page.server.ts`; quick-create form redirects to builder on 303 |
-| SET-02 | 03-03 | User can drag songs from their library into a setlist | SATISFIED | Cross-container `dndzone` with shared `type: 'setlist-songs'`; finalize handler detects new items from library and assigns UUIDs |
-| SET-03 | 03-03 | User can reorder songs in a setlist via drag-and-drop | SATISFIED | Setlist panel `dndzone` is reorderable; finalize calls `persistOrder` with new positions |
-| SET-04 | 03-03 | User can remove a song from a setlist | SATISFIED | `handleRemoveSong` in builder page; optimistic removal + `removeSong` server action; position re-normalization |
-| SET-05 | 03-03 | User can see a live-updating running time total | SATISFIED | `totalSeconds` derived in `TimingBar.svelte` from `setlistItems` array; updates immediately on DnD finalize via optimistic state |
-| SET-06 | 03-03 | User can set a target time and see over/under indicator | SATISFIED | Target input in `TimingBar.svelte`; `overUnderLabel` with signed prefix; `ProgressBar` with amber/red colors |
-| SET-07 | 03-03 | User can set a global transition time that adds to total | SATISFIED | +/- stepper in `TimingBar.svelte`; `totalTransitionSeconds` derived and added to `totalSeconds` |
-| SET-08 | 03-02 | User can duplicate an existing setlist | SATISFIED | `duplicate` action copies setlist metadata and all setlist_songs with `(Copy)` suffix |
-| SET-09 | 03-02 | User can delete a setlist | SATISFIED | `delete` action; confirmation dialog on client; `ConfirmDialog` component used |
-| SET-10 | 03-02 | User can edit a setlist's name | SATISFIED | Inline editing on `SetlistCard`; `rename` server action; also editable via `SetlistHeader` in builder |
-| SHARE-01 | 03-04 | User can generate a read-only shareable link | SATISFIED | `toggleShare` action sets `crypto.randomUUID()` as `share_token`; share URL constructed from `window.location.origin`; copy-to-clipboard |
-| SHARE-02 | 03-04 | Anyone with the link can view the setlist without an account | SATISFIED | `/share/[token]` outside `(app)` layout group; hooks exempts `/share`; anon RLS policy on `setlists` allows SELECT where `share_token IS NOT NULL` |
-| UX-01 | 03-03 | App is fully usable on mobile devices (responsive design) | SATISFIED | Mobile tab toggle between Library/Setlist panels; `LibrarySongRow` tap-to-add button (`md:hidden`); compact two-row mobile layout in `TimingBar` |
+| Requirement | Description | Status | Evidence |
+|-------------|-------------|--------|----------|
+| SET-01 | User can create a new setlist with a name | SATISFIED | Unchanged from original verification — setlists list page create flow |
+| SET-02 | User can drag songs from their library into a setlist | SATISFIED | Plan 06 fix: `isNew` flag + server ID sync corrects persistence regression |
+| SET-03 | User can reorder songs in a setlist via drag-and-drop | SATISFIED (human needed) | `isMutating` guard + upsert in place; runtime verification needed for smoothness |
+| SET-04 | User can remove a song from a setlist | SATISFIED (human needed) | `isMutating` guard eliminates flash-back; runtime needed to confirm timing |
+| SET-05 | User can see a live-updating running time total | SATISFIED | `TimingBar.svelte` `$derived` from `setlistItems` |
+| SET-06 | User can set a target time and see over/under indicator | SATISFIED | `TimingBar.svelte` target logic unchanged |
+| SET-07 | User can set a global transition time between songs | SATISFIED | `TimingBar.svelte` transition logic unchanged |
+| SET-08 | User can duplicate an existing setlist | SATISFIED | Setlist list page duplicate action unchanged |
+| SET-09 | User can delete a setlist | SATISFIED | Setlist list page delete action unchanged |
+| SET-10 | User can edit a setlist's name | SATISFIED | `SetlistHeader.svelte` + `?/updateSetlist` unchanged |
+| SHARE-01 | User can generate a read-only shareable link | SATISFIED | `toggleShare` action + share URL display in builder |
+| SHARE-02 | Anyone with the link can view without an account | SATISFIED | Public `/share/[token]` route present |
+| UX-01 | App is fully usable on mobile devices | SATISFIED | Mobile tab toggle, responsive layout unchanged |
 
-All 13 requirements: SATISFIED. No orphaned requirements.
+**No orphaned requirements.** All 13 phase requirements accounted for. No REQUIREMENTS.md requirement mapped to Phase 3 is missing from a plan's `requirements` field.
 
 ---
 
 ## Anti-Patterns Found
 
-None. All "placeholder" strings found during scan are legitimate HTML `placeholder=` attributes on form inputs — not stub implementations.
+| File | Line | Pattern | Severity | Impact |
+|------|------|---------|----------|--------|
+| `src/routes/(app)/setlists/[id]/+page.svelte` | 342-343 | `placeholder=` attribute on search input | Info | HTML input placeholder attribute — not a code stub |
 
-No empty handlers, `return null` stubs, `console.log`-only implementations, or TODO/FIXME comments found in phase files.
+No blocker or warning anti-patterns found. The single hit is a legitimate HTML attribute.
 
 ---
 
 ## Human Verification Required
 
-### 1. Drag-and-drop interaction feel
+### 1. Confirm library drag persistence (SET-02)
 
-**Test:** Open `/setlists/[id]` on desktop. Drag a song from the left library panel into the right setlist panel. Then reorder songs within the setlist panel by dragging.
-**Expected:** Songs snap into place with smooth animation (200ms flip); library song remains in library after drag; setlist updates immediately; total time in timing bar recalculates within same render cycle.
-**Why human:** svelte-dnd-action behavior (animation quality, drop zone highlighting, shadow item appearance) cannot be verified from source alone.
+**Test:** Open a setlist. Drag a song from the library panel into the setlist. Wait for the DnD animation to complete. Refresh the page.
+**Expected:** The song is still present in the setlist after refresh.
+**Why human:** Static analysis confirms the logic is correct — `isNew` flag routes the item to server INSERT, server returns saved rows, client syncs real UUIDs. Runtime is needed to confirm (a) the SvelteKit action response serialization format matches the client's JSON parsing expectations (`result?.data[0]?.items`), and (b) the Supabase INSERT actually executes without constraint errors.
 
-### 2. Cross-panel drag copy-on-drag correctness
+### 2. Reorder smoothness (SET-03)
 
-**Test:** Drag the same song from the library into the setlist twice.
-**Expected:** Song appears in setlist twice (same song can appear multiple times), library still shows it, opacity dimmed to indicate it's already in the setlist.
-**Why human:** The `songsInSetlist` derived set only dims the library item — verifying that duplicate-song behavior is intentional vs. a bug requires running the app.
+**Test:** Open a setlist with 3+ songs. Drag a song to a new position. Immediately drag another song. Refresh the page.
+**Expected:** No jank, no crash, no song duplication. Order persists after refresh.
+**Why human:** Animation quality, race condition absence between two rapid drags, and optimistic state timing cannot be verified from source.
 
-### 3. Shared view in incognito
+### 3. Remove reliability (SET-04)
 
-**Test:** Toggle sharing on for a setlist in the builder. Copy the share URL. Open it in an incognito browser window (no session cookies).
-**Expected:** Page loads showing logo, display name, setlist name, date, venue, numbered song titles — no durations, no nav chrome, no login prompt.
-**Why human:** RLS anon access and auth guard exemption function correctly only at runtime with a live Supabase instance.
-
-### 4. Print output quality
-
-**Test:** Open a shared setlist URL and trigger browser print (Cmd+P on macOS).
-**Expected:** Print preview shows clean layout — white background, black text, no navigation elements, logo centered, numbered song list readable.
-**Why human:** `@media print` CSS and Tailwind `print:` utilities are in the source but rendering quality requires visual inspection of the print preview.
-
-### 5. Logo upload and cross-page appearance
-
-**Test:** Upload a PNG logo in Settings. Navigate to a setlist builder page. Then view the public share URL.
-**Expected:** Logo appears in the builder header (via `SetlistHeader.svelte`); logo also appears on the public shared view.
-**Why human:** Supabase Storage upload, public URL generation, and profile upsert flow must all succeed at runtime.
-
-### 6. Mobile layout usability
-
-**Test:** Open the setlist builder on a mobile-width viewport (< 768px). Switch between Library and Setlist tabs. Tap the "+" button on a library song.
-**Expected:** Tab switch shows/hides panels correctly; song appears in the setlist after tapping "+"; timing bar remains visible below.
-**Why human:** CSS breakpoint behavior and touch interactions require a real device or browser dev tools.
+**Test:** Click X on 5 different songs in quick succession.
+**Expected:** Every removal is immediate and permanent. No song flashes back after removal.
+**Why human:** The `isMutating` guard is structurally correct, but the async timing of five rapid removals requires runtime confirmation that no race condition slips through.
 
 ---
 
 ## Summary
 
-All 5 success criteria verified against actual source code. All 17 artifacts verified as substantive (not stubs) and wired. All 9 key links confirmed present. All 13 phase requirements have implementation evidence. The 8 git commits referenced in summaries all exist in the repository.
+Plan 06 (commit `48910d7`) closes the sole remaining gap from the previous verification:
 
-The implementation is complete and non-trivial throughout: the DnD builder uses the copy-on-drag pattern with proper UUID assignment for new setlist_song entries, timing calculations are fully reactive via `$derived` runes, the sharing system properly restricts data returned to the client (no IDs or user references leaked), and the auth guard correctly exempts `/share/*` at the middleware level.
+**SET-02 (library drag persistence):** The broken `isNewFromLibrary` heuristic (`!item.song_id || item.id === item.song_id`) that was always `false` for newly dragged songs has been replaced with an explicit `isNew?: boolean` flag on `SetlistItem`. `handleSetlistFinalize` sets `isNew: true` when creating items from library drops. `persistOrder` sends `id: item.isNew ? undefined : item.id` — JSON.stringify omits the `id` key for `undefined`, so the server receives no `id` and correctly routes to INSERT. After save, `persistOrder` reads the server response body and syncs real DB-generated UUIDs back into `setlistItems`, clearing stale client UUIDs.
 
-Six items require human verification — all are runtime/visual concerns (DnD feel, incognito access, print layout, file upload flow, mobile touch) that cannot be determined from static source analysis.
+Plan 05 fixes (reorder jank, remove flash-back) are confirmed intact with no regressions.
+
+All 5 observable truths are verified at the code level. The only remaining gate is human runtime testing to confirm (1) the DB INSERT executes correctly in the live environment, (2) the SvelteKit action response format matches client JSON parsing expectations, and (3) animation smoothness and rapid-succession reliability under real async timing.
+
+**Phase 3 goal is structurally achieved. Awaiting runtime confirmation.**
 
 ---
 
-_Verified: 2026-02-18T03:00:00Z_
+_Verified: 2026-02-20T22:00:00Z_
 _Verifier: Claude (gsd-verifier)_
+_Re-verification: Yes — after Plan 06 gap closure commit 48910d7_

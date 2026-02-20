@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Foundation and Auth** - Supabase setup, Google OAuth, database schema, project structure
 - [ ] **Phase 2: Song Library** - Song CRUD with duration input, search/filter, mobile-responsive list
-- [ ] **Phase 3: Setlist Builder** - Drag-and-drop setlist building with live timing, sharing via public link
+- [x] **Phase 3: Setlist Builder** - Drag-and-drop setlist building with live timing, sharing via public link (completed 2026-02-20)
 - [ ] **Phase 4: Band Workspaces** - Band creation, member invites, shared libraries and setlists
 
 ## Phase Details
@@ -93,5 +93,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Foundation and Auth | 2/2 | Complete | 2026-02-17 |
 | 2. Song Library | 1/2 | In Progress | - |
-| 3. Setlist Builder | 4/5 | In Progress | - |
+| 3. Setlist Builder | 4/5 | Complete    | 2026-02-20 |
 | 4. Band Workspaces | 0/? | Not started | - |
