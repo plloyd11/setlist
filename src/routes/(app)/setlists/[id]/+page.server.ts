@@ -88,30 +88,59 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const itemsJson = formData.get('items') as string;
 
-		let items: Array<{ song_id: string; position: number }>;
+		let items: Array<{ id?: string; song_id: string; position: number }>;
 		try {
 			items = JSON.parse(itemsJson);
 		} catch {
 			return fail(400, { error: 'Invalid items data' });
 		}
 
-		// Delete all existing setlist_songs for this setlist
-		await supabase.from('setlist_songs').delete().eq('setlist_id', params.id);
+		// Separate existing rows (have id) from new rows (no id)
+		const existingItems = items.filter((item) => item.id);
+		const newItems = items.filter((item) => !item.id);
+		const existingIds = existingItems.map((item) => item.id as string);
 
-		// Insert new rows with sequential positions
-		if (items.length > 0) {
+		// Delete rows that are no longer in the list (removed during reorder)
+		if (existingIds.length > 0) {
+			await supabase
+				.from('setlist_songs')
+				.delete()
+				.eq('setlist_id', params.id)
+				.not('id', 'in', `(${existingIds.join(',')})`);
+		} else {
+			// No existing items means all were removed or replaced
+			await supabase.from('setlist_songs').delete().eq('setlist_id', params.id);
+		}
+
+		// Update positions for existing rows
+		for (const item of existingItems) {
+			await supabase
+				.from('setlist_songs')
+				.update({ position: item.position })
+				.eq('id', item.id as string)
+				.eq('setlist_id', params.id);
+		}
+
+		// Insert new rows
+		if (newItems.length > 0) {
 			const { error: insertError } = await supabase.from('setlist_songs').insert(
-				items.map((item, index) => ({
+				newItems.map((item) => ({
 					setlist_id: params.id,
 					song_id: item.song_id,
-					position: index
+					position: item.position
 				}))
 			);
-
 			if (insertError) return fail(500, { error: 'Failed to save order' });
 		}
 
-		return { saved: true };
+		// Return the full set of rows so the client can sync IDs
+		const { data: savedRows } = await supabase
+			.from('setlist_songs')
+			.select('id, position, song_id, songs(id, title, duration_seconds)')
+			.eq('setlist_id', params.id)
+			.order('position');
+
+		return { saved: true, items: savedRows ?? [] };
 	},
 
 	addSong: async ({ params, request, locals: { supabase, safeGetSession } }) => {
@@ -171,26 +200,9 @@ export const actions: Actions = {
 		const setlist_song_id = formData.get('setlist_song_id') as string;
 		if (!setlist_song_id) return fail(400, { error: 'Setlist song ID is required' });
 
-		// Delete the song
+		// Delete the single row -- no re-normalization needed
+		// Positions can have gaps; the client assigns contiguous positions from array index on next save
 		await supabase.from('setlist_songs').delete().eq('id', setlist_song_id);
-
-		// Re-normalize positions: get remaining songs in order, delete all, re-insert
-		const { data: remaining } = await supabase
-			.from('setlist_songs')
-			.select('id, song_id')
-			.eq('setlist_id', params.id)
-			.order('position');
-
-		if (remaining && remaining.length > 0) {
-			await supabase.from('setlist_songs').delete().eq('setlist_id', params.id);
-			await supabase.from('setlist_songs').insert(
-				remaining.map((item, index) => ({
-					setlist_id: params.id,
-					song_id: item.song_id,
-					position: index
-				}))
-			);
-		}
 
 		return { removed: true };
 	}
