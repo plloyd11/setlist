@@ -59,14 +59,15 @@ Plans:
   3. User can set a target time and see a clear over/under indicator (e.g., "+5:00" in red or "-3:00" in green)
   4. User can set a global transition time between songs and see it reflected in the total
   5. User can generate a shareable link and anyone with that link can view the setlist without logging in
-**Plans**: 5 plans
+**Plans**: 6 plans
 
 Plans:
 - [x] 03-01-PLAN.md — Database schema (setlists, setlist_songs, profiles, storage), types, svelte-dnd-action, auth guard
 - [x] 03-02-PLAN.md — Setlist list page with card grid, create, delete, duplicate, edit name
 - [x] 03-03-PLAN.md — Builder page with drag-and-drop, timing bar, progress indicator, responsive layout
 - [x] 03-04-PLAN.md — Public sharing toggle, shared view with print styles, logo upload in settings
-- [ ] 03-05-PLAN.md — Gap closure: fix DnD reorder jank/duplication and song removal race condition
+- [x] 03-05-PLAN.md — Gap closure: fix DnD reorder jank/duplication and song removal race condition
+- [ ] 03-06-PLAN.md — Gap closure: fix SET-02 regression (library drag persistence and server ID sync)
 
 ### Phase 4: Band Workspaces
 **Goal**: Musicians can form bands, share a common song library, and collaborate on setlists
