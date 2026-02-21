@@ -78,11 +78,14 @@ Plans:
   2. User can invite another user to join their band
   3. Band members see and contribute to a shared song library owned by the band
   4. Band members can create and edit setlists that belong to the band
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md — Database migration (band tables, RLS, user_band_ids function), TypeScript types, nav update
+- [ ] 04-02-PLAN.md — Band list page, create band, workspace layout with sub-nav, band dashboard
+- [ ] 04-03-PLAN.md — Band song library (share from personal, add new, edit, remove via junction table)
+- [ ] 04-04-PLAN.md — Member management (invite links, remove, transfer ownership) and invite acceptance
+- [ ] 04-05-PLAN.md — Band setlist list, band setlist builder (DnD + timing), shared view band branding
 
 ## Progress
 
@@ -94,4 +97,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Foundation and Auth | 2/2 | Complete | 2026-02-17 |
 | 2. Song Library | 1/2 | In Progress | - |
 | 3. Setlist Builder | 4/5 | Complete    | 2026-02-20 |
-| 4. Band Workspaces | 0/? | Not started | - |
+| 4. Band Workspaces | 0/5 | Not started | - |
