@@ -5,10 +5,14 @@
 
 	const signInWithGoogle = async () => {
 		error = '';
+		const redirectParam = page.url.searchParams.get('redirect');
+		const callbackUrl = redirectParam
+			? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectParam)}`
+			: `${window.location.origin}/auth/callback`;
 		const { error: authError } = await page.data.supabase.auth.signInWithOAuth({
 			provider: 'google',
 			options: {
-				redirectTo: `${window.location.origin}/auth/callback`
+				redirectTo: callbackUrl
 			}
 		});
 		if (authError) {
@@ -23,9 +27,7 @@
 			<!-- Logo / App Name -->
 			<div class="mb-8 text-center">
 				<h1 class="text-4xl font-bold tracking-tight text-amber-500">Setlist</h1>
-				<p class="mt-2 text-sm text-stone-500 dark:text-stone-400">
-					Build your perfect set
-				</p>
+				<p class="mt-2 text-sm text-stone-500 dark:text-stone-400">Build your perfect set</p>
 			</div>
 
 			<!-- Google Sign-In Button -->
@@ -63,8 +65,6 @@
 		</div>
 
 		<!-- Footer -->
-		<p class="mt-6 text-center text-xs text-stone-400 dark:text-stone-600">
-			Built for musicians
-		</p>
+		<p class="mt-6 text-center text-xs text-stone-400 dark:text-stone-600">Built for musicians</p>
 	</div>
 </div>
