@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 		.from('band_songs')
 		.select('id, song_id, added_by, songs(id, title, duration_seconds, notes, user_id)')
 		.eq('band_id', params.id)
-		.order('created_at', { ascending: true });
+		.order('added_at', { ascending: true });
 
 	// Load user's personal songs for the share picker
 	const { data: personalSongs } = await supabase
