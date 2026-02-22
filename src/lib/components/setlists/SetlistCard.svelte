@@ -6,6 +6,7 @@
 		setlist,
 		songCount = 0,
 		totalSeconds = 0,
+		basePath = '/setlists',
 		ondelete,
 		onduplicate,
 		onrename
@@ -13,6 +14,7 @@
 		setlist: Setlist;
 		songCount: number;
 		totalSeconds: number;
+		basePath?: string;
 		ondelete: (id: string, name: string) => void;
 		onduplicate: (id: string) => void;
 		onrename: (id: string, name: string) => void;
@@ -88,7 +90,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="group relative">
 	<a
-		href="/setlists/{setlist.id}"
+		href="{basePath}/{setlist.id}"
 		class="block rounded-lg border border-stone-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-stone-700 dark:bg-stone-800"
 	>
 		<!-- Header: name + menu -->
