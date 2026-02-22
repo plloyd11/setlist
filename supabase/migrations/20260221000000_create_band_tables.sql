@@ -31,7 +31,13 @@ alter table public.bands enable row level security;
 -- Bands RLS: members can view their bands
 create policy "Band members can view their bands"
   on public.bands for select to authenticated
-  using (id = any((select public.user_band_ids())));
+  using (id = ANY(public.user_band_ids()));
+
+-- Bands RLS: owners can always view their own bands (needed for post-INSERT
+-- select before band_members row exists — fixes chicken-and-egg)
+create policy "Band owners can view their own bands"
+  on public.bands for select to authenticated
+  using ((select auth.uid()) = owner_id);
 
 -- Bands RLS: authenticated users can create bands (must be owner)
 create policy "Authenticated users can create bands"
@@ -48,16 +54,6 @@ create policy "Band owner can update band"
 create policy "Band owner can delete band"
   on public.bands for delete to authenticated
   using ((select auth.uid()) = owner_id);
-
--- Bands RLS: anon can view bands for shared band setlists
-create policy "Anyone can view bands for shared setlists"
-  on public.bands for select to anon
-  using (
-    id in (
-      select band_id from public.setlists
-      where share_token is not null and band_id is not null
-    )
-  );
 
 -- ============================================================================
 -- 3. Band members table
@@ -76,7 +72,7 @@ alter table public.band_members enable row level security;
 -- Band members RLS: members can view members of their bands
 create policy "Band members can view members"
   on public.band_members for select to authenticated
-  using (band_id = any((select public.user_band_ids())));
+  using (band_id = ANY(public.user_band_ids()));
 
 -- Band members RLS: owner can add members
 create policy "Band owner can add members"
@@ -109,17 +105,17 @@ alter table public.band_songs enable row level security;
 -- Band songs RLS: members can view band songs
 create policy "Band members can view band songs"
   on public.band_songs for select to authenticated
-  using (band_id = any((select public.user_band_ids())));
+  using (band_id = ANY(public.user_band_ids()));
 
 -- Band songs RLS: members can add songs to band
 create policy "Band members can add songs to band"
   on public.band_songs for insert to authenticated
-  with check (band_id = any((select public.user_band_ids())));
+  with check (band_id = ANY(public.user_band_ids()));
 
 -- Band songs RLS: members can remove songs from band
 create policy "Band members can remove songs from band"
   on public.band_songs for delete to authenticated
-  using (band_id = any((select public.user_band_ids())));
+  using (band_id = ANY(public.user_band_ids()));
 
 -- ============================================================================
 -- 5. Band invites table (one-time use tokens)
@@ -160,25 +156,36 @@ create policy "Invite acceptor can mark as used"
 -- ============================================================================
 alter table public.setlists add column band_id uuid references public.bands(id) on delete cascade;
 
+-- Bands RLS: anon can view bands for shared band setlists
+-- (placed after ALTER TABLE setlists since it references setlists.band_id)
+create policy "Anyone can view bands for shared setlists"
+  on public.bands for select to anon
+  using (
+    id in (
+      select band_id from public.setlists
+      where share_token is not null and band_id is not null
+    )
+  );
+
 -- Setlists RLS: band members can view band setlists
 create policy "Band members can view band setlists"
   on public.setlists for select to authenticated
-  using (band_id = any((select public.user_band_ids())));
+  using (band_id = ANY(public.user_band_ids()));
 
 -- Setlists RLS: band members can create band setlists
 create policy "Band members can create band setlists"
   on public.setlists for insert to authenticated
-  with check (band_id = any((select public.user_band_ids())));
+  with check (band_id = ANY(public.user_band_ids()));
 
 -- Setlists RLS: band members can update band setlists
 create policy "Band members can update band setlists"
   on public.setlists for update to authenticated
-  using (band_id = any((select public.user_band_ids())));
+  using (band_id = ANY(public.user_band_ids()));
 
 -- Setlists RLS: band members can delete band setlists
 create policy "Band members can delete band setlists"
   on public.setlists for delete to authenticated
-  using (band_id = any((select public.user_band_ids())));
+  using (band_id = ANY(public.user_band_ids()));
 
 -- ============================================================================
 -- 7. Additional setlist_songs RLS: band members can manage songs in band setlists
@@ -188,7 +195,7 @@ create policy "Band members can manage band setlist songs"
   using (
     setlist_id in (
       select id from public.setlists
-      where band_id = any((select public.user_band_ids()))
+      where band_id = ANY(public.user_band_ids())
     )
   );
 
@@ -200,7 +207,7 @@ create policy "Band members can view band-linked songs"
   using (
     id in (
       select song_id from public.band_songs
-      where band_id = any((select public.user_band_ids()))
+      where band_id = ANY(public.user_band_ids())
     )
   );
 
@@ -209,7 +216,7 @@ create policy "Band members can update band-linked songs"
   using (
     id in (
       select song_id from public.band_songs
-      where band_id = any((select public.user_band_ids()))
+      where band_id = ANY(public.user_band_ids())
     )
   );
 
@@ -271,5 +278,5 @@ create policy "Band members can view profiles of their bandmates"
   on public.profiles for select to authenticated
   using (id in (
     select user_id from public.band_members
-    where band_id = any((select public.user_band_ids()))
+    where band_id = ANY(public.user_band_ids())
   ));

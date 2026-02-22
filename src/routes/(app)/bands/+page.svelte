@@ -56,13 +56,7 @@
 			method="POST"
 			action="?/create"
 			class="mt-4 flex items-center gap-2"
-			use:enhance={() => {
-				return async ({ result, update }) => {
-					if (result.type === 'redirect') {
-						await update();
-					}
-				};
-			}}
+			use:enhance
 		>
 			<!-- svelte-ignore a11y_autofocus -->
 			<input
