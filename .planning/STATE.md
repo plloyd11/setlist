@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Phase: 4 of 4 (Band Workspaces)
-Plan: 4 of 5 in current phase
-Status: Executing
-Last activity: 2026-02-22 -- Completed 04-04 (Member Management & Invites)
+Plan: 5 of 5 in current phase
+Status: Phase Complete
+Last activity: 2026-02-22 -- Completed 04-05 (Band Setlists & Builder)
 
-Progress: [█████████░] 96%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: 4min
-- Total execution time: ~0.8 hours
+- Total execution time: ~0.9 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [█████████░] 96%
 | 01 | 2 | 27min | 13.5min |
 | 02 | 2 | 5min | 2.5min |
 | 03 | 6 | 10min | 1.7min |
-| 04 | 4 | 9min | 2.3min |
+| 04 | 5 | 14min | 2.8min |
 
 **Recent Trend:**
-- Last 5 plans: 1min, 2min, 2min, 2min, 3min
+- Last 5 plans: 2min, 2min, 2min, 3min, 5min
 - Trend: accelerating
 
 | Plan | Duration | Tasks | Files |
@@ -52,6 +52,7 @@ Progress: [█████████░] 96%
 | Phase 04 P02 | 2min | 2 tasks | 8 files |
 | Phase 04 P03 | 2min | 2 tasks | 2 files |
 | Phase 04 P04 | 3min | 2 tasks | 5 files |
+| Phase 04 P05 | 5min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,9 @@ Recent decisions affecting current work:
 - 04-04: Confirmation step for remove member and transfer ownership prevents accidental clicks
 - 04-04: Invite URL displayed in amber-styled banner with copy button and expiry notice
 - 04-04: Unauthenticated invite visitors redirected to /auth with return URL for post-login redirect
+- 04-05: SetlistCard basePath prop (default '/setlists') for band URL routing without component duplication
+- 04-05: Band builder flattens junction table to Song[] so library panel reuses exact same types
+- 04-05: Share route checks band_id to resolve display profile (band name/logo vs user profile)
 
 ### Pending Todos
 
@@ -124,5 +128,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 04-04-PLAN.md
-Resume file: .planning/phases/04-band-workspaces/04-04-SUMMARY.md
+Stopped at: Completed 04-05-PLAN.md (Phase 04 complete, all phases complete)
+Resume file: .planning/phases/04-band-workspaces/04-05-SUMMARY.md
