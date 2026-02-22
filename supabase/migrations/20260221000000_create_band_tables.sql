@@ -39,6 +39,14 @@ create policy "Band owners can view their own bands"
   on public.bands for select to authenticated
   using ((select auth.uid()) = owner_id);
 
+-- Bands RLS: invite holders can view the band they're invited to
+create policy "Invite holders can view invited band"
+  on public.bands for select to authenticated
+  using (id in (
+    select band_id from public.band_invites
+    where used_at is null and expires_at > now()
+  ));
+
 -- Bands RLS: authenticated users can create bands (must be owner)
 create policy "Authenticated users can create bands"
   on public.bands for insert to authenticated
@@ -80,6 +88,18 @@ create policy "Band owner can add members"
   with check (band_id in (
     select id from public.bands where owner_id = (select auth.uid())
   ));
+
+-- Band members RLS: users with valid invite can join a band (self-insert only)
+create policy "Users with valid invite can join band"
+  on public.band_members for insert to authenticated
+  with check (
+    user_id = (select auth.uid())
+    and role = 'member'
+    and band_id in (
+      select band_id from public.band_invites
+      where used_at is null and expires_at > now()
+    )
+  );
 
 -- Band members RLS: owner can remove members
 create policy "Band owner can remove members"
