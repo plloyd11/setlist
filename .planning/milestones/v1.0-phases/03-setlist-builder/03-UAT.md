@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 03-setlist-builder
 source: [03-01-SUMMARY.md, 03-02-SUMMARY.md, 03-03-SUMMARY.md, 03-04-SUMMARY.md]
 started: 2026-02-19T02:05:00Z
@@ -91,16 +91,26 @@ skipped: 0
   reason: "User reported: the setlist reorder is pretty janky, and it crashed the page once and then duplicated a song for some reason"
   severity: major
   test: 9
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Three interlocking bugs: (1) Unguarded $effect on lines 64-72 resets setlistItems mid-DnD animation when invalidateAll() completes, causing jank. (2) existingSetlistSongIds built from stale data.setlistSongs causes reordered items to be misidentified as new library drops, duplicating songs. (3) saveOrder's delete-all + re-insert pattern generates new IDs every save, making client ID-based detection permanently unreliable."
+  artifacts:
+    - path: "src/routes/(app)/setlists/[id]/+page.svelte"
+      issue: "Unguarded $effect overwrites DnD state; stale ID detection in handleSetlistFinalize"
+    - path: "src/routes/(app)/setlists/[id]/+page.server.ts"
+      issue: "saveOrder delete-all + re-insert causes ID churn"
+  missing:
+    - "Add isDragging guard to $effect so it doesn't fire during DnD operations"
+    - "Skip invalidateAll() after persist — trust optimistic state or debounce"
+    - "Use song_id (stable) instead of setlist_songs.id for new-item detection"
+  debug_session: ".planning/debug/dnd-reorder-jank.md"
 - truth: "Clicking the remove button on a song removes it from the setlist reliably"
   status: failed
   reason: "User reported: fail, sometimes the song isnt removed"
   severity: major
   test: 10
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Same unguarded $effect (lines 64-72) overwrites the optimistic removal. When data prop changes during the async window between optimistic filter and server confirmation, $effect fires and restores the removed song from stale data.setlistSongs. Song flashes back until removeSong's invalidateAll() completes."
+  artifacts:
+    - path: "src/routes/(app)/setlists/[id]/+page.svelte"
+      issue: "Unguarded $effect clobbers optimistic state during async operations"
+  missing:
+    - "Guard $effect with a flag that prevents overwrite during pending mutations"
+  debug_session: ".planning/debug/setlist-remove-song-race.md"
