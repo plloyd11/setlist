@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Phase: 4 of 4 (Band Workspaces)
-Plan: 2 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: Executing
-Last activity: 2026-02-22 -- Completed 04-02 (Band List & Workspace Shell)
+Last activity: 2026-02-22 -- Completed 04-04 (Member Management & Invites)
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 96%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 13
 - Average duration: 4min
-- Total execution time: ~0.7 hours
+- Total execution time: ~0.8 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [█████████░] 92%
 | 01 | 2 | 27min | 13.5min |
 | 02 | 2 | 5min | 2.5min |
 | 03 | 6 | 10min | 1.7min |
-| 04 | 2 | 4min | 2min |
+| 04 | 4 | 9min | 2.3min |
 
 **Recent Trend:**
-- Last 5 plans: 2min, 1min, 1min, 2min, 2min
+- Last 5 plans: 1min, 2min, 2min, 2min, 3min
 - Trend: accelerating
 
 | Plan | Duration | Tasks | Files |
@@ -50,6 +50,8 @@ Progress: [█████████░] 92%
 | Phase 03 P06 | 1min | 1 tasks | 1 files |
 | Phase 04 P01 | 2min | 2 tasks | 4 files |
 | Phase 04 P02 | 2min | 2 tasks | 8 files |
+| Phase 04 P03 | 2min | 2 tasks | 2 files |
+| Phase 04 P04 | 3min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -100,6 +102,14 @@ Recent decisions affecting current work:
 - 04-02: Band workspace derives bandId from data.band.id (avoids $page.params string|undefined)
 - 04-02: Dashboard quick actions link directly to sub-pages rather than modals
 - 04-02: Band list enrichment uses Promise.all for parallel member/song/setlist count queries
+- 04-03: Inline share picker panel (not modal) toggled from header with search filter and deduplication
+- 04-03: Add-new-song inline form on band songs page rather than separate /new route
+- 04-03: Edit via form action (updateSong) for consistency with other band actions
+- 04-03: Remove button visible on each row (no context menu) for quick band song management
+- 04-04: Profiles loaded separately with Map lookup rather than Supabase join (avoids FK path ambiguity)
+- 04-04: Confirmation step for remove member and transfer ownership prevents accidental clicks
+- 04-04: Invite URL displayed in amber-styled banner with copy button and expiry notice
+- 04-04: Unauthenticated invite visitors redirected to /auth with return URL for post-login redirect
 
 ### Pending Todos
 
@@ -114,5 +124,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 04-02-PLAN.md
-Resume file: .planning/phases/04-band-workspaces/04-02-SUMMARY.md
+Stopped at: Completed 04-04-PLAN.md
+Resume file: .planning/phases/04-band-workspaces/04-04-SUMMARY.md
