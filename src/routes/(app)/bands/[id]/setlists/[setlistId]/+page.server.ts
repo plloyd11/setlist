@@ -92,35 +92,13 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid items data' });
 		}
 
-		// Separate existing rows (have id) from new rows (no id)
-		const existingItems = items.filter((item) => item.id);
-		const newItems = items.filter((item) => !item.id);
-		const existingIds = existingItems.map((item) => item.id as string);
+		// Delete all and re-insert to avoid unique(setlist_id, position) constraint
+		// violations during reorder (individual position updates conflict)
+		await supabase.from('setlist_songs').delete().eq('setlist_id', params.setlistId);
 
-		// Delete rows that are no longer in the list (removed during reorder)
-		if (existingIds.length > 0) {
-			await supabase
-				.from('setlist_songs')
-				.delete()
-				.eq('setlist_id', params.setlistId)
-				.not('id', 'in', `(${existingIds.join(',')})`);
-		} else {
-			await supabase.from('setlist_songs').delete().eq('setlist_id', params.setlistId);
-		}
-
-		// Update positions for existing rows
-		for (const item of existingItems) {
-			await supabase
-				.from('setlist_songs')
-				.update({ position: item.position })
-				.eq('id', item.id as string)
-				.eq('setlist_id', params.setlistId);
-		}
-
-		// Insert new rows
-		if (newItems.length > 0) {
+		if (items.length > 0) {
 			const { error: insertError } = await supabase.from('setlist_songs').insert(
-				newItems.map((item) => ({
+				items.map((item) => ({
 					setlist_id: params.setlistId,
 					song_id: item.song_id,
 					position: item.position
