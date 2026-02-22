@@ -16,7 +16,7 @@
 
 <a
 	href="/bands/{band.id}"
-	class="block rounded-lg border border-stone-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-stone-700 dark:bg-stone-800"
+	class="block rounded-lg border border-surface-200 bg-surface-50 p-4 shadow-sm transition-shadow hover:shadow-md dark:border-surface-700 dark:bg-surface-800"
 >
 	<div class="flex items-center gap-3">
 		{#if band.logo_url}
@@ -27,7 +27,7 @@
 			/>
 		{:else}
 			<div
-				class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+				class="flex h-10 w-10 items-center justify-center rounded-full bg-accent-100 text-accent-600 dark:bg-accent-900/30 dark:text-accent-400"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -46,13 +46,13 @@
 				</svg>
 			</div>
 		{/if}
-		<h2 class="min-w-0 flex-1 truncate font-display text-lg font-semibold text-stone-900 dark:text-stone-100">
+		<h2 class="min-w-0 flex-1 truncate font-display text-lg font-semibold text-surface-900 dark:text-surface-100">
 			{band.name}
 		</h2>
 	</div>
 
 	<!-- Stats -->
-	<div class="mt-3 flex items-center gap-3 text-sm text-stone-500 dark:text-stone-400">
+	<div class="mt-3 flex items-center gap-3 text-sm text-surface-500 dark:text-surface-400">
 		<span class="flex items-center gap-1">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"

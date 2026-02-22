@@ -36,13 +36,13 @@
 </script>
 
 <nav
-	class="fixed right-0 bottom-0 left-0 z-50 flex border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden dark:border-stone-800 dark:bg-stone-900"
+	class="fixed right-0 bottom-0 left-0 z-50 flex border-t border-surface-200 bg-surface-50 pb-[env(safe-area-inset-bottom)] md:hidden dark:border-surface-800 dark:bg-surface-900"
 >
 	{#each navItems as item}
 		<a
 			href={item.href}
 			class="flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors
-				{isActive($page.url.pathname, item.href) ? 'text-amber-500' : 'text-stone-400 dark:text-stone-500'}"
+				{isActive($page.url.pathname, item.href) ? 'text-neon-400' : 'text-surface-400 dark:text-surface-500'}"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"

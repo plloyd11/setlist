@@ -41,17 +41,17 @@
 		{/if}
 
 		{#if data.profile?.display_name}
-			<p class="text-lg text-stone-600 dark:text-stone-400 print:text-stone-600">
+			<p class="text-lg text-surface-600 dark:text-surface-400 print:text-surface-600">
 				{data.profile.display_name}
 			</p>
 		{/if}
 
-		<h1 class="font-display text-3xl text-stone-900 dark:text-stone-100 print:text-black">
+		<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100 print:text-black">
 			{data.setlist.name}
 		</h1>
 
 		{#if subtitle}
-			<p class="mt-1 text-stone-500 dark:text-stone-400 print:text-stone-500">
+			<p class="mt-1 text-surface-500 dark:text-surface-400 print:text-surface-500">
 				{subtitle}
 			</p>
 		{/if}
@@ -61,22 +61,22 @@
 	{#if data.songs.length > 0}
 		<ol class="space-y-0">
 			{#each data.songs as song, i}
-				<li class="flex items-baseline gap-3 border-b border-stone-200 py-2 dark:border-stone-700 print:border-stone-300">
-					<span class="w-8 text-right text-lg font-medium text-stone-400 dark:text-stone-500 print:text-stone-400">
+				<li class="flex items-baseline gap-3 border-b border-surface-200 py-2 dark:border-surface-700 print:border-surface-300">
+					<span class="w-8 text-right text-lg font-medium text-surface-400 dark:text-surface-500 print:text-surface-400">
 						{i + 1}
 					</span>
-					<span class="text-lg text-stone-900 dark:text-stone-100 print:text-black">
+					<span class="text-lg text-surface-900 dark:text-surface-100 print:text-black">
 						{song.title}
 					</span>
 				</li>
 			{/each}
 		</ol>
 	{:else}
-		<p class="py-8 text-center text-stone-400 dark:text-stone-500">No songs in this setlist</p>
+		<p class="py-8 text-center text-surface-400 dark:text-surface-500">No songs in this setlist</p>
 	{/if}
 
 	<!-- Footer -->
-	<p class="mt-12 text-center text-xs text-stone-400 dark:text-stone-500 print:hidden">
+	<p class="mt-12 text-center text-xs text-surface-400 dark:text-surface-500 print:hidden">
 		Powered by Setlist
 	</p>
 </div>

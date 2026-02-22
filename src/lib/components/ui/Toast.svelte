@@ -15,7 +15,7 @@
 
 {#if visible}
 	<div
-		class="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white shadow-lg dark:bg-stone-100 dark:text-stone-900 md:bottom-6"
+		class="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-surface-900 px-4 py-2 text-sm font-medium text-white shadow-lg md:bottom-6 dark:bg-surface-100 dark:text-surface-900"
 		role="status"
 		aria-live="polite"
 	>

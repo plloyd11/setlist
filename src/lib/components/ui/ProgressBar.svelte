@@ -11,14 +11,14 @@
 </script>
 
 <div
-	class="h-3 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"
+	class="h-3 w-full overflow-hidden rounded-full bg-surface-200 dark:bg-surface-700"
 	role="progressbar"
 	aria-valuenow={Math.round(percent)}
 	aria-valuemin={0}
 	aria-valuemax={100}
 >
 	<div
-		class="h-full rounded-full transition-all duration-300 {isOver ? 'bg-red-500' : 'bg-amber-500'}"
+		class="h-full rounded-full transition-all duration-300 {isOver ? 'bg-danger-500' : 'bg-accent-500'}"
 		style="width: {clampedWidth}%"
 	></div>
 </div>

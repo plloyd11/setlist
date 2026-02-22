@@ -6,7 +6,7 @@ export const actions: Actions = {
 	default: async ({ request, locals: { supabase, safeGetSession } }) => {
 		const { session } = await safeGetSession();
 		if (!session) {
-			return fail(401, { error: 'Not authenticated' });
+			return fail(401, { title: '', durationRaw: '', notes: null, error: 'Not authenticated' });
 		}
 
 		const formData = await request.formData();
@@ -36,7 +36,13 @@ export const actions: Actions = {
 		});
 
 		if (error) {
-			return fail(500, { title, durationRaw, notes, error: 'Failed to save song' });
+			console.error('Supabase insert error:', error);
+			return fail(500, {
+				title,
+				durationRaw,
+				notes,
+				error: `Failed to save song: ${error.message}`
+			});
 		}
 
 		return { success: true };

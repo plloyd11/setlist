@@ -120,18 +120,18 @@
 </script>
 
 <div class="space-y-3">
-	<label class="block text-sm font-medium text-stone-700 dark:text-stone-300">Logo</label>
+	<label class="block text-sm font-medium text-surface-700 dark:text-surface-300">Logo</label>
 
 	<!-- Upload area / preview -->
 	<div
-		class="relative flex min-h-[120px] items-center justify-center rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 transition-colors hover:border-amber-400 dark:border-stone-600 dark:bg-stone-800/50 dark:hover:border-amber-600"
+		class="relative flex min-h-[120px] items-center justify-center rounded-xl border-2 border-dashed border-surface-300 bg-surface-50 transition-colors hover:border-accent-400 dark:border-surface-600 dark:bg-surface-800/50 dark:hover:border-accent-600"
 	>
 		{#if previewUrl}
 			<div class="flex flex-col items-center gap-3 p-4">
 				<img src={previewUrl} alt="Logo preview" class="max-h-24 w-auto rounded" />
 				<div class="flex gap-2">
 					<label
-						class="cursor-pointer rounded px-3 py-1 text-xs font-medium text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20"
+						class="cursor-pointer rounded px-3 py-1 text-xs font-medium text-accent-600 hover:bg-accent-50 dark:text-accent-400 dark:hover:bg-accent-900/20"
 					>
 						Replace
 						<input
@@ -145,7 +145,7 @@
 					<button
 						onclick={removeLogo}
 						disabled={uploading}
-						class="rounded px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+						class="rounded px-3 py-1 text-xs font-medium text-danger-600 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/20"
 					>
 						Remove
 					</button>
@@ -153,13 +153,25 @@
 			</div>
 		{:else}
 			<label class="flex cursor-pointer flex-col items-center gap-2 p-6">
-				<svg class="h-8 w-8 text-stone-400 dark:text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+				<svg
+					class="h-8 w-8 text-surface-400 dark:text-surface-500"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="1.5"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
+					/>
 				</svg>
-				<span class="text-sm text-stone-500 dark:text-stone-400">
+				<span class="text-sm text-surface-500 dark:text-surface-400">
 					{uploading ? 'Uploading...' : 'Click to upload logo'}
 				</span>
-				<span class="text-xs text-stone-400 dark:text-stone-500">PNG, JPEG, WebP, or SVG (max 2MB)</span>
+				<span class="text-xs text-surface-400 dark:text-surface-500"
+					>PNG, JPEG, WebP, or SVG (max 2MB)</span
+				>
 				<input
 					type="file"
 					accept="image/png,image/jpeg,image/webp,image/svg+xml"
@@ -171,16 +183,29 @@
 		{/if}
 
 		{#if uploading}
-			<div class="absolute inset-0 flex items-center justify-center rounded-xl bg-white/70 dark:bg-stone-900/70">
-				<svg class="h-6 w-6 animate-spin text-amber-500" viewBox="0 0 24 24" fill="none">
-					<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25" />
-					<path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" class="opacity-75" />
+			<div
+				class="absolute inset-0 flex items-center justify-center rounded-xl bg-surface-50/70 dark:bg-surface-900/70"
+			>
+				<svg class="h-6 w-6 animate-spin text-accent-500" viewBox="0 0 24 24" fill="none">
+					<circle
+						cx="12"
+						cy="12"
+						r="10"
+						stroke="currentColor"
+						stroke-width="4"
+						class="opacity-25"
+					/>
+					<path
+						fill="currentColor"
+						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+						class="opacity-75"
+					/>
 				</svg>
 			</div>
 		{/if}
 	</div>
 
 	{#if error}
-		<p class="text-sm text-red-600 dark:text-red-400">{error}</p>
+		<p class="text-sm text-danger-600 dark:text-danger-400">{error}</p>
 	{/if}
 </div>

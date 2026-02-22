@@ -21,19 +21,19 @@
 	};
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-stone-50 dark:bg-stone-950">
+<div class="flex min-h-screen items-center justify-center bg-surface-50 dark:bg-surface-950">
 	<div class="w-full max-w-sm px-6">
-		<div class="rounded-2xl bg-white p-8 shadow-lg dark:bg-stone-900 dark:shadow-stone-900/50">
+		<div class="rounded-2xl bg-surface-50 p-8 shadow-lg dark:bg-surface-900 dark:shadow-surface-900/50">
 			<!-- Logo / App Name -->
 			<div class="mb-8 text-center">
-				<h1 class="text-4xl font-bold tracking-tight text-amber-500">Setlist</h1>
-				<p class="mt-2 text-sm text-stone-500 dark:text-stone-400">Build your perfect set</p>
+				<h1 class="text-4xl font-bold tracking-tight text-accent-500">Setlist</h1>
+				<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">Build your perfect set</p>
 			</div>
 
 			<!-- Google Sign-In Button -->
 			<button
 				onclick={signInWithGoogle}
-				class="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg bg-amber-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-amber-600 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:outline-none dark:focus:ring-offset-stone-900"
+				class="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg bg-accent-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-accent-600 focus:ring-2 focus:ring-neon-400 focus:ring-offset-2 focus:outline-none dark:focus:ring-offset-surface-900"
 			>
 				<svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
 					<path
@@ -58,13 +58,13 @@
 
 			<!-- Error Display -->
 			{#if error}
-				<p class="mt-4 text-center text-sm text-red-500 dark:text-red-400">
+				<p class="mt-4 text-center text-sm text-danger-500 dark:text-danger-400">
 					{error}
 				</p>
 			{/if}
 		</div>
 
 		<!-- Footer -->
-		<p class="mt-6 text-center text-xs text-stone-400 dark:text-stone-600">Built for musicians</p>
+		<p class="mt-6 text-center text-xs text-surface-400 dark:text-surface-600">Built for musicians</p>
 	</div>
 </div>

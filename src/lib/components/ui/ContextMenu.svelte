@@ -55,14 +55,14 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		bind:this={menuEl}
-		class="fixed z-50 min-w-[160px] rounded-lg border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-800"
+		class="fixed z-50 min-w-[160px] rounded-lg border border-surface-200 bg-surface-50 py-1 shadow-lg dark:border-surface-700 dark:bg-surface-800"
 		style="left: {adjustedX}px; top: {adjustedY}px;"
 		onclick={(e) => e.stopPropagation()}
 		oncontextmenu={(e) => e.preventDefault()}
 	>
 		{#each items as item}
 			<button
-				class="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
+				class="w-full px-4 py-2 text-left text-sm text-surface-700 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-700"
 				onclick={() => handleItemClick(item)}
 			>
 				{item.label}

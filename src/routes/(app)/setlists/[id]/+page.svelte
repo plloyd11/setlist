@@ -39,9 +39,7 @@
 	let isMutating = $state(false);
 
 	// State for DnD zones
-	let libraryItems = $state<LibraryItem[]>(
-		data.songs.map((s: Song) => ({ ...s, id: s.id }))
-	);
+	let libraryItems = $state<LibraryItem[]>(data.songs.map((s: Song) => ({ ...s, id: s.id })));
 	let setlistItems = $state<SetlistItem[]>(
 		data.setlistSongs.map((ss: any) => ({
 			id: ss.id,
@@ -306,24 +304,28 @@
 
 <div class="flex h-full flex-col">
 	<!-- Mobile tab toggle (below md) -->
-	<div class="flex border-b border-stone-200 md:hidden dark:border-stone-700">
+	<div class="flex border-b border-surface-200 md:hidden dark:border-surface-700">
 		<button
 			onclick={() => (activeTab = 'library')}
-			class="flex-1 px-4 py-3 text-center text-sm font-medium transition-colors {activeTab === 'library'
-				? 'border-b-2 border-amber-500 text-amber-600 dark:text-amber-400'
-				: 'text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300'}"
+			class="flex-1 px-4 py-3 text-center text-sm font-medium transition-colors {activeTab ===
+			'library'
+				? 'border-b-2 border-neon-400 text-neon-600 dark:text-neon-400'
+				: 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300'}"
 		>
 			Library
 		</button>
 		<button
 			onclick={() => (activeTab = 'setlist')}
-			class="flex-1 px-4 py-3 text-center text-sm font-medium transition-colors {activeTab === 'setlist'
-				? 'border-b-2 border-amber-500 text-amber-600 dark:text-amber-400'
-				: 'text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300'}"
+			class="flex-1 px-4 py-3 text-center text-sm font-medium transition-colors {activeTab ===
+			'setlist'
+				? 'border-b-2 border-neon-400 text-neon-600 dark:text-neon-400'
+				: 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300'}"
 		>
 			Setlist
 			{#if setlistItems.length > 0}
-				<span class="ml-1 rounded-full bg-amber-100 px-1.5 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+				<span
+					class="ml-1 rounded-full bg-neon-100 px-1.5 text-xs text-neon-700 dark:bg-neon-900/30 dark:text-neon-400"
+				>
 					{setlistItems.length}
 				</span>
 			{/if}
@@ -334,16 +336,19 @@
 	<div class="flex min-h-0 flex-1 md:grid md:grid-cols-[320px_1fr]">
 		<!-- Library panel -->
 		<div
-			class="flex flex-col border-r border-stone-200 bg-stone-50 md:flex dark:border-stone-700 dark:bg-stone-900/50 {activeTab === 'library' ? 'flex' : 'hidden'}"
+			class="flex flex-col border-r border-surface-200 bg-surface-50 md:flex dark:border-surface-700 dark:bg-surface-900/50 {activeTab ===
+			'library'
+				? 'flex'
+				: 'hidden'}"
 		>
 			<div class="p-3">
-				<h2 class="font-display text-lg text-stone-900 dark:text-stone-100">Song Library</h2>
+				<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Song Library</h2>
 				<!-- Search -->
 				<input
 					type="text"
 					bind:value={searchQuery}
 					placeholder="Search songs..."
-					class="mt-2 w-full rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-900 placeholder-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+					class="mt-2 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
 				/>
 			</div>
 
@@ -365,7 +370,7 @@
 					</div>
 				{/each}
 				{#if filteredLibraryItems.length === 0}
-					<p class="py-8 text-center text-sm text-stone-400 dark:text-stone-500">
+					<p class="py-8 text-center text-sm text-surface-400 dark:text-surface-500">
 						{searchQuery ? 'No songs match your search' : 'No songs in your library'}
 					</p>
 				{/if}
@@ -373,9 +378,7 @@
 		</div>
 
 		<!-- Setlist panel -->
-		<div
-			class="flex flex-col md:flex {activeTab === 'setlist' ? 'flex' : 'hidden'}"
-		>
+		<div class="flex flex-col md:flex {activeTab === 'setlist' ? 'flex' : 'hidden'}">
 			<div class="flex-1 overflow-y-auto p-4 md:p-6">
 				<!-- Setlist header -->
 				<SetlistHeader
@@ -390,30 +393,55 @@
 						onclick={toggleShare}
 						disabled={shareLoading}
 						class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {isShared
-							? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50'
-							: 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-400 dark:hover:bg-stone-700'}"
+							? 'bg-accent-100 text-accent-700 hover:bg-accent-200 dark:bg-accent-900/30 dark:text-accent-400 dark:hover:bg-accent-900/50'
+							: 'bg-surface-100 text-surface-600 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-surface-700'}"
 					>
 						{#if shareLoading}
 							<svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25" />
-								<path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" class="opacity-75" />
+								<circle
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+									class="opacity-25"
+								/>
+								<path
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+									class="opacity-75"
+								/>
 							</svg>
 						{:else}
-							<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+							<svg
+								class="h-4 w-4"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+								/>
 							</svg>
 						{/if}
 						{isShared ? 'Sharing On' : 'Share'}
 					</button>
 
 					{#if isShared && shareUrl}
-						<div class="flex items-center gap-2 rounded-lg bg-stone-100 px-3 py-1.5 dark:bg-stone-800">
-							<span class="max-w-[200px] truncate text-xs text-stone-500 dark:text-stone-400 md:max-w-sm">
+						<div
+							class="flex items-center gap-2 rounded-lg bg-surface-100 px-3 py-1.5 dark:bg-surface-800"
+						>
+							<span
+								class="max-w-[200px] truncate text-xs text-surface-500 md:max-w-sm dark:text-surface-400"
+							>
 								{shareUrl}
 							</span>
 							<button
 								onclick={copyShareLink}
-								class="shrink-0 rounded px-2 py-0.5 text-xs font-medium text-amber-600 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/30"
+								class="shrink-0 rounded px-2 py-0.5 text-xs font-medium text-accent-600 hover:bg-accent-100 dark:text-accent-400 dark:hover:bg-accent-900/30"
 							>
 								{copiedShareLink ? 'Copied!' : 'Copy'}
 							</button>
@@ -423,7 +451,9 @@
 
 				<!-- Setlist DnD zone -->
 				<div
-					class="min-h-[120px] rounded-lg {setlistItems.length === 0 ? 'border-2 border-dashed border-stone-300 p-8 dark:border-stone-700' : ''}"
+					class="min-h-[120px] rounded-lg {setlistItems.length === 0
+						? 'border-2 border-dashed border-surface-300 p-8 dark:border-surface-700'
+						: ''}"
 					use:dndzone={{
 						items: setlistItems,
 						flipDurationMs,
@@ -439,10 +469,10 @@
 					{/each}
 					{#if setlistItems.length === 0}
 						<div class="pointer-events-none text-center">
-							<p class="text-sm text-stone-500 dark:text-stone-400">
+							<p class="text-sm text-surface-500 dark:text-surface-400">
 								Drag songs here to build your setlist
 							</p>
-							<p class="mt-1 text-xs text-stone-400 dark:text-stone-500">
+							<p class="mt-1 text-xs text-surface-400 dark:text-surface-500">
 								or tap + on mobile to add songs
 							</p>
 						</div>

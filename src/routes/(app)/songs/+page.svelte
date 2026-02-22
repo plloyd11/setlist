@@ -47,10 +47,14 @@
 		if (durationFilter !== 'all') {
 			result = result.filter((s) => {
 				switch (durationFilter) {
-					case 'under3': return s.duration_seconds < 180;
-					case '3to5': return s.duration_seconds >= 180 && s.duration_seconds <= 300;
-					case 'over5': return s.duration_seconds > 300;
-					default: return true;
+					case 'under3':
+						return s.duration_seconds < 180;
+					case '3to5':
+						return s.duration_seconds >= 180 && s.duration_seconds <= 300;
+					case 'over5':
+						return s.duration_seconds > 300;
+					default:
+						return true;
 				}
 			});
 		}
@@ -77,9 +81,7 @@
 
 	let hasSongs = $derived(data.songs.length > 0);
 	let hasResults = $derived(filteredSongs.length > 0);
-	let songCountLabel = $derived(
-		data.songs.length === 1 ? '1 song' : `${data.songs.length} songs`
-	);
+	let songCountLabel = $derived(data.songs.length === 1 ? '1 song' : `${data.songs.length} songs`);
 
 	function toggleSort(field: typeof sortBy) {
 		if (sortBy === field) {
@@ -138,19 +140,29 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div class="flex items-baseline gap-3">
-			<h1 class="font-display text-3xl text-stone-900 dark:text-stone-100">Songs</h1>
+			<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Songs</h1>
 			{#if hasSongs}
-				<span class="text-sm text-stone-500 dark:text-stone-400">{songCountLabel}</span>
+				<span class="text-sm text-surface-500 dark:text-surface-400">{songCountLabel}</span>
 			{/if}
 		</div>
 		<div class="flex items-center gap-2">
 			{#if hasSongs}
 				<button
 					onclick={() => (searchExpanded = !searchExpanded)}
-					class="rounded-lg p-2 text-stone-500 hover:bg-stone-200 dark:text-stone-400 dark:hover:bg-stone-700"
+					class="rounded-lg p-2 text-surface-500 hover:bg-surface-200 dark:text-surface-400 dark:hover:bg-surface-700"
 					aria-label="Toggle search"
 				>
-					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
 						<circle cx="11" cy="11" r="8" />
 						<path d="m21 21-4.3-4.3" />
 					</svg>
@@ -158,10 +170,20 @@
 			{/if}
 			<a
 				href="/songs/new"
-				class="flex items-center justify-center rounded-lg bg-amber-500 p-2 text-white shadow-sm hover:bg-amber-600"
+				class="flex items-center justify-center rounded-lg bg-accent-500 p-2 text-white shadow-sm hover:bg-accent-600"
 				aria-label="Add song"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="20"
+					height="20"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
 					<path d="M12 5v14M5 12h14" />
 				</svg>
 			</a>
@@ -176,12 +198,12 @@
 	{#if hasSongs}
 		<!-- Sort controls -->
 		<div class="mt-4 flex items-center gap-1">
-			<span class="mr-1 text-xs text-stone-400 dark:text-stone-500">Sort:</span>
+			<span class="mr-1 text-xs text-surface-400 dark:text-surface-500">Sort:</span>
 			{#each sortOptions as opt}
 				<button
 					class="rounded px-2 py-0.5 text-xs font-medium transition-colors {sortBy === opt.value
-						? 'bg-stone-800 text-stone-100 dark:bg-stone-200 dark:text-stone-800'
-						: 'text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300'}"
+						? 'bg-surface-800 text-surface-100 dark:bg-surface-200 dark:text-surface-800'
+						: 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300'}"
 					onclick={() => toggleSort(opt.value)}
 				>
 					{opt.label}
@@ -194,7 +216,9 @@
 
 		{#if hasResults}
 			<!-- Song list -->
-			<div class="mt-4 overflow-hidden rounded-xl border border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-800/50">
+			<div
+				class="mt-4 overflow-hidden rounded-xl border border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800/50"
+			>
 				{#each filteredSongs as song (song.id)}
 					<SongRow
 						{song}
@@ -206,16 +230,16 @@
 			</div>
 		{:else}
 			<!-- No results state -->
-			<div class="mt-8 rounded-xl border border-dashed border-stone-300 bg-white/50 p-8 text-center dark:border-stone-700 dark:bg-stone-900/50">
-				<p class="font-display text-lg text-stone-700 dark:text-stone-300">
-					No songs match
-				</p>
-				<p class="mt-2 text-sm text-stone-500 dark:text-stone-400">
+			<div
+				class="mt-8 rounded-xl border border-dashed border-surface-300 bg-surface-50/50 p-8 text-center dark:border-surface-700 dark:bg-surface-900/50"
+			>
+				<p class="font-display text-lg text-surface-700 dark:text-surface-300">No songs match</p>
+				<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">
 					Try a different search or clear your filters.
 				</p>
 				<button
 					onclick={clearSearch}
-					class="mt-4 rounded-lg bg-stone-200 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-300 dark:bg-stone-700 dark:text-stone-300 dark:hover:bg-stone-600"
+					class="mt-4 rounded-lg bg-surface-200 px-4 py-2 text-sm font-medium text-surface-700 hover:bg-surface-300 dark:bg-surface-700 dark:text-surface-300 dark:hover:bg-surface-600"
 				>
 					Clear search
 				</button>
@@ -223,7 +247,9 @@
 		{/if}
 	{:else}
 		<!-- Empty state (no songs at all) -->
-		<div class="mt-8 rounded-xl border border-dashed border-stone-300 bg-white/50 p-12 text-center dark:border-stone-700 dark:bg-stone-900/50">
+		<div
+			class="mt-8 rounded-xl border border-dashed border-surface-300 bg-surface-50/50 p-12 text-center dark:border-surface-700 dark:bg-surface-900/50"
+		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				width="48"
@@ -234,19 +260,21 @@
 				stroke-width="1.5"
 				stroke-linecap="round"
 				stroke-linejoin="round"
-				class="mx-auto text-stone-300 dark:text-stone-600"
+				class="mx-auto text-surface-300 dark:text-surface-600"
 			>
-				<path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+				<path
+					d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"
+				/>
 			</svg>
-			<p class="mt-4 font-display text-lg text-stone-700 dark:text-stone-300">
+			<p class="mt-4 font-display text-lg text-surface-700 dark:text-surface-300">
 				Your song library is empty
 			</p>
-			<p class="mt-2 text-sm text-stone-500 dark:text-stone-400">
+			<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">
 				Add your first song to get started.
 			</p>
 			<a
 				href="/songs/new"
-				class="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 font-semibold text-white shadow-sm hover:bg-amber-600"
+				class="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-accent-500 px-4 py-2 font-semibold text-white shadow-sm hover:bg-accent-600"
 			>
 				Add your first song
 			</a>
@@ -255,12 +283,7 @@
 </div>
 
 <!-- Context menu (page-level singleton) -->
-<ContextMenu
-	items={contextMenuItems}
-	x={contextX}
-	y={contextY}
-	bind:visible={contextVisible}
-/>
+<ContextMenu items={contextMenuItems} x={contextX} y={contextY} bind:visible={contextVisible} />
 
 <!-- Confirm dialog (page-level singleton) -->
 <ConfirmDialog bind:this={confirmDialog} />

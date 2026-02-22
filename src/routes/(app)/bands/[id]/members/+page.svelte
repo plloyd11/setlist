@@ -26,7 +26,7 @@
 
 <div class="p-6 md:p-8">
 	<div class="flex items-center justify-between">
-		<h2 class="font-display text-2xl text-stone-900 dark:text-stone-100">Members</h2>
+		<h2 class="font-display text-2xl text-surface-900 dark:text-surface-100">Members</h2>
 
 		{#if data.isOwner}
 			<form
@@ -46,7 +46,7 @@
 			>
 				<button
 					type="submit"
-					class="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-2 focus:outline-none dark:focus:ring-offset-stone-900"
+					class="inline-flex items-center gap-1.5 rounded-lg bg-accent-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-accent-600 focus:ring-2 focus:ring-neon-400/50 focus:ring-offset-2 focus:outline-none dark:focus:ring-offset-surface-900"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -69,15 +69,15 @@
 	</div>
 
 	{#if form?.error}
-		<div class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+		<div class="mt-4 rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-800 dark:bg-danger-900/20 dark:text-danger-400">
 			{form.error}
 		</div>
 	{/if}
 
 	<!-- Invite URL display -->
 	{#if showInviteUrl && inviteUrl}
-		<div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
-			<p class="mb-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+		<div class="mt-4 rounded-lg border border-accent-200 bg-accent-50 p-4 dark:border-accent-800 dark:bg-accent-900/20">
+			<p class="mb-2 text-sm font-medium text-accent-800 dark:text-accent-300">
 				Share this one-time invite link:
 			</p>
 			<div class="flex gap-2">
@@ -86,17 +86,17 @@
 					type="text"
 					readonly
 					value={inviteUrl}
-					class="flex-1 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm text-stone-900 dark:border-amber-700 dark:bg-stone-800 dark:text-stone-100"
+					class="flex-1 rounded-md border border-accent-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 dark:border-accent-700 dark:bg-surface-800 dark:text-surface-100"
 				/>
 				<button
 					type="button"
 					onclick={copyToClipboard}
-					class="rounded-md bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
+					class="rounded-md bg-accent-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-600"
 				>
 					Copy
 				</button>
 			</div>
-			<p class="mt-2 text-xs text-amber-600 dark:text-amber-400">
+			<p class="mt-2 text-xs text-accent-600 dark:text-accent-400">
 				This link can only be used once and expires in 7 days.
 			</p>
 		</div>
@@ -114,7 +114,7 @@
 		{/each}
 
 		{#if data.members.length === 0}
-			<p class="py-8 text-center text-sm text-stone-500 dark:text-stone-400">
+			<p class="py-8 text-center text-sm text-surface-500 dark:text-surface-400">
 				No members yet. Generate an invite link to add members.
 			</p>
 		{/if}

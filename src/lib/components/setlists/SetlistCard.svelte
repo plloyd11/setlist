@@ -91,7 +91,7 @@
 <div class="group relative">
 	<a
 		href="{basePath}/{setlist.id}"
-		class="block rounded-lg border border-stone-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-stone-700 dark:bg-stone-800"
+		class="block rounded-lg border border-surface-200 bg-surface-50 p-4 shadow-sm transition-shadow hover:shadow-md dark:border-surface-700 dark:bg-surface-800"
 	>
 		<!-- Header: name + menu -->
 		<div class="flex items-start justify-between gap-2">
@@ -103,12 +103,12 @@
 					onblur={saveEdit}
 					onkeydown={handleKeydown}
 					autofocus
-					class="min-w-0 flex-1 rounded border border-amber-400 bg-white px-2 py-0.5 font-display text-lg font-semibold text-stone-900 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-amber-600 dark:bg-stone-800 dark:text-stone-100"
+					class="min-w-0 flex-1 rounded border border-neon-400 bg-surface-50 px-2 py-0.5 font-display text-lg font-semibold text-surface-900 focus:outline-none focus:ring-1 focus:ring-neon-400 dark:border-neon-600 dark:bg-surface-800 dark:text-surface-100"
 					onclick={(e) => e.preventDefault()}
 				/>
 			{:else}
 				<button
-					class="min-w-0 flex-1 truncate text-left font-display text-lg font-semibold text-stone-900 hover:text-amber-600 dark:text-stone-100 dark:hover:text-amber-400"
+					class="min-w-0 flex-1 truncate text-left font-display text-lg font-semibold text-surface-900 hover:text-neon-500 dark:text-surface-100 dark:hover:text-neon-400"
 					onclick={startEdit}
 					title="Click to rename"
 				>
@@ -120,7 +120,7 @@
 			<div class="relative">
 				<button
 					onclick={toggleMenu}
-					class="rounded p-1 text-stone-400 opacity-0 transition-opacity hover:bg-stone-100 hover:text-stone-600 group-hover:opacity-100 dark:hover:bg-stone-700 dark:hover:text-stone-300"
+					class="rounded p-1 text-surface-400 opacity-0 transition-opacity hover:bg-surface-100 hover:text-surface-600 group-hover:opacity-100 dark:hover:bg-surface-700 dark:hover:text-surface-300"
 					aria-label="Setlist options"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -133,11 +133,11 @@
 				{#if menuOpen}
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
 					<div
-						class="absolute right-0 top-8 z-10 w-36 rounded-lg border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-800"
+						class="absolute right-0 top-8 z-10 w-36 rounded-lg border border-surface-200 bg-surface-50 py-1 shadow-lg dark:border-surface-700 dark:bg-surface-800"
 						onclick={(e) => e.stopPropagation()}
 					>
 						<button
-							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
+							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-surface-700 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-700"
 							onclick={handleDuplicate}
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -147,7 +147,7 @@
 							Duplicate
 						</button>
 						<button
-							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-danger-600 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/20"
 							onclick={handleDelete}
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -162,7 +162,7 @@
 
 		<!-- Meta: date + venue -->
 		{#if setlist.gig_date || setlist.venue}
-			<p class="mt-1.5 truncate text-sm text-stone-500 dark:text-stone-400">
+			<p class="mt-1.5 truncate text-sm text-surface-500 dark:text-surface-400">
 				{#if setlist.venue}{setlist.venue}{/if}
 				{#if setlist.venue && setlist.gig_date} &mdash; {/if}
 				{#if setlist.gig_date}{formatDate(setlist.gig_date)}{/if}
@@ -170,7 +170,7 @@
 		{/if}
 
 		<!-- Stats: song count + total time -->
-		<div class="mt-3 flex items-center gap-3 text-sm text-stone-500 dark:text-stone-400">
+		<div class="mt-3 flex items-center gap-3 text-sm text-surface-500 dark:text-surface-400">
 			<span class="flex items-center gap-1">
 				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M9 19V6l12-3v13" />

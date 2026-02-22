@@ -8,7 +8,7 @@
 
 <div class="flex h-full flex-col">
 	<!-- Band header -->
-	<div class="border-b border-stone-200 px-6 py-4 dark:border-stone-700">
+	<div class="border-b border-surface-200 px-6 py-4 dark:border-surface-700">
 		<div class="flex items-center gap-3">
 			{#if data.band.logo_url}
 				<img
@@ -17,7 +17,7 @@
 					class="h-8 w-8 rounded-full object-cover"
 				/>
 			{/if}
-			<h1 class="font-display text-2xl text-stone-900 dark:text-stone-100">
+			<h1 class="font-display text-2xl text-surface-900 dark:text-surface-100">
 				{data.band.name}
 			</h1>
 		</div>

@@ -8,11 +8,7 @@ export const load: LayoutServerLoad = async ({ params, locals: { supabase, safeG
 	}
 
 	// Load band (RLS ensures only band members can access)
-	const { data: band } = await supabase
-		.from('bands')
-		.select('*')
-		.eq('id', params.id)
-		.single();
+	const { data: band } = await supabase.from('bands').select('*').eq('id', params.id).single();
 
 	if (!band) {
 		throw error(404, 'Band not found');

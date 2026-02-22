@@ -20,14 +20,14 @@
 	}
 </script>
 
-<nav class="flex border-b border-stone-200 px-6 dark:border-stone-700">
+<nav class="flex border-b border-surface-200 px-6 dark:border-surface-700">
 	{#each tabs as tab}
 		<a
 			href={tab.href}
 			class="border-b-2 px-4 py-2.5 text-sm font-medium transition-colors
 				{isActive($page.url.pathname, tab.href, tab.exact)
-				? 'border-amber-500 text-amber-600 dark:text-amber-400'
-				: 'border-transparent text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200'}"
+				? 'border-accent-500 text-accent-600 dark:text-accent-400'
+				: 'border-transparent text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200'}"
 		>
 			{tab.label}
 		</a>

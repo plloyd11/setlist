@@ -43,11 +43,11 @@
 </script>
 
 <aside
-	class="hidden border-r border-stone-200 bg-white md:flex md:w-56 md:flex-col dark:border-stone-800 dark:bg-stone-900"
+	class="hidden border-r border-surface-200 bg-surface-50 md:flex md:w-56 md:flex-col dark:border-surface-800 dark:bg-surface-900"
 >
 	<!-- App branding -->
 	<div class="flex h-16 items-center px-6">
-		<a href="/" class="font-display text-2xl text-amber-500">Setlist</a>
+		<a href="/" class="font-display text-2xl text-accent-500">Setlist</a>
 	</div>
 
 	<!-- Navigation -->
@@ -57,8 +57,8 @@
 				href={item.href}
 				class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors
 					{isActive($page.url.pathname, item.href)
-					? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-					: 'text-stone-600 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800'}"
+					? 'bg-neon-500/10 text-neon-600 dark:text-neon-400'
+					: 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800'}"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -79,13 +79,13 @@
 	</nav>
 
 	<!-- Bottom section: user info + theme toggle -->
-	<div class="border-t border-stone-200 px-3 py-3 dark:border-stone-800">
+	<div class="border-t border-surface-200 px-3 py-3 dark:border-surface-800">
 		{#if user}
 			<div class="mb-2 flex items-center gap-2 px-3 py-1">
 				{#if user.user_metadata?.avatar_url}
 					<img src={user.user_metadata.avatar_url} alt="" class="h-6 w-6 rounded-full" />
 				{/if}
-				<span class="truncate text-xs text-stone-500 dark:text-stone-400">
+				<span class="truncate text-xs text-surface-500 dark:text-surface-400">
 					{user.user_metadata?.full_name || user.email}
 				</span>
 			</div>

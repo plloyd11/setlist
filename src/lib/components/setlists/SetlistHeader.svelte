@@ -77,12 +77,12 @@
 			onblur={saveName}
 			onkeydown={handleNameKeydown}
 			autofocus
-			class="w-full max-w-md rounded border border-amber-400 bg-transparent px-2 py-1 text-center font-display text-2xl text-stone-900 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-amber-600 dark:text-stone-100"
+			class="w-full max-w-md rounded border border-neon-400 bg-transparent px-2 py-1 text-center font-display text-2xl text-surface-900 focus:outline-none focus:ring-1 focus:ring-neon-400 dark:border-neon-600 dark:text-surface-100"
 		/>
 	{:else}
 		<button
 			onclick={startNameEdit}
-			class="font-display text-2xl text-stone-900 hover:text-amber-600 dark:text-stone-100 dark:hover:text-amber-400"
+			class="font-display text-2xl text-surface-900 hover:text-neon-500 dark:text-surface-100 dark:hover:text-neon-400"
 			title="Click to rename"
 		>
 			{setlist.name}
@@ -95,7 +95,7 @@
 			type="date"
 			bind:value={dateValue}
 			onchange={handleDateChange}
-			class="rounded border border-stone-300 bg-transparent px-2 py-1 text-sm text-stone-600 focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:text-stone-400"
+			class="rounded border border-surface-300 bg-transparent px-2 py-1 text-sm text-surface-600 focus:border-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-400"
 			placeholder="Date"
 		/>
 		<input
@@ -104,7 +104,7 @@
 			onblur={handleVenueBlur}
 			onkeydown={handleVenueKeydown}
 			placeholder="Venue"
-			class="rounded border border-stone-300 bg-transparent px-2 py-1 text-sm text-stone-600 placeholder-stone-400 focus:border-amber-500 focus:outline-none dark:border-stone-600 dark:text-stone-400 dark:placeholder-stone-500"
+			class="rounded border border-surface-300 bg-transparent px-2 py-1 text-sm text-surface-600 placeholder-surface-400 focus:border-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-400 dark:placeholder-surface-500"
 		/>
 	</div>
 </div>
