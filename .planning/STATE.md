@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** Musicians can build a setlist from their songs and instantly see how long the set runs, so they can nail the timing for a show.
-**Current focus:** Phase 3 - Setlist Builder
+**Current focus:** Phase 4 - Band Workspaces
 
 ## Current Position
 
-Phase: 3 of 4 (Setlist Builder) -- COMPLETE
-Plan: 6 of 6 in current phase
-Status: Phase Complete (all gap closures done)
-Last activity: 2026-02-20 -- Completed 03-06 (Library Drag Persistence Fix)
+Phase: 4 of 4 (Band Workspaces)
+Plan: 1 of 5 in current phase
+Status: Executing
+Last activity: 2026-02-22 -- Completed 04-01 (Database Foundation & Navigation)
 
-Progress: [████████░░] 85%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 4min
 - Total execution time: ~0.7 hours
 
@@ -30,9 +30,10 @@ Progress: [████████░░] 85%
 | 01 | 2 | 27min | 13.5min |
 | 02 | 2 | 5min | 2.5min |
 | 03 | 6 | 10min | 1.7min |
+| 04 | 1 | 2min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 1min, 2min, 4min, 2min, 1min
+- Last 5 plans: 4min, 2min, 1min, 1min, 2min
 - Trend: accelerating
 
 | Plan | Duration | Tasks | Files |
@@ -47,6 +48,7 @@ Progress: [████████░░] 85%
 | Phase 03 P04 | 3min | 2 tasks | 7 files |
 | Phase 03 P05 | 2min | 2 tasks | 2 files |
 | Phase 03 P06 | 1min | 1 tasks | 1 files |
+| Phase 04 P01 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -90,6 +92,10 @@ Recent decisions affecting current work:
 - 03-05: song_id field presence used for new-item detection (library items lack song_id, setlist items have it)
 - 03-06: isNew boolean flag for new-item detection instead of heuristic song_id check
 - 03-06: Parse raw fetch response for SvelteKit action data to sync server UUIDs without invalidateAll
+- 04-01: user_band_ids() security definer stable function for all band RLS policies
+- 04-01: band_songs junction table references original song row (no duplication, edits sync automatically)
+- 04-01: Separate RLS policies per operation on bands/band_members for owner vs member distinction
+- 04-01: Bands nav positioned between Setlists and Settings as separate nav item (per user decision)
 
 ### Pending Todos
 
@@ -103,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Completed 03-06-PLAN.md
-Resume file: .planning/phases/03-setlist-builder/03-06-SUMMARY.md
+Last session: 2026-02-22
+Stopped at: Completed 04-01-PLAN.md
+Resume file: .planning/phases/04-band-workspaces/04-01-SUMMARY.md

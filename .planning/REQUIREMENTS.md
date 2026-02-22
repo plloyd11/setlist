@@ -40,10 +40,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Band Workspaces
 
-- [ ] **BAND-01**: User can create a band/group
-- [ ] **BAND-02**: User can invite members to a band
-- [ ] **BAND-03**: Band members share a common song library
-- [ ] **BAND-04**: Band members can create and edit shared setlists
+- [x] **BAND-01**: User can create a band/group
+- [x] **BAND-02**: User can invite members to a band
+- [x] **BAND-03**: Band members share a common song library
+- [x] **BAND-04**: Band members can create and edit shared setlists
 
 ### Mobile & UX
 
@@ -121,10 +121,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SET-10 | Phase 3 | Complete |
 | SHARE-01 | Phase 3 | Complete |
 | SHARE-02 | Phase 3 | Complete |
-| BAND-01 | Phase 4 | Pending |
-| BAND-02 | Phase 4 | Pending |
-| BAND-03 | Phase 4 | Pending |
-| BAND-04 | Phase 4 | Pending |
+| BAND-01 | Phase 4 | Complete |
+| BAND-02 | Phase 4 | Complete |
+| BAND-03 | Phase 4 | Complete |
+| BAND-04 | Phase 4 | Complete |
 | UX-01 | Phase 3 | Complete |
 
 **Coverage:**
