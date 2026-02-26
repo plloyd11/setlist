@@ -2,18 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-22)
+See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** Musicians can build a setlist from their songs and instantly see how long the set runs, so they can nail the timing for a show.
-**Current focus:** Planning next milestone
+**Current focus:** v1.1 Marketing Landing Page
 
 ## Current Position
 
-Milestone: v1.0 MVP — SHIPPED 2026-02-22
-Status: Milestone Complete
-Last activity: 2026-02-22 — Archived v1.0 milestone
-
-Progress: [██████████] 100% (v1.0)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-26 — Milestone v1.1 started
 
 ## Performance Metrics
 
@@ -35,10 +34,10 @@ None.
 
 ### Blockers/Concerns
 
-None (all v1.0 blockers resolved).
+None.
 
 ## Session Continuity
 
-Last session: 2026-02-22
-Stopped at: v1.0 milestone archived
-Next step: `/gsd:new-milestone` to define v1.1 or v2.0
+Last session: 2026-02-26
+Stopped at: Defining v1.1 requirements
+Next step: Complete requirements → roadmap

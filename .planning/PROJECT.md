@@ -33,7 +33,14 @@ Musicians can build a setlist from their songs and instantly see how long the se
 
 ### Active
 
-(None — use `/gsd:new-milestone` to define next milestone requirements)
+<!-- v1.1 Marketing Landing Page -->
+- [ ] Marketing landing page at root (/) with auth-based routing
+- [ ] Hero section with Three.js particle background and bold typography
+- [ ] GSAP scroll-triggered animations throughout
+- [ ] Feature highlight cards with app screenshots
+- [ ] Social proof section
+- [ ] Footer with links and branding
+- [ ] Responsive design matching app design system
 
 ### Out of Scope
 
@@ -84,5 +91,18 @@ Band workspaces fully operational with invite links, shared libraries, and colla
 | user_band_ids() security definer | Single function for all band RLS policies | ✓ Good — clean policy pattern |
 | DOM-based theme (not Svelte stores) | Simpler, inline script prevents FOUC | ✓ Good — no flash on load |
 
+## Current Milestone: v1.1 Marketing Landing Page
+
+**Goal:** Build a high-impact, animated marketing landing page that converts visitors into users.
+
+**Target features:**
+- Single-page landing at `/` (logged-out → landing, logged-in → dashboard)
+- Three.js abstract particle hero with stage lighting energy
+- GSAP scroll-triggered animations (fade, slide, parallax)
+- Feature highlight cards with real app screenshots
+- Bold, dramatic typography with large headings
+- Social proof section
+- Footer with branding
+
 ---
-*Last updated: 2026-02-22 after v1.0 milestone*
+*Last updated: 2026-02-26 after v1.1 milestone start*
