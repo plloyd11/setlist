@@ -14,9 +14,9 @@ Requirements for Marketing Landing Page milestone. Each maps to roadmap phases.
 
 ### Hero
 
-- [ ] **HERO-01**: Hero section with bold headline, subheadline, and sign-up CTA button
+- [x] **HERO-01**: Hero section with bold headline, subheadline, and sign-up CTA button
 - [ ] **HERO-02**: Three.js animated particle background with stage lighting aesthetic
-- [ ] **HERO-03**: Dramatic typography with large, impactful font sizes
+- [x] **HERO-03**: Dramatic typography with large, impactful font sizes
 
 ### Animation
 
@@ -25,22 +25,22 @@ Requirements for Marketing Landing Page milestone. Each maps to roadmap phases.
 
 ### Features
 
-- [ ] **FEAT-01**: Feature highlight section with 3-4 cards showcasing core capabilities
-- [ ] **FEAT-02**: Real app screenshots embedded in feature cards
+- [x] **FEAT-01**: Feature highlight section with 3-4 cards showcasing core capabilities
+- [x] **FEAT-02**: Real app screenshots embedded in feature cards
 
 ### Social Proof
 
-- [ ] **SOCL-01**: Social proof section with testimonials, stats, or credibility indicators
+- [x] **SOCL-01**: Social proof section with testimonials, stats, or credibility indicators
 
 ### Footer
 
-- [ ] **FOOT-01**: Footer with branding and relevant links
+- [x] **FOOT-01**: Footer with branding and relevant links
 
 ### Design
 
-- [ ] **DSGN-01**: Responsive design that works on mobile, tablet, and desktop
-- [ ] **DSGN-02**: Uses app's existing design system (surface/accent tokens, fonts, dark/light theme)
-- [ ] **DSGN-03**: Bold typography throughout with dramatic heading sizes
+- [x] **DSGN-01**: Responsive design that works on mobile, tablet, and desktop
+- [x] **DSGN-02**: Uses app's existing design system (surface/accent tokens, fonts, dark/light theme)
+- [x] **DSGN-03**: Bold typography throughout with dramatic heading sizes
 
 ## Future Requirements
 
@@ -66,18 +66,18 @@ Requirements for Marketing Landing Page milestone. Each maps to roadmap phases.
 |-------------|-------|--------|
 | ROUTE-01 | Phase 5 | Complete |
 | ROUTE-02 | Phase 5 | Complete |
-| HERO-01 | Phase 5 | Pending |
+| HERO-01 | Phase 5 | Complete |
 | HERO-02 | Phase 6 | Pending |
-| HERO-03 | Phase 5 | Pending |
+| HERO-03 | Phase 5 | Complete |
 | ANIM-01 | Phase 6 | Pending |
 | ANIM-02 | Phase 6 | Pending |
-| FEAT-01 | Phase 5 | Pending |
-| FEAT-02 | Phase 5 | Pending |
-| SOCL-01 | Phase 5 | Pending |
-| FOOT-01 | Phase 5 | Pending |
-| DSGN-01 | Phase 5 | Pending |
-| DSGN-02 | Phase 5 | Pending |
-| DSGN-03 | Phase 5 | Pending |
+| FEAT-01 | Phase 5 | Complete |
+| FEAT-02 | Phase 5 | Complete |
+| SOCL-01 | Phase 5 | Complete |
+| FOOT-01 | Phase 5 | Complete |
+| DSGN-01 | Phase 5 | Complete |
+| DSGN-02 | Phase 5 | Complete |
+| DSGN-03 | Phase 5 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 14 total
