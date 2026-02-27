@@ -9,8 +9,8 @@ Requirements for Marketing Landing Page milestone. Each maps to roadmap phases.
 
 ### Routing
 
-- [ ] **ROUTE-01**: Logged-out visitors see marketing landing page at `/`
-- [ ] **ROUTE-02**: Logged-in users are redirected to dashboard from `/`
+- [x] **ROUTE-01**: Logged-out visitors see marketing landing page at `/`
+- [x] **ROUTE-02**: Logged-in users are redirected to dashboard from `/`
 
 ### Hero
 
@@ -64,8 +64,8 @@ Requirements for Marketing Landing Page milestone. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROUTE-01 | Phase 5 | Pending |
-| ROUTE-02 | Phase 5 | Pending |
+| ROUTE-01 | Phase 5 | Complete |
+| ROUTE-02 | Phase 5 | Complete |
 | HERO-01 | Phase 5 | Pending |
 | HERO-02 | Phase 6 | Pending |
 | HERO-03 | Phase 5 | Pending |
