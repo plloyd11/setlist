@@ -18,6 +18,8 @@
 	let uploading = $state(false);
 	let error = $state('');
 	let previewUrl = $state<string | null>(null);
+	let dragging = $state(false);
+	let fileInput: HTMLInputElement;
 
 	// Sync preview with prop changes
 	$effect(() => {
@@ -31,11 +33,7 @@
 		return createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 	}
 
-	async function handleFileSelect(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-
+	async function uploadFile(file: File) {
 		error = '';
 
 		// Validate type
@@ -67,9 +65,9 @@
 				return;
 			}
 
-			// Get public URL
+			// Get public URL with cache-buster to avoid stale images
 			const { data: urlData } = supabase.storage.from('logos').getPublicUrl(filePath);
-			const publicUrl = urlData.publicUrl;
+			const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
 
 			// Save URL to database
 			const { error: saveError } =
@@ -95,9 +93,35 @@
 			error = 'An unexpected error occurred.';
 		} finally {
 			uploading = false;
-			// Reset input so same file can be re-selected
-			input.value = '';
 		}
+	}
+
+	function handleFileSelect(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (file) uploadFile(file);
+		// Reset input so same file can be re-selected
+		input.value = '';
+	}
+
+	function handleDrop(e: DragEvent) {
+		e.preventDefault();
+		dragging = false;
+		const file = e.dataTransfer?.files?.[0];
+		if (file) uploadFile(file);
+	}
+
+	function handleDragOver(e: DragEvent) {
+		e.preventDefault();
+		dragging = true;
+	}
+
+	function handleDragLeave() {
+		dragging = false;
+	}
+
+	function triggerFileSelect() {
+		if (!uploading) fileInput.click();
 	}
 
 	async function removeLogo() {
@@ -140,28 +164,41 @@
 		Profile Photo / Band Logo
 	</p>
 
-	<!-- Upload area / preview -->
+	<!-- Hidden file input shared by all interactions -->
+	<input
+		bind:this={fileInput}
+		type="file"
+		accept="image/png,image/jpeg,image/webp,image/svg+xml"
+		onchange={handleFileSelect}
+		class="hidden"
+		disabled={uploading}
+	/>
+
+	<!-- Upload area / preview — click or drag anywhere -->
 	<div
-		class="relative flex min-h-[120px] items-center justify-center rounded-xl border-2 border-dashed border-surface-300 bg-surface-50 transition-colors hover:border-accent-400 dark:border-surface-600 dark:bg-surface-800/50 dark:hover:border-accent-600"
+		role="button"
+		tabindex="0"
+		class="relative flex min-h-[120px] cursor-pointer items-center justify-center rounded-xl border-2 border-dashed transition-colors
+			{dragging
+			? 'border-accent-500 bg-accent-50 dark:border-accent-400 dark:bg-accent-900/20'
+			: 'border-surface-300 bg-surface-50 hover:border-accent-400 dark:border-surface-600 dark:bg-surface-800/50 dark:hover:border-accent-600'}"
+		onclick={triggerFileSelect}
+		onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); triggerFileSelect(); } }}
+		ondrop={handleDrop}
+		ondragover={handleDragOver}
+		ondragleave={handleDragLeave}
 	>
 		{#if previewUrl}
 			<div class="flex flex-col items-center gap-3 p-4">
 				<img src={previewUrl} alt="Logo preview" class="max-h-24 w-auto rounded" />
 				<div class="flex gap-2">
-					<label
-						class="cursor-pointer rounded px-3 py-1 text-xs font-medium text-accent-600 hover:bg-accent-50 dark:text-accent-400 dark:hover:bg-accent-900/20"
+					<span
+						class="rounded px-3 py-1 text-xs font-medium text-accent-600 hover:bg-accent-50 dark:text-accent-400 dark:hover:bg-accent-900/20"
 					>
 						Replace
-						<input
-							type="file"
-							accept="image/png,image/jpeg,image/webp,image/svg+xml"
-							onchange={handleFileSelect}
-							class="hidden"
-							disabled={uploading}
-						/>
-					</label>
+					</span>
 					<button
-						onclick={removeLogo}
+						onclick={(e) => { e.stopPropagation(); removeLogo(); }}
 						disabled={uploading}
 						class="rounded px-3 py-1 text-xs font-medium text-danger-600 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/20"
 					>
@@ -170,7 +207,7 @@
 				</div>
 			</div>
 		{:else}
-			<label class="flex cursor-pointer flex-col items-center gap-2 p-6">
+			<div class="flex flex-col items-center gap-2 p-6">
 				<svg
 					class="h-8 w-8 text-surface-400 dark:text-surface-500"
 					fill="none"
@@ -185,19 +222,12 @@
 					/>
 				</svg>
 				<span class="text-sm text-surface-500 dark:text-surface-400">
-					{uploading ? 'Uploading...' : 'Click to upload logo'}
+					{uploading ? 'Uploading...' : 'Click or drag to upload logo'}
 				</span>
 				<span class="text-xs text-surface-400 dark:text-surface-500"
 					>PNG, JPEG, WebP, or SVG (max 2MB)</span
 				>
-				<input
-					type="file"
-					accept="image/png,image/jpeg,image/webp,image/svg+xml"
-					onchange={handleFileSelect}
-					class="hidden"
-					disabled={uploading}
-				/>
-			</label>
+			</div>
 		{/if}
 
 		{#if uploading}

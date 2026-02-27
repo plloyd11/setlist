@@ -4,12 +4,17 @@
 	import { invalidateAll } from '$app/navigation';
 	import Toast from '$lib/components/ui/Toast.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
+	import SongSearch from '$lib/components/songs/SongSearch.svelte';
 	import type { SupabaseClient } from '@supabase/supabase-js';
 
 	let { data } = $props();
 
 	// UI state
 	let searchQuery = $state('');
+	let durationFilter = $state<'all' | 'under3' | '3to5' | 'over5'>('all');
+	let searchExpanded = $state(false);
+	let sortBy = $state<'title' | 'duration'>('title');
+	let sortDir = $state<'asc' | 'desc'>('asc');
 	let showSharePicker = $state(false);
 	let showAddForm = $state(false);
 	let shareSearchQuery = $state('');
@@ -43,11 +48,47 @@
 		}))
 	);
 
-	// Filter band songs by search
+	// Filter and sort band songs
 	let filteredSongs = $derived.by(() => {
-		if (!searchQuery) return bandSongs;
-		const q = searchQuery.toLowerCase();
-		return bandSongs.filter((s: any) => s.title.toLowerCase().includes(q));
+		let result = bandSongs;
+
+		// Search filter
+		if (searchQuery) {
+			const q = searchQuery.toLowerCase();
+			result = result.filter((s: any) => s.title.toLowerCase().includes(q));
+		}
+
+		// Duration filter
+		if (durationFilter !== 'all') {
+			result = result.filter((s: any) => {
+				switch (durationFilter) {
+					case 'under3':
+						return s.durationSeconds < 180;
+					case '3to5':
+						return s.durationSeconds >= 180 && s.durationSeconds <= 300;
+					case 'over5':
+						return s.durationSeconds > 300;
+					default:
+						return true;
+				}
+			});
+		}
+
+		// Sort
+		result = [...result].sort((a: any, b: any) => {
+			let cmp = 0;
+			switch (sortBy) {
+				case 'title':
+					cmp = a.title.localeCompare(b.title);
+					break;
+				case 'duration':
+					cmp = a.durationSeconds - b.durationSeconds;
+					break;
+			}
+			return sortDir === 'asc' ? cmp : -cmp;
+		});
+
+		return result;
 	});
 
 	// Personal songs not already in band
@@ -88,6 +129,25 @@
 		newDuration = '';
 		newNotes = '';
 	}
+
+	function toggleSort(field: typeof sortBy) {
+		if (sortBy === field) {
+			sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+		} else {
+			sortBy = field;
+			sortDir = 'asc';
+		}
+	}
+
+	function clearSearch() {
+		searchQuery = '';
+		durationFilter = 'all';
+	}
+
+	const sortOptions: { label: string; value: typeof sortBy }[] = [
+		{ label: 'Title', value: 'title' },
+		{ label: 'Duration', value: 'duration' }
+	];
 </script>
 
 <div class="p-6 md:p-8">
@@ -95,6 +155,28 @@
 	<div class="flex items-center justify-between">
 		<h2 class="font-display text-2xl text-surface-900 dark:text-surface-100">Songs</h2>
 		<div class="flex items-center gap-2">
+			{#if hasSongs}
+				<button
+					onclick={() => (searchExpanded = !searchExpanded)}
+					class="rounded-lg p-2 text-surface-500 hover:bg-surface-200 dark:text-surface-400 dark:hover:bg-surface-700"
+					aria-label="Toggle search"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<circle cx="11" cy="11" r="8" />
+						<path d="m21 21-4.3-4.3" />
+					</svg>
+				</button>
+			{/if}
 			<button
 				onclick={() => {
 					showSharePicker = !showSharePicker;
@@ -328,19 +410,29 @@
 		</div>
 	{/if}
 
-	<!-- Search (only when songs exist) -->
+	<!-- Search (collapsible) -->
 	{#if hasSongs}
-		<div class="mt-4">
-			<input
-				type="text"
-				bind:value={searchQuery}
-				placeholder="Search band songs..."
-				class="w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
-			/>
-		</div>
+		<SongSearch bind:searchQuery bind:durationFilter bind:expanded={searchExpanded} />
 	{/if}
 
 	{#if hasSongs}
+		<!-- Sort controls -->
+		<div class="mt-4 flex items-center gap-1">
+			<span class="mr-1 text-xs text-surface-400 dark:text-surface-500">Sort:</span>
+			{#each sortOptions as opt}
+				<button
+					class="rounded px-2 py-0.5 text-xs font-medium transition-colors {sortBy === opt.value
+						? 'bg-surface-800 text-surface-100 dark:bg-surface-200 dark:text-surface-800'
+						: 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300'}"
+					onclick={() => toggleSort(opt.value)}
+				>
+					{opt.label}
+					{#if sortBy === opt.value}
+						<span class="ml-0.5">{sortDir === 'asc' ? '\u2191' : '\u2193'}</span>
+					{/if}
+				</button>
+			{/each}
+		</div>
 		{#if hasResults}
 			<!-- Song list -->
 			<div
@@ -506,10 +598,10 @@
 			>
 				<p class="font-display text-lg text-surface-700 dark:text-surface-300">No songs match</p>
 				<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">
-					Try a different search term.
+					Try a different search or clear your filters.
 				</p>
 				<button
-					onclick={() => (searchQuery = '')}
+					onclick={clearSearch}
 					class="mt-4 rounded-lg bg-surface-200 px-4 py-2 text-sm font-medium text-surface-700 hover:bg-surface-300 dark:bg-surface-700 dark:text-surface-300 dark:hover:bg-surface-600"
 				>
 					Clear search

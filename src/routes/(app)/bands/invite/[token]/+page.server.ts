@@ -9,15 +9,11 @@ export const load: PageServerLoad = async ({ params, url, locals: { supabase, sa
 		throw redirect(303, `/auth?redirect=${returnUrl}`);
 	}
 
-	// Query invite by token (must be unused and not expired)
-	const { data: invite } = await supabase
-		.from('band_invites')
-		.select('id, band_id, bands(name, logo_url)')
-		.eq('token', params.token)
-		.is('used_at', null)
-		.gt('expires_at', new Date().toISOString())
-		.single();
+	// Look up invite + band info via RPC (bypasses RLS safely with token check)
+	const { data: rows } = await supabase
+		.rpc('get_band_by_invite_token', { invite_token: params.token });
 
+	const invite = rows?.[0];
 	if (!invite) {
 		throw error(404, 'This invite link is invalid or has expired.');
 	}
@@ -30,13 +26,11 @@ export const load: PageServerLoad = async ({ params, url, locals: { supabase, sa
 		.eq('user_id', session.user.id)
 		.single();
 
-	const bandInfo = invite.bands as unknown as { name: string; logo_url: string | null } | null;
-
 	return {
 		invite: {
 			bandId: invite.band_id,
-			bandName: bandInfo?.name ?? 'Unknown Band',
-			bandLogoUrl: bandInfo?.logo_url ?? null,
+			bandName: invite.band_name ?? 'Unknown Band',
+			bandLogoUrl: invite.band_logo_url ?? null,
 			alreadyMember: !!existingMember
 		}
 	};
