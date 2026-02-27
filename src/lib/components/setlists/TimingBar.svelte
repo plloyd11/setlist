@@ -16,8 +16,8 @@
 		onTransitionChange: (seconds: number) => void;
 	} = $props();
 
-	// Target input value (mm:ss string)
-	let targetInput = $state(targetSeconds ? formatDuration(targetSeconds) : '');
+	// Target input value (mm:ss string, synced from prop via $effect below)
+	let targetInput = $state('');
 
 	// Sync target input when prop changes
 	$effect(() => {

@@ -6,7 +6,7 @@
 
 	let { data } = $props();
 	let signingOut = $state(false);
-	let displayName = $state(data.profile?.display_name ?? '');
+	let displayName = $state('');
 	let profileSaved = $state(false);
 
 	// Sync display name when data changes

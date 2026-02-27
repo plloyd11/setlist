@@ -12,9 +12,14 @@
 	} = $props();
 
 	let editingName = $state(false);
-	let nameValue = $state(setlist.name);
-	let dateValue = $state(setlist.gig_date ?? '');
-	let venueValue = $state(setlist.venue ?? '');
+	let nameValue = $state('');
+	let dateValue = $state('');
+	let venueValue = $state('');
+
+	// Sync local state when prop changes
+	$effect(() => { nameValue = setlist.name; });
+	$effect(() => { dateValue = setlist.gig_date ?? ''; });
+	$effect(() => { venueValue = setlist.venue ?? ''; });
 
 	function startNameEdit() {
 		nameValue = setlist.name;

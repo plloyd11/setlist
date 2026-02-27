@@ -21,7 +21,7 @@
 	} = $props();
 
 	let editing = $state(false);
-	let editName = $state(setlist.name);
+	let editName = $state('');
 	let menuOpen = $state(false);
 
 	function startEdit(e: MouseEvent) {

@@ -5,15 +5,19 @@
 
 	let {
 		currentLogoUrl = null,
-		userId
+		userId,
+		table = 'profiles',
+		storagePath
 	}: {
 		currentLogoUrl: string | null;
 		userId: string;
+		table?: 'profiles' | 'bands';
+		storagePath?: string;
 	} = $props();
 
 	let uploading = $state(false);
 	let error = $state('');
-	let previewUrl = $state(currentLogoUrl);
+	let previewUrl = $state<string | null>(null);
 
 	// Sync preview with prop changes
 	$effect(() => {
@@ -51,7 +55,9 @@
 		try {
 			const supabase = getSupabase();
 			const ext = file.name.split('.').pop() || 'png';
-			const filePath = `${userId}/logo.${ext}`;
+			const filePath = storagePath
+				? storagePath.replace('{ext}', ext)
+				: `${userId}/logo.${ext}`;
 
 			// Upload to storage
 			const { error: uploadError } = await supabase.storage
@@ -67,14 +73,20 @@
 			const { data: urlData } = supabase.storage.from('logos').getPublicUrl(filePath);
 			const publicUrl = urlData.publicUrl;
 
-			// Save URL to profile
-			const { error: profileError } = await supabase.from('profiles').upsert({
-				id: userId,
-				logo_url: publicUrl,
-				updated_at: new Date().toISOString()
-			});
+			// Save URL to database
+			const { error: saveError } =
+				table === 'profiles'
+					? await supabase.from('profiles').upsert({
+							id: userId,
+							logo_url: publicUrl,
+							updated_at: new Date().toISOString()
+						})
+					: await supabase
+							.from('bands')
+							.update({ logo_url: publicUrl, updated_at: new Date().toISOString() })
+							.eq('id', userId);
 
-			if (profileError) {
+			if (saveError) {
 				error = 'Failed to save logo. Please try again.';
 				return;
 			}
@@ -97,14 +109,20 @@
 		try {
 			const supabase = getSupabase();
 
-			// Clear logo_url in profile
-			const { error: profileError } = await supabase.from('profiles').upsert({
-				id: userId,
-				logo_url: null,
-				updated_at: new Date().toISOString()
-			});
+			// Clear logo_url in database
+			const { error: saveError } =
+				table === 'profiles'
+					? await supabase.from('profiles').upsert({
+							id: userId,
+							logo_url: null,
+							updated_at: new Date().toISOString()
+						})
+					: await supabase
+							.from('bands')
+							.update({ logo_url: null, updated_at: new Date().toISOString() })
+							.eq('id', userId);
 
-			if (profileError) {
+			if (saveError) {
 				error = 'Failed to remove logo.';
 				return;
 			}
@@ -120,7 +138,7 @@
 </script>
 
 <div class="space-y-3">
-	<label class="block text-sm font-medium text-surface-700 dark:text-surface-300">Logo</label>
+	<p class="text-sm font-medium text-surface-700 dark:text-surface-300">Logo</p>
 
 	<!-- Upload area / preview -->
 	<div

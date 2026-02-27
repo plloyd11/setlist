@@ -11,7 +11,8 @@
 		{ href: `/bands/${bandId}`, label: 'Dashboard', exact: true },
 		{ href: `/bands/${bandId}/songs`, label: 'Songs', exact: false },
 		{ href: `/bands/${bandId}/setlists`, label: 'Setlists', exact: false },
-		{ href: `/bands/${bandId}/members`, label: 'Members', exact: false }
+		{ href: `/bands/${bandId}/members`, label: 'Members', exact: false },
+		{ href: `/bands/${bandId}/settings`, label: 'Settings', exact: false }
 	]);
 
 	function isActive(pathname: string, href: string, exact: boolean): boolean {

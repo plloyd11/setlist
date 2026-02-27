@@ -49,7 +49,7 @@
 	<div class="mt-6 flex flex-wrap gap-3">
 		<a
 			href="/bands/{bandId}/songs"
-			class="inline-flex items-center gap-1.5 rounded-lg border border-surface-200 bg-surface-50 px-4 py-2 text-sm font-medium text-surface-700 shadow-sm transition-colors hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+			class="inline-flex items-center gap-1.5 rounded-lg border border-surface-200 bg-surface-50 px-4 py-2 text-sm font-medium text-surface-700 shadow-sm transition-colors hover:bg-surface-100 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -70,7 +70,7 @@
 		</a>
 		<a
 			href="/bands/{bandId}/setlists"
-			class="inline-flex items-center gap-1.5 rounded-lg border border-surface-200 bg-surface-50 px-4 py-2 text-sm font-medium text-surface-700 shadow-sm transition-colors hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+			class="inline-flex items-center gap-1.5 rounded-lg border border-surface-200 bg-surface-50 px-4 py-2 text-sm font-medium text-surface-700 shadow-sm transition-colors hover:bg-surface-100 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -89,7 +89,7 @@
 		</a>
 		<a
 			href="/bands/{bandId}/members"
-			class="inline-flex items-center gap-1.5 rounded-lg border border-surface-200 bg-surface-50 px-4 py-2 text-sm font-medium text-surface-700 shadow-sm transition-colors hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+			class="inline-flex items-center gap-1.5 rounded-lg border border-surface-200 bg-surface-50 px-4 py-2 text-sm font-medium text-surface-700 shadow-sm transition-colors hover:bg-surface-100 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -118,7 +118,7 @@
 				{#each data.recentSetlists as setlist}
 					<a
 						href="/bands/{bandId}/setlists/{setlist.id}"
-						class="flex items-center justify-between rounded-lg border border-surface-200 bg-surface-50 px-4 py-3 transition-colors hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-800 dark:hover:bg-surface-750"
+						class="flex items-center justify-between rounded-lg border border-surface-200 bg-surface-50 px-4 py-3 transition-colors hover:bg-surface-100 dark:border-surface-700 dark:bg-surface-800 dark:hover:bg-surface-700"
 					>
 						<span class="font-medium text-surface-900 dark:text-surface-100">{setlist.name}</span>
 						<span class="text-sm text-surface-500 dark:text-surface-400">

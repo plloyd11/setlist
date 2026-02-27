@@ -17,9 +17,9 @@
 		editing: boolean;
 	} = $props();
 
-	let editTitle = $state(song.title);
-	let editDuration = $state(formatDuration(song.duration_seconds));
-	let editNotes = $state(song.notes ?? '');
+	let editTitle = $state('');
+	let editDuration = $state('');
+	let editNotes = $state('');
 	let editError = $state('');
 	let saving = $state(false);
 
@@ -163,7 +163,7 @@
 {:else}
 	<!-- Display mode -->
 	<button
-		class="w-full border-b border-surface-200 px-4 py-3 text-left transition-colors hover:bg-surface-50 dark:border-surface-700 dark:hover:bg-surface-800/50"
+		class="w-full border-b border-surface-200 px-4 py-3 text-left transition-colors hover:bg-surface-100 dark:border-surface-700 dark:hover:bg-surface-800/50"
 		onclick={enterEdit}
 		oncontextmenu={handleContextMenu}
 		use:longpress

@@ -38,19 +38,9 @@
 	// Mutation guard: prevents $effect from overwriting optimistic state during async operations
 	let isMutating = $state(false);
 
-	// State for DnD zones
-	let libraryItems = $state<LibraryItem[]>(
-		data.songs.map((s: Song) => ({ ...s, id: s.id }))
-	);
-	let setlistItems = $state<SetlistItem[]>(
-		data.setlistSongs.map((ss: any) => ({
-			id: ss.id,
-			song_id: ss.song_id,
-			title: (ss.songs as any).title,
-			duration_seconds: (ss.songs as any).duration_seconds,
-			position: ss.position
-		}))
-	);
+	// State for DnD zones (populated by $effect blocks below that sync with data)
+	let libraryItems = $state<LibraryItem[]>([]);
+	let setlistItems = $state<SetlistItem[]>([]);
 
 	// Filtered library items (search)
 	let filteredLibraryItems = $derived.by(() => {

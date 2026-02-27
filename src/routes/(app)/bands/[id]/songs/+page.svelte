@@ -447,7 +447,7 @@
 						<!-- Display mode -->
 						<div class="flex items-center border-b border-surface-200 dark:border-surface-700">
 							<button
-								class="flex-1 px-4 py-3 text-left transition-colors hover:bg-surface-50 dark:hover:bg-surface-800/50"
+								class="flex-1 px-4 py-3 text-left transition-colors hover:bg-surface-100 dark:hover:bg-surface-800/50"
 								onclick={() => enterEdit(song)}
 							>
 								<div class="flex items-center justify-between">
