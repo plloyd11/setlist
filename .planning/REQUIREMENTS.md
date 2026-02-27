@@ -64,26 +64,26 @@ Requirements for Marketing Landing Page milestone. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROUTE-01 | — | Pending |
-| ROUTE-02 | — | Pending |
-| HERO-01 | — | Pending |
-| HERO-02 | — | Pending |
-| HERO-03 | — | Pending |
-| ANIM-01 | — | Pending |
-| ANIM-02 | — | Pending |
-| FEAT-01 | — | Pending |
-| FEAT-02 | — | Pending |
-| SOCL-01 | — | Pending |
-| FOOT-01 | — | Pending |
-| DSGN-01 | — | Pending |
-| DSGN-02 | — | Pending |
-| DSGN-03 | — | Pending |
+| ROUTE-01 | Phase 5 | Pending |
+| ROUTE-02 | Phase 5 | Pending |
+| HERO-01 | Phase 5 | Pending |
+| HERO-02 | Phase 6 | Pending |
+| HERO-03 | Phase 5 | Pending |
+| ANIM-01 | Phase 6 | Pending |
+| ANIM-02 | Phase 6 | Pending |
+| FEAT-01 | Phase 5 | Pending |
+| FEAT-02 | Phase 5 | Pending |
+| SOCL-01 | Phase 5 | Pending |
+| FOOT-01 | Phase 5 | Pending |
+| DSGN-01 | Phase 5 | Pending |
+| DSGN-02 | Phase 5 | Pending |
+| DSGN-03 | Phase 5 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14 (pending roadmap creation)
+- Mapped to phases: 14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-26*
-*Last updated: 2026-02-26 after initial definition*
+*Last updated: 2026-02-26 after roadmap creation*
