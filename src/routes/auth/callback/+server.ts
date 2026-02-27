@@ -8,6 +8,6 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 		await supabase.auth.exchangeCodeForSession(code);
 	}
 
-	const redirectTo = url.searchParams.get('redirect') || '/';
+	const redirectTo = url.searchParams.get('redirect') || '/dashboard';
 	redirect(303, redirectTo);
 };

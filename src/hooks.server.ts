@@ -28,8 +28,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return { session, user };
 	};
 
-	// Auth guard: protect all routes except /auth/* and /share/*
-	if (!event.url.pathname.startsWith('/auth') && !event.url.pathname.startsWith('/share')) {
+	// Auth guard: protect all routes except /auth/*, /share/*, and root /
+	if (
+		!event.url.pathname.startsWith('/auth') &&
+		!event.url.pathname.startsWith('/share') &&
+		event.url.pathname !== '/'
+	) {
 		const { session } = await event.locals.safeGetSession();
 		if (!session) {
 			const returnUrl = event.url.pathname + event.url.search;
