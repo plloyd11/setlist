@@ -34,11 +34,12 @@
   3. Hero section displays bold headline, subheadline, and a CTA button that initiates sign-up
   4. Feature cards show real app screenshots and describe core capabilities
   5. Page renders correctly on mobile, tablet, and desktop using the app's existing design tokens and theme
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
+- [x] 05-01-PLAN.md -- Auth-based routing and dashboard relocation
+- [x] 05-02-PLAN.md -- Marketing landing page content and layout
+- [ ] 05-03-PLAN.md -- Replace placeholder screenshots with realistic SVG illustrations (gap closure: FEAT-02)
 
 ### Phase 6: Three.js Hero & Scroll Animations
 **Goal**: The landing page feels alive with an animated particle hero background and scroll-triggered animations throughout, while remaining accessible
@@ -65,5 +66,5 @@ Phases execute in numeric order: 5 -> 6
 | 2. Song Library | v1.0 | 2/2 | Complete | 2026-02-18 |
 | 3. Setlist Builder | v1.0 | 6/6 | Complete | 2026-02-20 |
 | 4. Band Workspaces | v1.0 | 5/5 | Complete | 2026-02-22 |
-| 5. Landing Page Structure | v1.1 | 0/? | Not started | - |
+| 5. Landing Page Structure | v1.1 | 2/3 | In progress | - |
 | 6. Three.js Hero & Scroll Animations | v1.1 | 0/? | Not started | - |
