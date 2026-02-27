@@ -28,7 +28,9 @@
 	<div class="mt-8 space-y-8">
 		<!-- Profile section -->
 		<section>
-			<h2 class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500">
+			<h2
+				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500"
+			>
 				Profile
 			</h2>
 			<div
@@ -85,7 +87,9 @@
 
 		<!-- Theme section -->
 		<section>
-			<h2 class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500">
+			<h2
+				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500"
+			>
 				Appearance
 			</h2>
 			<div
@@ -98,7 +102,9 @@
 
 		<!-- Account section -->
 		<section>
-			<h2 class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500">
+			<h2
+				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500"
+			>
 				Account
 			</h2>
 			<div class="mt-3 space-y-3">

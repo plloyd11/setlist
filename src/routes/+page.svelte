@@ -1,3 +1,23 @@
+<script>
+	import { onMount } from 'svelte';
+
+	onMount(() => {
+		const script = document.createElement('script');
+		script.src =
+			'https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.0.5/dist/unicornStudio.umd.js';
+		script.onload = () => {
+			// @ts-ignore — UnicornStudio is loaded via external script
+			window.UnicornStudio.init();
+		};
+		document.head.appendChild(script);
+
+		return () => {
+			// @ts-ignore
+			if (window.UnicornStudio?.destroy) window.UnicornStudio.destroy();
+		};
+	});
+</script>
+
 <svelte:head>
 	<title>Setlist — Know your set. Own the stage.</title>
 	<meta
@@ -8,7 +28,7 @@
 
 <!-- Top Navigation -->
 <nav
-	class="fixed top-0 left-0 right-0 z-50 bg-surface-950/80 backdrop-blur-md border-b border-surface-800/50"
+	class="fixed top-0 right-0 left-0 z-50 border-b border-surface-800/50 bg-surface-950/80 backdrop-blur-md"
 >
 	<div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
 		<a href="/" class="font-display text-2xl font-bold text-accent-400">Setlist</a>
@@ -22,22 +42,34 @@
 </nav>
 
 <!-- Hero Section -->
-<section
-	class="flex min-h-[60vh] flex-col items-center justify-center bg-surface-950 px-6 pt-24 text-center md:min-h-[70vh] lg:min-h-[80vh]"
->
-	<h1 class="font-display text-4xl font-black leading-tight text-surface-100 md:text-6xl lg:text-8xl">
-		Know your set.<br />
-		<span class="text-neon-300">Own the stage.</span>
-	</h1>
-	<p class="mx-auto mt-6 max-w-2xl text-lg text-surface-400 md:mt-8 md:text-xl">
-		Build setlists, track timing to the second, and keep your band in sync — all in one place.
-	</p>
-	<a
-		href="/auth?redirect=/dashboard"
-		class="mt-10 inline-block rounded-lg bg-accent-400 px-8 py-4 font-display text-lg font-bold text-surface-950 shadow-glow-accent transition-all hover:bg-accent-300 hover:shadow-lg md:mt-12"
+<section class="relative min-h-screen overflow-hidden bg-surface-950">
+	<div
+		data-us-project="hSluNvAYoMlk2ZQwpzrN"
+		data-us-scale="1"
+		data-us-dpi="1.5"
+		data-us-lazyload="true"
+		data-us-production="true"
+		class="absolute inset-0 h-full w-full"
+	></div>
+	<div
+		class="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 pt-24 text-center"
 	>
-		Build Your First Setlist
-	</a>
+		<h1
+			class="font-display text-4xl leading-tight font-black text-surface-100 md:text-6xl lg:text-8xl"
+		>
+			Know your set.<br />
+			<span class="text-neon-300">Own the stage.</span>
+		</h1>
+		<p class="mx-auto mt-6 max-w-2xl text-lg text-white md:mt-8 md:text-2xl">
+			Build setlists, track timing to the second, and keep your band in sync — all in one place.
+		</p>
+		<a
+			href="/auth?redirect=/dashboard"
+			class="mt-10 inline-block rounded-lg bg-accent-400 px-8 py-4 font-display text-lg font-bold text-surface-950 shadow-glow-accent transition-all hover:bg-accent-300 hover:shadow-lg md:mt-12"
+		>
+			Build Your First Setlist
+		</a>
+	</div>
 </section>
 
 <!-- Divider -->
@@ -62,9 +94,8 @@
 				Every second, accounted for
 			</h2>
 			<p class="mt-4 text-lg text-surface-400">
-				Build your setlist and watch the running total update in real time. Set a target
-				duration, see exactly how far over or under you are, and walk on stage knowing your
-				set fits the slot.
+				Build your setlist and watch the running total update in real time. Set a target duration,
+				see exactly how far over or under you are, and walk on stage knowing your set fits the slot.
 			</p>
 		</div>
 	</div>
@@ -92,9 +123,9 @@
 				Your songs, always ready
 			</h2>
 			<p class="mt-4 text-lg text-surface-400">
-				Keep your full catalog in one place. Add songs with durations, search instantly, and
-				drag them into any setlist. No more spreadsheets, no more guessing how long that
-				encore tune actually is.
+				Keep your full catalog in one place. Add songs with durations, search instantly, and drag
+				them into any setlist. No more spreadsheets, no more guessing how long that encore tune
+				actually is.
 			</p>
 		</div>
 	</div>
@@ -122,8 +153,8 @@
 				Your whole band, one page
 			</h2>
 			<p class="mt-4 text-lg text-surface-400">
-				Create a shared workspace for your band. Everyone sees the same setlists, the same
-				songs, the same plan. No more group chat chaos before a gig.
+				Create a shared workspace for your band. Everyone sees the same setlists, the same songs,
+				the same plan. No more group chat chaos before a gig.
 			</p>
 		</div>
 	</div>
@@ -157,21 +188,13 @@
 
 <!-- Footer -->
 <footer class="border-t border-surface-800 bg-surface-950 px-6 py-10">
-	<div
-		class="mx-auto flex max-w-6xl flex-col items-center gap-6 md:flex-row md:justify-between"
-	>
+	<div class="mx-auto flex max-w-6xl flex-col items-center gap-6 md:flex-row md:justify-between">
 		<a href="/" class="font-display text-xl font-bold text-accent-400">Setlist</a>
 		<div class="flex items-center gap-6">
-			<a
-				href="/auth"
-				class="text-sm text-surface-400 transition-colors hover:text-surface-200"
-			>
+			<a href="/auth" class="text-sm text-surface-400 transition-colors hover:text-surface-200">
 				Sign Up
 			</a>
-			<a
-				href="/auth"
-				class="text-sm text-surface-400 transition-colors hover:text-surface-200"
-			>
+			<a href="/auth" class="text-sm text-surface-400 transition-colors hover:text-surface-200">
 				Log In
 			</a>
 		</div>

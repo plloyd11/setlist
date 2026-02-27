@@ -55,9 +55,7 @@
 		try {
 			const supabase = getSupabase();
 			const ext = file.name.split('.').pop() || 'png';
-			const filePath = storagePath
-				? storagePath.replace('{ext}', ext)
-				: `${userId}/logo.${ext}`;
+			const filePath = storagePath ? storagePath.replace('{ext}', ext) : `${userId}/logo.${ext}`;
 
 			// Upload to storage
 			const { error: uploadError } = await supabase.storage
@@ -138,7 +136,9 @@
 </script>
 
 <div class="space-y-3">
-	<p class="text-sm font-medium text-surface-700 dark:text-surface-300">Logo</p>
+	<p class="text-sm font-medium text-surface-700 dark:text-surface-300">
+		Profile Photo / Band Logo
+	</p>
 
 	<!-- Upload area / preview -->
 	<div
