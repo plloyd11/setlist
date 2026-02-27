@@ -35,7 +35,7 @@
 					</svg>
 				</div>
 				<div>
-					<p class="text-2xl font-bold text-surface-900 dark:text-surface-100">0</p>
+					<p class="text-2xl font-bold text-surface-900 dark:text-surface-100">{data.songCount}</p>
 					<p class="text-sm text-surface-500 dark:text-surface-400">songs in your library</p>
 				</div>
 			</div>
@@ -63,7 +63,7 @@
 					</svg>
 				</div>
 				<div>
-					<p class="text-2xl font-bold text-surface-900 dark:text-surface-100">0</p>
+					<p class="text-2xl font-bold text-surface-900 dark:text-surface-100">{data.setlistCount}</p>
 					<p class="text-sm text-surface-500 dark:text-surface-400">setlists created</p>
 				</div>
 			</div>
