@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="800" height="500" fill="#162030" rx="12"/>
+  <rect x="40" y="40" width="720" height="420" fill="#1e2a3d" rx="8" stroke="#2a3a52" stroke-width="1"/>
+  <text x="400" y="220" text-anchor="middle" fill="#5a7190" font-family="sans-serif" font-size="20" font-weight="500">Setlist Timing</text>
+  <text x="400" y="260" text-anchor="middle" fill="#3d5170" font-family="sans-serif" font-size="14">Screenshot placeholder</text>
+  <!-- Decorative timing bars -->
+  <rect x="120" y="300" width="200" height="8" fill="#a78265" rx="4" opacity="0.6"/>
+  <rect x="120" y="320" width="320" height="8" fill="#a78265" rx="4" opacity="0.4"/>
+  <rect x="120" y="340" width="160" height="8" fill="#d1d895" rx="4" opacity="0.5"/>
+  <rect x="120" y="360" width="280" height="8" fill="#a78265" rx="4" opacity="0.3"/>
+</svg>
