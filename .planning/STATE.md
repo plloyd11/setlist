@@ -2,19 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-26)
+See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Musicians can build a setlist from their songs and instantly see how long the set runs, so they can nail the timing for a show.
-**Current focus:** Phase 5 - Landing Page Structure
+**Current focus:** Milestone v1.2 - Playwright E2E Test Suite
 
 ## Current Position
 
-Phase: 5 of 6 (Landing Page Structure)
-Plan: 2 of 2 in current phase (COMPLETE)
-Status: Phase 5 Complete
-Last activity: 2026-02-27 -- Completed 05-02-PLAN.md
-
-Progress: [####################] 100% (milestones) | [##########] 100% (v1.1)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-02 — Milestone v1.2 started
 
 ## Performance Metrics
 
@@ -24,14 +22,9 @@ Progress: [####################] 100% (milestones) | [##########] 100% (v1.1)
 - Timeline: 6 days (Feb 17 -> Feb 22)
 - Execution time: ~0.9 hours
 
-**v1.1:**
+**v1.1 (paused):**
 - Plans completed: 2
 - Total execution time: 5min
-
-| Phase | Plan | Duration | Tasks | Files |
-|-------|------|----------|-------|-------|
-| 05    | 01   | 2min     | 2     | 7     |
-| 05    | 02   | 3min     | 2     | 4     |
 
 ## Accumulated Context
 
@@ -55,6 +48,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped at: Completed 05-02-PLAN.md
-Next step: Phase 5 complete. Phase 6 (Landing Page Animations) is next.
+Last session: 2026-03-02
+Stopped at: Starting milestone v1.2
+Next step: Define requirements, then create roadmap.

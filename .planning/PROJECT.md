@@ -33,14 +33,13 @@ Musicians can build a setlist from their songs and instantly see how long the se
 
 ### Active
 
-<!-- v1.1 Marketing Landing Page -->
-- [ ] Marketing landing page at root (/) with auth-based routing
-- [ ] Hero section with Three.js particle background and bold typography
-- [ ] GSAP scroll-triggered animations throughout
-- [ ] Feature highlight cards with app screenshots
-- [ ] Social proof section
-- [ ] Footer with links and branding
-- [ ] Responsive design matching app design system
+<!-- v1.2 Playwright E2E Test Suite -->
+- [ ] Playwright test infrastructure with Supabase test helpers
+- [ ] Auth flow E2E tests
+- [ ] Song library E2E tests (CRUD, search, batch entry)
+- [ ] Setlist builder E2E tests (create, DnD, timing, sharing)
+- [ ] Band workspace E2E tests (create, invite, shared library, collab setlists)
+- [ ] Multi-user test scenarios
 
 ### Out of Scope
 
@@ -91,18 +90,17 @@ Band workspaces fully operational with invite links, shared libraries, and colla
 | user_band_ids() security definer | Single function for all band RLS policies | ✓ Good — clean policy pattern |
 | DOM-based theme (not Svelte stores) | Simpler, inline script prevents FOUC | ✓ Good — no flash on load |
 
-## Current Milestone: v1.1 Marketing Landing Page
+## Current Milestone: v1.2 Playwright E2E Test Suite
 
-**Goal:** Build a high-impact, animated marketing landing page that converts visitors into users.
+**Goal:** Comprehensive Playwright E2E tests covering all user journeys, ensuring every shipped feature has automated test coverage.
 
 **Target features:**
-- Single-page landing at `/` (logged-out → landing, logged-in → dashboard)
-- Three.js abstract particle hero with stage lighting energy
-- GSAP scroll-triggered animations (fade, slide, parallax)
-- Feature highlight cards with real app screenshots
-- Bold, dramatic typography with large headings
-- Social proof section
-- Footer with branding
+- Playwright test infrastructure with Supabase test helpers
+- Auth flow tests (Google OAuth via programmatic Supabase login)
+- Song library tests (CRUD, search/filter, batch entry)
+- Setlist builder tests (create, drag-and-drop, timing, sharing)
+- Band workspace tests (create, invite, shared songs, collaborative setlists)
+- Multi-user test scenarios using Supabase service role
 
 ---
-*Last updated: 2026-02-26 after v1.1 milestone start*
+*Last updated: 2026-03-02 after v1.2 milestone start*
