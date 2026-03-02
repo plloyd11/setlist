@@ -5,14 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Musicians can build a setlist from their songs and instantly see how long the set runs, so they can nail the timing for a show.
-**Current focus:** Milestone v1.2 - Playwright E2E Test Suite
+**Current focus:** Phase 7 - Test Infrastructure (v1.2)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-02 — Milestone v1.2 started
+Phase: 7 of 10 (Test Infrastructure)
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-03-02 -- Roadmap created for v1.2
+
+Progress: [██████████████░░░░░░] 70% (phases 1-6 of 10 addressed)
 
 ## Performance Metrics
 
@@ -26,17 +28,20 @@ Last activity: 2026-03-02 — Milestone v1.2 started
 - Plans completed: 2
 - Total execution time: 5min
 
+**v1.2:**
+- Plans completed: 0
+- 4 phases, 30 requirements
+
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
 
-- v1.1: Two-phase split -- structure first (Phase 5), animations second (Phase 6)
-- v1.1: Three.js and GSAP need client-only rendering (no SSR)
-- [Phase 05]: Root page server load redirects authenticated users to /dashboard via 303
-- [Phase 05]: SVG placeholders instead of PNG for landing page screenshots (CLI feasibility)
-- [Phase 05]: Dark-only landing page uses direct palette classes, not dark: variants
+- v1.2: Auth bypass via Supabase admin API password users (Google OAuth cannot be automated)
+- v1.2: Custom pointer event helper needed for svelte-dnd-action DnD tests (locator.dragTo() fails silently)
+- v1.2: Per-worker test user isolation with CASCADE cleanup
+- v1.2: Simple CRUD tests before DnD, multi-user tests last (complexity ordering)
 
 ### Pending Todos
 
@@ -44,10 +49,11 @@ None.
 
 ### Blockers/Concerns
 
-None.
+- DnD pointer event helper needs tuning (steps count, timing) -- will address in Phase 9
+- Verify FK CASCADE exists on user_id foreign keys -- check in Phase 7
 
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Starting milestone v1.2
-Next step: Define requirements, then create roadmap.
+Stopped at: Roadmap created for v1.2 milestone
+Next step: Plan Phase 7 (Test Infrastructure)

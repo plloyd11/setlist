@@ -1,4 +1,4 @@
-# Requirements: Setlist — Playwright E2E Test Suite
+# Requirements: Setlist -- Playwright E2E Test Suite
 
 **Defined:** 2026-03-02
 **Core Value:** Musicians can build a setlist from their songs and instantly see how long the set runs, so they can nail the timing for a show.
@@ -77,49 +77,49 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 | Cross-browser testing | Chromium only for now, multi-browser adds complexity |
 | Visual regression | Requires baseline screenshots, separate concern |
 | Performance testing | Different tool and methodology (Lighthouse, etc.) |
-| Unit/component tests | Different scope — this milestone is E2E only |
+| Unit/component tests | Different scope -- this milestone is E2E only |
 | Mocking Supabase | Tests should hit real Supabase for E2E fidelity |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | TBD | Pending |
-| INFRA-02 | TBD | Pending |
-| INFRA-03 | TBD | Pending |
-| INFRA-04 | TBD | Pending |
-| INFRA-05 | TBD | Pending |
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| AUTH-03 | TBD | Pending |
-| SONG-01 | TBD | Pending |
-| SONG-02 | TBD | Pending |
-| SONG-03 | TBD | Pending |
-| SONG-04 | TBD | Pending |
-| SONG-05 | TBD | Pending |
-| SETL-01 | TBD | Pending |
-| SETL-02 | TBD | Pending |
-| SETL-03 | TBD | Pending |
-| SETL-04 | TBD | Pending |
-| SETL-05 | TBD | Pending |
-| SETL-06 | TBD | Pending |
-| SETL-07 | TBD | Pending |
-| SETL-08 | TBD | Pending |
-| BAND-01 | TBD | Pending |
-| BAND-02 | TBD | Pending |
-| BAND-03 | TBD | Pending |
-| BAND-04 | TBD | Pending |
-| BAND-05 | TBD | Pending |
-| RLS-01 | TBD | Pending |
-| RLS-02 | TBD | Pending |
-| RLS-03 | TBD | Pending |
-| RLS-04 | TBD | Pending |
+| INFRA-01 | Phase 7 | Pending |
+| INFRA-02 | Phase 7 | Pending |
+| INFRA-03 | Phase 7 | Pending |
+| INFRA-04 | Phase 7 | Pending |
+| INFRA-05 | Phase 7 | Pending |
+| AUTH-01 | Phase 8 | Pending |
+| AUTH-02 | Phase 8 | Pending |
+| AUTH-03 | Phase 8 | Pending |
+| SONG-01 | Phase 8 | Pending |
+| SONG-02 | Phase 8 | Pending |
+| SONG-03 | Phase 8 | Pending |
+| SONG-04 | Phase 8 | Pending |
+| SONG-05 | Phase 8 | Pending |
+| SETL-01 | Phase 9 | Pending |
+| SETL-02 | Phase 9 | Pending |
+| SETL-03 | Phase 9 | Pending |
+| SETL-04 | Phase 9 | Pending |
+| SETL-05 | Phase 9 | Pending |
+| SETL-06 | Phase 9 | Pending |
+| SETL-07 | Phase 9 | Pending |
+| SETL-08 | Phase 9 | Pending |
+| BAND-01 | Phase 10 | Pending |
+| BAND-02 | Phase 10 | Pending |
+| BAND-03 | Phase 10 | Pending |
+| BAND-04 | Phase 10 | Pending |
+| BAND-05 | Phase 10 | Pending |
+| RLS-01 | Phase 10 | Pending |
+| RLS-02 | Phase 10 | Pending |
+| RLS-03 | Phase 10 | Pending |
+| RLS-04 | Phase 10 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 30 total
-- Mapped to phases: 0
-- Unmapped: 30 ⚠️
+- Mapped to phases: 30
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-02*
-*Last updated: 2026-03-02 after initial definition*
+*Last updated: 2026-03-02 after roadmap creation*
