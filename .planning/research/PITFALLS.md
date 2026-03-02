@@ -1,115 +1,122 @@
 # Domain Pitfalls
 
-**Domain:** Setlist management web app (SvelteKit + Supabase + drag-and-drop)
-**Researched:** 2026-02-17
-**Overall confidence:** MEDIUM -- based on training data; WebSearch/WebFetch unavailable for live verification
+**Domain:** Adding Playwright E2E tests to SvelteKit + Supabase app (Google OAuth, DnD, multi-user, RLS)
+**Researched:** 2026-03-02
+**Overall confidence:** HIGH -- verified via official Playwright docs, Supabase docs, and community sources
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites, data leaks, or major UX failures.
+Mistakes that cause rewrites, persistent flakiness, or abandoned test suites.
 
 ---
 
-### Pitfall 1: RLS Policies That Look Correct but Leak Data Through Band Membership
+### Pitfall 1: Automating the Real Google OAuth Flow
 
-**What goes wrong:** In a multi-tenant model where users belong to bands, the most common RLS mistake is writing policies that check `auth.uid() = user_id` on the setlist table, but forget that setlists belong to *bands*, not individual users. The policy needs to traverse the `band_members` junction table. Developers either (a) skip the join and expose all band data to any authenticated user, or (b) write the join but forget to add RLS to the `band_members` table itself, allowing a user to insert themselves into any band.
-
-**Why it happens:** RLS policies are SQL, but developers test them through the app UI -- which naturally constrains access. The vulnerability only appears when someone hits the Supabase REST API directly (which any authenticated user can do via the public anon/service key).
-
-**Consequences:** Any authenticated user can read/modify any band's setlists. This is a data leak and integrity violation.
-
+**What goes wrong:** Tests attempt to automate Google's actual OAuth consent screen. Google detects automation (Playwright fingerprinting, headless mode signals), presents CAPTCHAs, locks accounts, or changes UI without notice. Tests become permanently flaky in CI.
+**Why it happens:** Developers copy the "just click through login" pattern from simpler email/password flows and assume OAuth providers will cooperate.
+**Consequences:** Test suite becomes untrusted. CI pipeline blocked by Google security measures. Test Google accounts get suspended.
 **Prevention:**
-- Every table gets RLS enabled, no exceptions. Use `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` as step one for every migration.
-- Write RLS policies that chain through `band_members`: `EXISTS (SELECT 1 FROM band_members WHERE band_members.band_id = setlists.band_id AND band_members.user_id = auth.uid())`.
-- Add RLS to `band_members` itself: only existing members (or the band creator) can insert new members.
-- Test RLS by calling Supabase REST API directly with a token from a user who should NOT have access. Automate this as a test.
-
-**Detection:** Create a second test user not in any band. If they can `SELECT * FROM setlists` and get results, RLS is broken.
-
-**Phase:** Phase 1 (Auth + data model). Get this right before any features are built on top.
+1. Never automate the Google OAuth UI. Bypass OAuth entirely by injecting Supabase auth state directly.
+2. Use Supabase Admin API (`supabase.auth.admin.createUser()`) with the service role key to create test users with pre-verified email addresses and passwords.
+3. Call `supabase.auth.signInWithPassword()` via Playwright's API request context to get session tokens (this requires the test users to have email/password auth enabled -- they can exist alongside the app's Google-only flow).
+4. Inject the resulting session cookies (`sb-<ref>-auth-token`) into Playwright's `storageState` before tests run.
+5. Use Playwright's `setup` project pattern: a single `auth.setup.ts` creates session files that all test projects depend on.
+**Detection:** If you see `page.goto('accounts.google.com')` in any test file, stop immediately.
+**Confidence:** HIGH -- universally documented as the wrong approach. See [Playwright Auth Docs](https://playwright.dev/docs/auth) and [Supabase REST API Login for Playwright](https://mokkapps.de/blog/login-at-supabase-via-rest-api-in-playwright-e2e-test).
 
 ---
 
-### Pitfall 2: Supabase Auth SSR Token Handling -- Stale Sessions and Cookie Mismatch
+### Pitfall 2: Auth State Leaking Between Tests via Shared Browser Context
 
-**What goes wrong:** SvelteKit runs on both server and client. Supabase auth tokens live in cookies, but the server-side Supabase client and the client-side Supabase client can disagree about the current session. Common symptoms: (a) user appears logged out on first server render after login, (b) RLS queries fail server-side because the token is missing or expired, (c) redirect loops on protected routes.
-
-**Why it happens:** Developers create a single `createClient()` call and use it everywhere, instead of creating separate server/client instances. The server needs to read cookies from the request; the client uses browser storage. Using `@supabase/ssr` (formerly `@supabase/auth-helpers-sveltekit`) is required but has specific setup steps that are easy to get subtly wrong.
-
-**Consequences:** Intermittent auth failures, server-rendered pages showing logged-out state, RLS returning empty results on SSR.
-
+**What goes wrong:** Tests share a browser context (or improperly isolated storageState), so User A's session bleeds into User B's test. Band member tests see owner data. RLS appears broken because the wrong user is authenticated.
+**Why it happens:** Playwright reuses browser contexts for speed by default. Supabase stores auth in cookies (`sb-<ref>-auth-token`), and those persist across navigations within a context. The app's `hooks.server.ts` reads these cookies on every request to establish the session.
+**Consequences:** Tests pass locally (sequential) but fail in CI (parallel). Multi-user band scenarios produce impossible data states. Hours spent debugging "RLS bugs" that are actually auth leaks.
 **Prevention:**
-- Use `@supabase/ssr` package. Create the server client in `hooks.server.ts` using `event.cookies`. Create the client-side client in a `+layout.ts` load function or a shared module that reads the session from the server.
-- In `hooks.server.ts`, call `supabase.auth.getUser()` (not `getSession()`) to validate the token on every request. `getSession()` reads from the cookie without verifying the JWT; `getUser()` makes a round-trip to Supabase to confirm validity.
-- Pass the session from server to client via `+layout.server.ts` returning `{ session }`, then initialize client-side Supabase with that session.
-- Never import a server-side Supabase client in client code (SvelteKit will error on this, but be aware).
-
-**Detection:** After login, hard-refresh the page. If the user appears logged out for a flash before hydration fixes it, the server-side auth is broken.
-
-**Phase:** Phase 1 (Auth setup). This is foundational -- every subsequent feature depends on correct SSR auth.
+1. Use separate Playwright `projects` per user role (owner, member, anonymous). Each project gets its own `storageState` file.
+2. For multi-user tests within a single spec (e.g., "owner invites member, member accepts"), use `browser.newContext()` explicitly for each user -- never switch users within one context.
+3. Add an assertion at the start of critical tests verifying the expected user identity (e.g., check the profile name displayed in the UI or a `data-testid="user-email"` element).
+4. In `playwright.config.ts`, set `fullyParallel: true` per project (not globally) to force context isolation.
+**Detection:** Tests that work individually but fail when run together. Errors like "row not found" or unexpected empty query results.
+**Confidence:** HIGH -- standard Playwright auth documentation emphasizes this pattern.
 
 ---
 
-### Pitfall 3: Drag-and-Drop Reordering Loses Position Data or Creates Race Conditions
+### Pitfall 3: RLS Silently Blocking Test Data Setup
 
-**What goes wrong:** Setlist songs need a `position` (or `order`) column. The naive approach uses sequential integers (1, 2, 3...). When a song is dragged from position 5 to position 2, you need to update positions 2-4 to shift down AND set the moved song to position 2. This means updating N rows for every drag operation. Common failures: (a) concurrent edits produce duplicate positions, (b) optimistic UI shows the new order but the database update fails silently, leaving the UI and DB out of sync, (c) rapid drag operations queue up and execute out of order.
-
-**Why it happens:** Integer position ordering requires updating multiple rows atomically. Without a transaction, partial updates leave gaps or duplicates. Optimistic updates in the UI make the user think it worked when it may not have.
-
-**Consequences:** Setlist order appears different for different band members. Songs disappear from view (filtered out by a sort that can't handle duplicate positions). Data corruption that's hard to debug.
-
+**What goes wrong:** Tests try to create seed data (songs, setlists, bands) through the Supabase client using the `anon` or `authenticated` key without a matching `auth.uid()`. RLS policies reject the operations. Critically, Supabase returns **empty arrays** for RLS-blocked SELECTs (not errors), so tests appear to pass while testing nothing.
+**Why it happens:** The app uses `PUBLIC_SUPABASE_PUBLISHABLE_KEY` everywhere. Developers copy this pattern into test setup code. But test fixtures run outside the browser context, so there is no authenticated session attached to these calls.
+**Consequences:** Test setup silently creates zero data. Tests pass but exercise only empty states. Coverage is illusory.
 **Prevention:**
-- Use fractional indexing (e.g., the `fractional-indexing` npm package or a simple string-based approach). Instead of integers, positions are strings like "a0", "a1", "a2". Inserting between "a1" and "a2" generates "a1V" -- only ONE row update needed.
-- Wrap position updates in a Supabase RPC (Postgres function) that runs in a transaction. Never do multi-row position updates from the client.
-- Debounce drag operations -- don't fire a DB update on every pixel of movement, only on drop.
-- After each drop, compare the local order with what the server returns. If they diverge, snap to the server state.
-
-**Detection:** Open the same setlist in two browser tabs. Reorder in both rapidly. Check if both tabs converge to the same order.
-
-**Phase:** Phase 2 (Setlist builder with drag-and-drop). This is the core interaction -- get ordering strategy right before building the UI.
+1. Use a **service role client** (`SUPABASE_SERVICE_ROLE_KEY`) exclusively in test fixtures for data setup and teardown. This bypasses RLS entirely.
+2. Keep the service role key in `.env.test` or CI secrets only -- never in browser-accessible code.
+3. Create a `tests/utils/db.ts` that exports the admin client and helper functions (`createTestSong()`, `createTestBand()`, `createTestSetlist()`, etc.).
+4. After creating data with the admin client, verify it exists by querying through the app's UI (not just the admin client).
+5. Consider [Supawright](https://github.com/isaacharrisholt/supawright) -- a Playwright+Supabase test harness that handles FK-aware creation and automatic cleanup when tests exit.
+**Detection:** Take screenshots after test data setup. If the UI shows "No songs in your library" or empty lists, the setup data was not created or is invisible to the test user.
+**Confidence:** HIGH -- this is the most commonly reported Supabase testing issue. See [Supabase RLS Troubleshooting](https://supabase.com/docs/guides/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z).
 
 ---
 
-### Pitfall 4: Supabase RLS Performance -- N+1 Policy Checks Kill Load Times
+### Pitfall 4: Drag-and-Drop Tests That Are Permanently Flaky
 
-**What goes wrong:** RLS policies run per-row. A policy like `EXISTS (SELECT 1 FROM band_members WHERE ...)` executes for every row returned. Loading a setlist with 20 songs means 20 subqueries against `band_members`. For a band page showing 10 setlists each with 20 songs, that's 200 subquery executions.
-
-**Why it happens:** Postgres is generally efficient with `EXISTS` subqueries and will often cache/optimize them. But without proper indexes, or with complex multi-table policies, the query planner can't optimize and performance degrades noticeably.
-
-**Consequences:** Slow page loads (500ms+) that feel sluggish. Worse on Supabase free tier with limited connection pooling.
-
+**What goes wrong:** DnD tests using `page.dragAndDrop()` or basic `locator.dragTo()` fail 20-50% of the time. Elements appear to be dragged but land in the wrong position or the drop is not registered by `svelte-dnd-action`.
+**Why it happens:** `svelte-dnd-action` uses pointer events, animation frames (`flipDurationMs: 200` in this codebase), and reactive state updates (`$state` arrays). Playwright's synthetic events fire faster than the framework's microtask/animation frame cycle. The library recalculates drop zones during `pointermove`, and if the pointer jumps too fast, the target zone is missed. Additionally, `dragover` requires at least two `pointermove` events to fire reliably in all browsers.
+**Consequences:** Team disables DnD tests or marks them as `test.fixme()`. The most interactive and bug-prone feature in the app goes untested.
 **Prevention:**
-- Add explicit indexes: `CREATE INDEX idx_band_members_user_band ON band_members(user_id, band_id)`. This is the single most important index for the entire app.
-- Keep RLS policies simple -- one `EXISTS` check, not nested subqueries.
-- For read-heavy views (setlist with all songs), create a Postgres function (`get_setlist_with_songs(setlist_id uuid)`) that runs as `SECURITY DEFINER` with its own auth check inside, bypassing per-row RLS. This gives you one auth check instead of N.
-- Use `EXPLAIN ANALYZE` on queries to see actual RLS overhead.
-
-**Detection:** Monitor Supabase query performance in the dashboard. If `SELECT` queries on setlist_songs take >50ms for 20 rows, investigate the query plan.
-
-**Phase:** Phase 2-3. Implement indexes in Phase 2 (data model). Monitor and add RPC functions in Phase 3 if performance issues appear.
+1. Use low-level mouse operations instead of `dragAndDrop()`:
+   ```typescript
+   const source = page.locator('[data-testid="library-song-0"]');
+   const target = page.locator('[data-testid="setlist-zone"]');
+   const sourceBox = await source.boundingBox();
+   const targetBox = await target.boundingBox();
+   await source.hover();
+   await page.mouse.down();
+   // Move in multiple small steps -- not one jump
+   await page.mouse.move(
+     targetBox.x + targetBox.width / 2,
+     targetBox.y + 10,
+     { steps: 20 }
+   );
+   // Second move triggers dragover in all browsers
+   await page.mouse.move(
+     targetBox.x + targetBox.width / 2,
+     targetBox.y + 20,
+     { steps: 5 }
+   );
+   await page.mouse.up();
+   ```
+2. Wait for DOM change after drop, not a fixed timeout:
+   ```typescript
+   await expect(page.locator('[data-testid="setlist-song-0"]'))
+     .toContainText('Song Name');
+   ```
+3. Add `data-testid` attributes to DnD zones and draggable items for stable selectors.
+4. Re-fetch `boundingBox()` if the container might have scrolled or resized mid-drag.
+5. Test reordering (within-zone) and cross-zone (library-to-setlist) separately -- they have different flakiness profiles.
+6. Note: `svelte-dnd-action` has a specific bugfix making `dragHandleZones` testable within Playwright (see [release notes](https://github.com/isaacHagoel/svelte-dnd-action/blob/master/release-notes.md)).
+**Detection:** Tests that pass on retry but fail on first attempt. Trace viewer shows pointer ending at correct coordinates but no DOM change occurring.
+**Confidence:** MEDIUM -- approach verified via Playwright docs and svelte-dnd-action release notes, but exact step counts will need per-project tuning.
 
 ---
 
-### Pitfall 5: Time/Duration Calculations with Floating Point and Display Inconsistencies
+### Pitfall 5: Test Data Pollution Across Parallel Workers
 
-**What goes wrong:** Song durations stored as seconds (integer) seem simple, but problems emerge: (a) storing as float/decimal introduces floating-point arithmetic issues (3:30 = 210 seconds, but 3.5 minutes as a float leads to display rounding errors), (b) summing durations across a setlist with breaks/transitions produces totals that don't visually add up, (c) users input "3:30" meaning 3 minutes 30 seconds, but the parser interprets it as 3 hours 30 minutes or 3.30 minutes.
-
-**Why it happens:** Duration is deceptively simple. The mm:ss format is ambiguous (is "1:05:30" one hour five minutes thirty seconds, or a typo?). Summing and displaying requires consistent units throughout.
-
-**Consequences:** Setlist shows "Total: 42:00" but manually adding songs gives 41:58. Users lose trust in the core feature.
-
+**What goes wrong:** Two test workers create songs with the same title, or setlists with colliding names. One worker's teardown deletes another worker's data. Band invite tokens collide. Tests become order-dependent.
+**Why it happens:** Tests use hardcoded data ("Test Song", "My Setlist"). With parallel execution, multiple workers hit the same Supabase database simultaneously. The `songs` table has no unique constraint on `(user_id, title)`, and neither does `setlists` on `(user_id, name)`.
+**Consequences:** Tests flake in CI but pass locally (single worker). Debugging is nearly impossible because failures depend on execution order.
 **Prevention:**
-- Store duration as integer seconds in the database. Never use float or interval types.
-- Parse user input strictly: accept `mm:ss` and `h:mm:ss` formats only. Validate that seconds < 60.
-- Create a single `formatDuration(totalSeconds: number): string` utility and use it everywhere -- never format inline.
-- Write unit tests for the duration parser and formatter with edge cases: 0 seconds, exactly 60 seconds, durations over an hour, single-digit seconds (3:05 not 3:5).
-- Sum durations server-side (in the Postgres query) as well as client-side, and compare. Use `SUM(duration_seconds)` in SQL.
-
-**Detection:** Add a song with duration 3:05. If it displays as "3:5" or "3:50" anywhere, the formatter is broken.
-
-**Phase:** Phase 2 (Song library). Get the parser/formatter right as a utility before building any UI that displays durations.
+1. Namespace all test data with worker index and timestamp:
+   ```typescript
+   const songTitle = `Test Song W${testInfo.workerIndex}-${Date.now()}`;
+   ```
+2. Each worker gets its own test user. Create users like `test-worker-0@test.com`, `test-worker-1@test.com` in auth setup. RLS naturally isolates their songs and setlists data via `user_id` policies.
+3. Clean up in `afterEach`/`afterAll` using the service role client, targeting only data created by the current test (match on the unique prefix or creation timestamp).
+4. Never rely on database state from a previous test. Each test creates its own data.
+5. For band/multi-user tests, create the entire band + members + songs in the test's own setup, not shared across the suite.
+**Detection:** Run tests with `--workers=4` locally. If any tests that passed with `--workers=1` now fail, you have data isolation issues.
+**Confidence:** HIGH -- universal E2E testing pattern.
 
 ---
 
@@ -117,100 +124,94 @@ Mistakes that cause rewrites, data leaks, or major UX failures.
 
 ---
 
-### Pitfall 6: Svelte 5 Reactivity Gotchas with Drag-and-Drop State
+### Pitfall 6: SvelteKit Hydration Race Conditions
 
-**What goes wrong:** Svelte 5 uses runes (`$state`, `$derived`, `$effect`) instead of Svelte 4's implicit reactivity. Drag-and-drop libraries that worked with Svelte 4 may not trigger reactivity correctly in Svelte 5 because they mutate arrays directly. In Svelte 5, `$state` arrays need reassignment (or use `$state` with fine-grained tracking) to trigger updates.
-
-**Why it happens:** Most Svelte drag-and-drop libraries (svelte-dnd-action, etc.) were written for Svelte 4 where `array = array` triggered reactivity. In Svelte 5, direct array mutation via `splice()` IS tracked when the array is `$state`, but the library may be creating new arrays or using patterns that bypass Svelte's proxy.
-
+**What goes wrong:** Playwright clicks a button before SvelteKit hydration completes. The `onclick` handler (used throughout this app, e.g., `onclick={signInWithGoogle}`, `onclick={toggleShare}`) is not yet attached. The click does nothing. The test times out waiting for a state change that never happens.
+**Why it happens:** SvelteKit SSR renders HTML first, then hydrates with Svelte 5 JavaScript. There is a gap between "element visible" and "element interactive." Playwright's auto-wait checks for element visibility and stability, but not for JavaScript hydration.
 **Prevention:**
-- Verify the drag-and-drop library explicitly supports Svelte 5. Check GitHub issues/releases for Svelte 5 compatibility.
-- If using `svelte-dnd-action`, test thoroughly -- it has been updated for Svelte 5 but edge cases may exist.
-- Consider building a simple drag-and-drop with the HTML5 Drag and Drop API or Pointer Events for this specific use case (reordering a flat list is simpler than a general-purpose DnD solution).
-- Keep the source of truth for song order in a `$state` array and derive the display from it. Don't let the DnD library own the state.
-
-**Detection:** Drag a song to a new position. If the UI snaps back or shows the wrong order momentarily, the reactivity binding is broken.
-
-**Phase:** Phase 2 (Setlist builder). Evaluate DnD approach early and prototype before committing to a library.
+1. Use Playwright's `locator.click()` with built-in auto-wait (checks actionability), combined with `await expect(page.locator('button')).toBeEnabled()` before clicking interactive elements.
+2. For the DnD page specifically, wait for the library items to render before attempting drags: `await expect(page.locator('[data-testid="library-song-0"]')).toBeVisible()`.
+3. Consider adding a root-level hydration marker: `<svelte:body data-hydrated />` set by an `onMount`, and wait for it in tests.
+4. After page navigation, wait for a dynamic element that only exists after hydration (e.g., a reactive counter, user name, or data-fetched content).
+**Detection:** Tests fail with "timeout waiting for navigation" after a click. Trace viewer shows the click happened but nothing followed.
+**Confidence:** HIGH -- well-documented SvelteKit + Playwright issue.
 
 ---
 
-### Pitfall 7: Google OAuth Redirect Issues on Netlify
+### Pitfall 7: Using `networkidle` and Getting Slowness or Hangs
 
-**What goes wrong:** Supabase Google OAuth requires a redirect URL. On Netlify, the deploy URL changes for preview deploys (e.g., `deploy-preview-42--yoursite.netlify.app`). Developers configure only the production URL in Supabase and Google Cloud Console, then OAuth breaks on all preview/staging environments. Additionally, Netlify's edge functions and SvelteKit's server routes can conflict on redirect handling.
-
-**Why it happens:** OAuth redirect URLs must be whitelisted exactly. Google is strict about this. Supabase allows multiple redirect URLs but developers forget to configure them.
-
-**Consequences:** Login works in production but breaks in development and preview deploys. Team members can't test auth features in PRs.
-
+**What goes wrong:** Tests sprinkle `waitForLoadState('networkidle')` after every action. If the app ever adds Supabase Realtime subscriptions (WebSocket connections), `networkidle` will never resolve. Even without Realtime, Supabase auth token refresh calls and periodic health checks keep the network active, adding 500ms+ delays per wait.
+**Why it happens:** `networkidle` is the "easy" way to wait after an action, and works in simple apps. But Supabase's client makes background requests that defeat the "no requests for 500ms" heuristic.
 **Prevention:**
-- Add `http://localhost:5173` (Vite dev server) to both Supabase redirect URLs and Google Cloud Console authorized redirect URIs.
-- Add a wildcard pattern in Supabase: `https://*.netlify.app/**` (Supabase supports wildcard redirects).
-- In Google Cloud Console, you cannot use wildcards -- add the production URL and localhost. For preview deploys, consider using Supabase's built-in redirect URL parameter to route back correctly.
-- Set the `SITE_URL` environment variable in Netlify to the production URL, and use it in auth configuration.
-
-**Detection:** Try logging in on a Netlify preview deploy. If you get a "redirect_uri_mismatch" error, the URLs aren't configured.
-
-**Phase:** Phase 1 (Auth setup). Configure all redirect URLs before anyone else on the team tries to test.
+1. Use `networkidle` only after full page navigations where you need everything loaded, not after in-page actions.
+2. After form submissions or API calls (like `persistOrder()`, `handleAddSong()`, `handleRemoveSong()` in the setlist page), wait for specific UI changes instead:
+   ```typescript
+   await expect(page.getByText('Added "Song Name"')).toBeVisible();
+   ```
+3. Use `domcontentloaded` + specific element waits as the default pattern.
+4. If Supabase Realtime is ever added, `networkidle` will completely break -- plan for it now.
+**Detection:** Test suite takes 3-5x longer than expected. Trace viewer shows long idle waits with no meaningful network activity.
+**Confidence:** HIGH -- Supabase-specific due to background auth/API calls.
 
 ---
 
-### Pitfall 8: Netlify Adapter and SvelteKit API Routes -- Cold Starts and Function Limits
+### Pitfall 8: Not Testing the Anonymous/Share Path Separately
 
-**What goes wrong:** `@sveltejs/adapter-netlify` converts SvelteKit server routes into Netlify Functions (or Edge Functions). Each `+server.ts` and `+page.server.ts` becomes a serverless function. Cold starts add 200-500ms latency. Netlify's free tier has function invocation limits (125K/month) that a small collaborative app can hit if every page load triggers multiple server functions.
-
-**Why it happens:** SvelteKit's server-side rendering means every page visit invokes a serverless function. With Supabase, many operations can be done client-side (direct Supabase calls), but developers default to putting everything in `+page.server.ts` load functions.
-
-**Consequences:** Slow initial page loads. Unexpected bills or rate limits on Netlify.
-
+**What goes wrong:** All tests run as authenticated users. The share link path (`/share/[token]`) is untested or tested incorrectly (from an authenticated context, which uses different RLS policies). Bugs in `to anon` RLS policies ship to production.
+**Why it happens:** The auth setup pattern makes it easy to always be logged in. Developers forget that the share route uses `to anon` policies (defined in `20260218100000_create_setlist_tables.sql` and `20260302000000_add_anon_songs_policy.sql`), which are completely separate from the `to authenticated` policies.
 **Prevention:**
-- Prefer client-side Supabase calls for data fetching where SSR isn't needed (e.g., loading songs after the page shell renders). Use `+page.ts` (universal load) instead of `+page.server.ts` where possible.
-- Use `+page.server.ts` only for operations that need server-side secrets or initial SEO-relevant content.
-- Configure adapter-netlify to use edge functions for SSR routes (lower cold start latency): `adapter: netlifyAdapter({ edge: true })` -- but verify Supabase SSR client works in edge runtime.
-- Monitor function invocations in Netlify dashboard.
-
-**Detection:** Check Netlify function logs. If you see >300ms cold starts on simple page loads, consider moving data fetching client-side.
-
-**Phase:** Phase 1 (Project setup). Choose the adapter strategy early -- changing from functions to edge later requires testing everything.
+1. Create a dedicated Playwright project with **no** `storageState` (anonymous context).
+2. Test the full share flow end-to-end:
+   - Authenticated user creates a setlist and enables sharing (gets `share_token`).
+   - Open `/share/[token]` in the anonymous context.
+   - Verify songs are visible (read-only).
+   - Verify the anonymous user cannot modify, reorder, or delete songs.
+3. Test that revoking sharing (setting `share_token` to null) immediately blocks access.
+4. Test that a logged-in user accessing a share link does not see edit controls they should not have (a share link from another user's setlist).
+**Detection:** Deploy the share feature, then test it in an incognito browser window. If it shows empty or errors, the `to anon` policies are wrong.
+**Confidence:** HIGH -- specific to this codebase's share feature and RLS structure.
 
 ---
 
-### Pitfall 9: Multi-User Setlist Editing Without Conflict Resolution
+### Pitfall 9: Supabase Connection Pool Exhaustion in CI
 
-**What goes wrong:** Two band members open the same setlist. Both reorder songs. The last save wins, silently overwriting the other person's changes. Even worse: one person adds a song while another reorders, and the add is lost because the reorder overwrote the entire song list.
-
-**Why it happens:** Without real-time sync or optimistic concurrency control, the app uses "last write wins" by default. Supabase Realtime can broadcast changes, but developers often add it as an afterthought rather than designing for it from the start.
-
-**Consequences:** Lost edits, user frustration, distrust of the tool ("I added that song, where did it go?").
-
+**What goes wrong:** Tests run with 4+ parallel workers, each creating Supabase clients (service role for setup, anon for the app). Combined with the dev server's own connections, the connection pool is exhausted. Tests fail with connection errors or hang indefinitely.
+**Why it happens:** Each Playwright worker + the SvelteKit dev server + admin clients for setup/teardown each hold connections. Cloud Supabase has limited connection slots (varies by plan). Even with connection pooling (PgBouncer), the total can exceed limits.
 **Prevention:**
-- For v1, use an `updated_at` timestamp on setlists. Before saving, check if `updated_at` has changed since the user loaded the page. If it has, show a "this setlist was modified by someone else -- reload?" prompt. This is optimistic concurrency control and prevents silent data loss.
-- Design mutations as atomic operations (add song, remove song, move song) rather than "save entire setlist state." This makes conflicts granular -- two users can add different songs without conflicting.
-- In v2+, add Supabase Realtime subscriptions to push changes to all open clients. But this is complex -- start with conflict detection first.
-
-**Detection:** Open the same setlist in two browsers. Edit in both. If one person's changes silently disappear, you have a last-write-wins problem.
-
-**Phase:** Phase 2 (basic conflict detection with `updated_at`), Phase 4+ (real-time sync as enhancement).
+1. In CI, set `workers: 1` or `workers: 2` in `playwright.config.ts`. The reliability gain outweighs the speed loss.
+2. **Strongly recommended:** Use `supabase start` for a local Supabase instance in CI. This eliminates connection limits, provides deterministic state, and avoids polluting any shared database.
+3. Close admin clients explicitly in `afterAll` hooks.
+4. Reuse a single service role client across all setup/teardown in a worker (create once in `beforeAll`, not per-test).
+**Detection:** Tests hang or fail with connection errors only in CI. Works fine locally with `supabase start`.
+**Confidence:** MEDIUM -- depends on the Supabase plan and CI configuration.
 
 ---
 
-### Pitfall 10: Forgetting to Handle the "No Band" State
+### Pitfall 10: Band Multi-User Tests Without Proper Context Isolation
 
-**What goes wrong:** The app assumes users belong to at least one band. But after signup, a user has no bands. The first thing they see should guide them to create or join a band. Developers build the happy path (user has bands, bands have setlists) and the empty states crash or show blank screens.
-
-**Why it happens:** Development always happens with seeded data. Nobody tests the fresh-signup flow end-to-end.
-
-**Consequences:** New users see a blank page or errors, think the app is broken, and leave.
-
+**What goes wrong:** A test for "band owner invites member" creates the band, generates an invite, and then tries to accept it -- all in the same browser context. The test cannot simulate two users because both actions require different Supabase auth sessions (different `auth.uid()` values).
+**Why it happens:** Developers think of E2E tests as single-user journeys and do not account for multi-actor workflows.
 **Prevention:**
-- Define the "empty state" UI for every level: no bands, no setlists, no songs in a setlist.
-- Make "create a band" the first action after signup, with a clear onboarding flow.
-- Seed dev data, but also have a "fresh user" test account that has no data.
-- Protect routes: if a page requires a band context (e.g., `/bands/[id]/setlists`), handle the case where `[id]` doesn't exist or the user isn't a member.
-
-**Detection:** Create a new account and go through the entire flow without clicking "create band." Every screen should be usable and helpful.
-
-**Phase:** Phase 1 (Auth + onboarding). Design the empty states alongside the data-full states.
+1. Use two browser contexts within one test:
+   ```typescript
+   const ownerContext = await browser.newContext({
+     storageState: 'playwright/.auth/owner.json'
+   });
+   const memberContext = await browser.newContext({
+     storageState: 'playwright/.auth/member.json'
+   });
+   const ownerPage = await ownerContext.newPage();
+   const memberPage = await memberContext.newPage();
+   // Owner creates band, navigates to settings, generates invite link
+   // Extract invite token from the URL shown in ownerPage
+   // Member navigates to /bands/invite/[token] in memberPage
+   // Verify member now sees the band in their bands list
+   ```
+2. Create both test users in `auth.setup.ts` and save separate storageState files.
+3. For the invite acceptance flow: owner creates invite (gets token), member navigates to `/bands/invite/[token]` in their own context.
+4. After the invite is accepted, verify RLS scoping: member sees band songs, but cannot access owner-only settings (band deletion, member removal).
+**Detection:** Band tests that only test single-user paths. Missing coverage for the invite acceptance flow, member removal, and permission boundaries.
+**Confidence:** HIGH -- specific to this app's band collaboration features.
 
 ---
 
@@ -218,43 +219,64 @@ Mistakes that cause rewrites, data leaks, or major UX failures.
 
 ---
 
-### Pitfall 11: Tailwind v4 Migration Syntax Changes
+### Pitfall 11: Brittle Selectors Tied to Tailwind Classes or DOM Structure
 
-**What goes wrong:** Tailwind v4 changed configuration significantly -- no more `tailwind.config.js` (uses CSS-based config), different plugin syntax, some utility class renames. Tutorials and Stack Overflow answers for Tailwind v3 lead developers to patterns that don't work.
-
-**Prevention:** Only reference Tailwind v4 docs. The project already has Tailwind v4 set up via `@tailwindcss/vite`, so stick with CSS-based `@theme` configuration in the main CSS file, not a JS config file.
-
-**Phase:** Throughout (ongoing awareness).
+**What goes wrong:** Tests select elements by Tailwind classes (`page.locator('.bg-accent-500')`) or deep DOM structure paths. Tests break on every design tweak or component refactor.
+**Prevention:**
+1. Use `data-testid` attributes for elements that tests interact with.
+2. Use ARIA roles and text content where semantically meaningful: `page.getByRole('button', { name: 'Sign in with Google' })`.
+3. Never select by Tailwind utility classes or component wrapper divs.
+4. The DnD zones in particular need testids -- the `use:dndzone` containers and each draggable item.
+**Confidence:** HIGH.
 
 ---
 
-### Pitfall 12: Supabase Migrations vs Dashboard Schema Drift
+### Pitfall 12: Only Testing Against Dev Server, Not Production Build
 
-**What goes wrong:** Developers make schema changes in the Supabase dashboard (adding columns, modifying RLS) during development, then forget to capture these as migration files. The production database diverges from what's in source control.
-
+**What goes wrong:** Tests pass against `vite dev` but fail against `vite build && vite preview`. SSR behavior differs between dev and production builds (e.g., different code splitting, environment variable handling via `$env/static`). The Netlify adapter (`@sveltejs/adapter-netlify`) may further change behavior.
 **Prevention:**
-- Use `supabase db diff` to capture dashboard changes as migrations.
-- Better: never touch the dashboard for schema changes. Write migrations in SQL files and apply with `supabase db push` or `supabase migration up`.
-- Store all migrations in `supabase/migrations/` in the repo.
-
-**Detection:** Run `supabase db diff` -- if it produces output, the database has drifted from migrations.
-
-**Phase:** Phase 1 (Project setup). Establish the migration workflow before any schema is created.
+1. In `playwright.config.ts`, configure `webServer` to run `npm run build && npm run preview` for CI.
+2. Use `npm run dev` for local development speed.
+3. Run the full suite against the production build at least in CI before merging.
+**Confidence:** MEDIUM -- depends on SSR complexity.
 
 ---
 
-### Pitfall 13: Not Typing Supabase Client with Generated Types
+### Pitfall 13: Clipboard API Tests Failing in Headless/CI
 
-**What goes wrong:** Supabase queries return `any` types by default. Without generated types, you lose TypeScript safety on all database operations -- wrong column names, missing fields, and type mismatches only surface at runtime.
-
+**What goes wrong:** The "Copy share link" button uses `navigator.clipboard.writeText()`. In headless browsers or CI environments, the clipboard API is unavailable or requires permissions not granted by default. The test clicks "Copy" and nothing happens.
 **Prevention:**
-- Run `supabase gen types typescript --project-id <id> > src/lib/types/database.types.ts` and regenerate after every migration.
-- Create the Supabase client with `createClient<Database>(url, key)` where `Database` is the generated type.
-- Add type generation to the CI/CD pipeline or a pre-commit hook.
+1. Grant clipboard permissions in the browser context:
+   ```typescript
+   const context = await browser.newContext({
+     permissions: ['clipboard-read', 'clipboard-write']
+   });
+   ```
+2. Alternatively, test the UI feedback ("Copied!" text appearing) rather than actual clipboard content.
+3. If clipboard permissions are flaky, intercept the clipboard call with `page.evaluate()` to mock it.
+**Confidence:** HIGH -- common headless/CI issue.
 
-**Detection:** If you can write `supabase.from('nonexistent_table')` without a TypeScript error, types aren't configured.
+---
 
-**Phase:** Phase 1 (Project setup). Set up type generation alongside the first migration.
+### Pitfall 14: Dev Server Startup Timeout in CI
+
+**What goes wrong:** The SvelteKit dev server takes longer to start in CI than locally. Playwright's `webServer.timeout` (default 60s) is exceeded, and all tests fail before they begin.
+**Prevention:**
+1. Set `webServer.timeout: 120_000` (120 seconds) in `playwright.config.ts`.
+2. Use `reuseExistingServer: !process.env.CI` so local development reuses an already-running server.
+3. In CI, consider running against the production build (`npm run preview`) which starts faster than the dev server.
+**Confidence:** HIGH.
+
+---
+
+### Pitfall 15: Svelte 5 Reactivity Timing in Assertions
+
+**What goes wrong:** Tests assert against a DOM state immediately after an action, but Svelte 5's fine-grained reactivity (`$state`, `$derived`) has not yet propagated to the DOM. The assertion fails because the DOM update is scheduled for the next microtick. This is especially relevant for the setlist page where `isMutating`, `setlistItems`, and `libraryItems` are all `$state` variables with `$effect` dependencies.
+**Prevention:**
+1. Always use Playwright's auto-retrying assertions: `expect(locator).toBeVisible()`, `expect(locator).toHaveText()`, `expect(locator).toContainText()`.
+2. Never use `page.content()` or `page.$eval()` for reactive state checks -- these are point-in-time snapshots.
+3. Set a reasonable `expect.timeout` (5000ms default is usually fine) to give Svelte's reactivity time to settle.
+**Confidence:** MEDIUM -- Svelte 5 reactivity is new, fewer documented test patterns.
 
 ---
 
@@ -262,24 +284,26 @@ Mistakes that cause rewrites, data leaks, or major UX failures.
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|---------------|------------|
-| Auth + Data Model (Phase 1) | RLS policies incomplete or wrong (Pitfalls 1, 2) | Test with unauthorized users from day one |
-| Auth + Data Model (Phase 1) | OAuth redirects broken in dev/preview (Pitfall 7) | Configure all redirect URLs before first PR |
-| Auth + Data Model (Phase 1) | Schema changes not captured in migrations (Pitfall 12) | Establish migration-first workflow immediately |
-| Song Library (Phase 2) | Duration parsing/display bugs (Pitfall 5) | Build and unit-test duration utilities first |
-| Setlist Builder (Phase 2) | Drag-and-drop reactivity issues in Svelte 5 (Pitfall 6) | Prototype DnD before committing to a library |
-| Setlist Builder (Phase 2) | Position ordering corruption (Pitfall 3) | Use fractional indexing, not integer positions |
-| Setlist Builder (Phase 2) | Multi-user edit conflicts (Pitfall 9) | Add `updated_at` conflict detection from the start |
-| Performance (Phase 3) | RLS N+1 query overhead (Pitfall 4) | Index `band_members(user_id, band_id)`, monitor query plans |
-| Deployment (Phase 3+) | Netlify cold starts and function limits (Pitfall 8) | Prefer client-side data fetching where SSR not needed |
-| Polish (Phase 4+) | Empty states untested (Pitfall 10) | Test fresh-user flow in every phase |
+| Initial Playwright setup | Pitfall 14 (dev server timeout), Pitfall 12 (dev vs build) | Get `webServer` config right first, test both modes early |
+| Auth setup project | Pitfall 1 (Google OAuth automation), Pitfall 2 (state leaking) | Bypass OAuth from day one with admin API users and storageState per role |
+| First CRUD tests (songs) | Pitfall 3 (RLS blocking setup), Pitfall 5 (data pollution) | Service role client for fixtures, unique data per worker |
+| DnD setlist tests | Pitfall 4 (flaky DnD), Pitfall 6 (hydration race) | Low-level mouse API with small step counts, wait for hydration signals |
+| Band multi-user tests | Pitfall 10 (single-context multi-user), Pitfall 2 (auth leaking) | Dual browser contexts with separate storageState files |
+| Share link tests | Pitfall 8 (untested anon path), Pitfall 13 (clipboard in CI) | Dedicated anonymous Playwright project, grant clipboard permissions |
+| CI pipeline setup | Pitfall 9 (connection exhaustion), Pitfall 7 (networkidle slowness) | Limit workers, use `supabase start` locally, avoid networkidle |
+
+---
 
 ## Sources
 
-- Supabase documentation on RLS (supabase.com/docs/guides/database/postgres/row-level-security) -- MEDIUM confidence (training data, not live-verified)
-- Supabase SSR auth guide (supabase.com/docs/guides/auth/server-side) -- MEDIUM confidence
-- SvelteKit adapter-netlify documentation (svelte.dev/docs/kit/adapter-netlify) -- MEDIUM confidence
-- Svelte 5 runes documentation (svelte.dev/docs/svelte/$state) -- MEDIUM confidence
-- General experience with drag-and-drop ordering systems, fractional indexing patterns -- MEDIUM confidence
-- Tailwind v4 migration guide (tailwindcss.com/docs/v4-beta) -- LOW confidence (may have changed since training data)
-
-**Note:** WebSearch and WebFetch tools were unavailable during this research session. All findings are based on training data and should be verified against current documentation before implementation decisions are made. Particular areas to re-verify: Svelte 5 DnD library compatibility, Supabase SSR package current API, Tailwind v4 final syntax.
+- [Playwright Authentication Docs](https://playwright.dev/docs/auth) -- storageState and setup project patterns (HIGH confidence)
+- [Playwright Input/Actions Docs](https://playwright.dev/docs/input) -- mouse.down/move/up for DnD (HIGH confidence)
+- [Playwright Parallel Execution Docs](https://playwright.dev/docs/test-parallel) -- worker isolation (HIGH confidence)
+- [svelte-dnd-action Release Notes](https://github.com/isaacHagoel/svelte-dnd-action/blob/master/release-notes.md) -- Playwright compatibility fix (MEDIUM confidence)
+- [Supawright - Playwright+Supabase Test Harness](https://github.com/isaacharrisholt/supawright) -- FK-aware data setup/teardown (MEDIUM confidence)
+- [Supabase Testing Overview](https://supabase.com/docs/guides/local-development/testing/overview) -- official testing guidance (HIGH confidence)
+- [Supabase RLS Troubleshooting](https://supabase.com/docs/guides/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z) -- service role bypasses RLS (HIGH confidence)
+- [Login at Supabase via REST API in Playwright](https://mokkapps.de/blog/login-at-supabase-via-rest-api-in-playwright-e2e-test) -- API-based auth bypass pattern (MEDIUM confidence)
+- [Database Rollback Strategies in Playwright](https://www.thegreenreport.blog/articles/database-rollback-strategies-in-playwright/database-rollback-strategies-in-playwright.html) -- data isolation patterns (MEDIUM confidence)
+- [Reflect: DnD Testing in Playwright](https://reflect.run/articles/how-to-test-drag-and-drop-interactions-in-playwright/) -- multi-step mouse moves for DnD (MEDIUM confidence)
+- [BrowserStack: Playwright DnD](https://www.browserstack.com/guide/playwright-drag-and-drop) -- DnD approaches and pitfalls (MEDIUM confidence)

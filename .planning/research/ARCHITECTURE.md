@@ -1,544 +1,377 @@
-# Architecture Patterns
+# Architecture: Playwright E2E Testing Infrastructure
 
-**Domain:** Setlist management web app (SvelteKit + Supabase)
-**Researched:** 2026-02-17
-**Confidence:** MEDIUM (training data, no web verification available)
+**Domain:** E2E testing for SvelteKit + Supabase setlist-builder app
+**Researched:** 2026-03-02
+**Confidence:** HIGH
 
-## Recommended Architecture
+## Test Architecture Overview
 
 ```
-Browser (Svelte 5 SPA-like experience)
+playwright.config.ts          -- Config: webServer, projects, env loading
   |
-  +-- SvelteKit Routes (SSR + CSR hybrid)
+  +-- tests/fixtures.ts       -- Custom fixtures: testUser, authenticatedPage
   |     |
-  |     +-- +layout.server.ts  (auth guard, session refresh)
-  |     +-- +page.server.ts    (load data, form actions)
-  |     +-- +page.svelte       (UI + client-side DnD state)
+  |     +-- helpers/auth.ts   -- Supabase admin API: create/delete users, sign in, inject session
+  |     +-- helpers/data.ts   -- Data factories: createSong(), createSetlist(), createBand()
+  |     +-- helpers/dnd.ts    -- DnD helper: manual pointer event sequence
+  |     +-- helpers/cleanup.ts -- Cascade cleanup (if FK constraints insufficient)
   |
-  +-- Supabase Client (two instances)
-  |     |
-  |     +-- Server client (hooks.server.ts, +page.server.ts)
-  |     |     Uses service role or user session for DB access
-  |     |
-  |     +-- Browser client (components, realtime subscriptions)
-  |           Uses anon key + user JWT for direct DB access
-  |
-  +-- Supabase Backend
+  +-- tests/e2e/*.spec.ts     -- Test files import custom `test` from fixtures.ts
         |
-        +-- Auth (Google OAuth, JWT sessions)
-        +-- Postgres (data storage, RLS policies)
-        +-- Storage (not needed for v1)
+        +-- Supabase Test Project (dedicated, hosted)
+              Auth + Postgres + RLS (identical schema to production)
 ```
 
 ### Component Boundaries
 
 | Component | Responsibility | Communicates With |
 |-----------|---------------|-------------------|
-| **Auth Layer** (`hooks.server.ts`) | Validate session on every request, refresh tokens, inject user into `locals` | Supabase Auth, all server load functions |
-| **Song Library** (routes + components) | CRUD songs for a user/band | Supabase Postgres via server load/actions |
-| **Setlist Builder** (routes + components) | Create/edit setlists, drag-and-drop reorder, time calculation | Local Svelte state (optimistic), Supabase for persistence |
-| **Band Management** (routes + components) | Create bands, invite members, manage membership | Supabase Postgres + RLS |
-| **Public Share** (routes) | Read-only setlist view without auth | Supabase with anon access via RLS |
-| **Supabase Client Lib** (`$lib/supabase.ts`) | Create and export typed Supabase clients | All data-accessing components |
-| **UI Component Library** (`$lib/components/`) | Reusable presentational components | Parent components only |
+| **Playwright Config** | Dev server startup, browser config, env loading, worker parallelism | Vite dev server, `.env.test` |
+| **Custom Fixtures** (`fixtures.ts`) | Per-worker test user lifecycle, authenticated page setup | Supabase admin API, browser localStorage |
+| **Auth Helper** (`helpers/auth.ts`) | Create users, sign in via REST, inject session, delete users | Supabase REST API (`/auth/v1/token`, admin endpoints) |
+| **Data Factories** (`helpers/data.ts`) | Create songs/setlists/bands with known test data | Supabase admin client (bypasses RLS) |
+| **DnD Helper** (`helpers/dnd.ts`) | Simulate drag-and-drop via pointer events | `page.mouse` API |
+| **Test Specs** (`e2e/*.spec.ts`) | User journey assertions | Browser via Playwright locators |
+| **Supabase Test Project** | Identical schema + RLS, test data storage | Test fixtures (service role), app under test (anon key) |
 
 ### Data Flow
 
-**Page Load (authenticated):**
+**Test User Lifecycle (per worker):**
 
 ```
-1. Browser requests /setlists/[id]
-2. hooks.server.ts intercepts:
-   - Reads session from cookies
-   - Refreshes token if needed via supabase.auth.getSession()
-   - Sets event.locals.supabase (server client)
-   - Sets event.locals.session (user session)
-3. +layout.server.ts returns session to client
-4. +page.server.ts loads setlist data:
-   - Creates server supabase client
-   - Queries setlist + setlist_songs joined with songs
-   - RLS ensures user can only see own/band setlists
-   - Returns typed data to page
-5. +page.svelte renders with SSR data
-6. Client hydrates, DnD becomes interactive
+1. Playwright spawns worker N
+2. testUser fixture runs:
+   a. Admin client creates user: POST /auth/v1/admin/users
+      email: test-wN-{timestamp}@test.local
+      password: random via faker
+      email_confirm: true
+   b. Returns { id, email, password }
+3. authenticatedPage fixture runs:
+   a. Signs in via REST: POST /auth/v1/token?grant_type=password
+   b. Gets { access_token, refresh_token }
+   c. Navigates to '/' (loads app shell)
+   d. Injects session into localStorage:
+      key: sb-{project-ref}-auth-token
+      value: JSON { access_token, refresh_token, ... }
+   e. Reloads page -- app reads session from localStorage
+   f. App's hooks.server.ts validates JWT, user is authenticated
+4. Test spec runs against authenticated page
+5. Fixture teardown:
+   a. Admin client deletes user: DELETE /auth/v1/admin/users/{id}
+   b. FK CASCADE deletes all related data (songs, setlists, etc.)
 ```
 
-**Drag-and-Drop Reorder Flow:**
+**Multi-User Test Flow (band invites):**
 
 ```
-1. User drags song to new position in setlist
-2. Client updates local state IMMEDIATELY (optimistic)
-   - Svelte 5 $state() rune holds ordered song list
-   - Running time recalculates reactively
-3. Debounced save triggers (300-500ms after last drag)
-4. Client sends new order to server:
-   Option A: Form action (SvelteKit native)
-   Option B: Direct Supabase client call from browser
-5. Server/Supabase updates position values
-6. On failure: revert local state, show toast error
+1. Create two test users (User A, User B) in fixture
+2. User A creates a band via the app UI
+3. User A generates an invite link
+4. Extract invite URL from User A's page
+5. Open invite URL in User B's browser context
+6. User B accepts invite
+7. Assert: User B sees the band in their bands list
+8. Assert: User A sees User B in the member list
+9. Teardown: delete both users (cascades clean up band + membership)
 ```
 
-**Public Share Flow:**
+**DnD Test Flow:**
 
 ```
-1. Browser requests /s/[share_id] (no auth required)
-2. +page.server.ts loads setlist by share_id column
-3. RLS policy: SELECT allowed where is_public = true
-4. Renders read-only view (no DnD, no edit controls)
+1. Test creates a setlist with 3+ songs via data factory
+2. Navigate to setlist detail page
+3. Identify source song element (e.g., song at position 3)
+4. Identify target position (e.g., before song at position 1)
+5. Execute manual pointer sequence:
+   a. page.mouse.move(sourceCenter)
+   b. page.mouse.down()
+   c. page.mouse.move(targetCenter, { steps: 10 })
+   d. page.mouse.up()
+6. Wait for svelte-dnd-action to settle (consider, drop animation)
+7. Assert new order: song that was at position 3 is now at position 1
+8. Reload page to verify persistence
 ```
-
-## Data Model
-
-### Core Tables
-
-```sql
--- Users are managed by Supabase Auth (auth.users)
--- This is the public profile table
-
-create table profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  display_name text not null,
-  avatar_url text,
-  created_at timestamptz default now()
-);
-
-create table bands (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  created_by uuid references profiles(id) not null,
-  created_at timestamptz default now()
-);
-
-create table band_members (
-  band_id uuid references bands(id) on delete cascade,
-  user_id uuid references profiles(id) on delete cascade,
-  role text not null default 'member' check (role in ('owner', 'admin', 'member')),
-  joined_at timestamptz default now(),
-  primary key (band_id, user_id)
-);
-
-create table songs (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  duration_seconds integer not null check (duration_seconds > 0),
-  owner_id uuid references profiles(id) not null,
-  band_id uuid references bands(id),  -- null = personal song
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
-create table setlists (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  owner_id uuid references profiles(id) not null,
-  band_id uuid references bands(id),  -- null = personal setlist
-  share_id text unique default encode(gen_random_bytes(8), 'hex'),
-  is_public boolean default false,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
-create table setlist_songs (
-  id uuid primary key default gen_random_uuid(),
-  setlist_id uuid references setlists(id) on delete cascade,
-  song_id uuid references songs(id) on delete cascade,
-  position integer not null,
-  unique (setlist_id, position)  -- enforces no duplicate positions
-);
-```
-
-### Key Design Decisions
-
-**Position as integer (not float/fractional):** Use integer positions (0, 1, 2...) and renumber on reorder. Simpler than fractional indexing. The maximum setlist is ~40 songs -- renumbering the full list on every reorder is trivial. Send the full ordered array of song IDs to the server and bulk-update positions in a single transaction.
-
-**`share_id` as short random string:** Separate from the UUID primary key. Short enough for URLs (`/s/a1b2c3d4`), random enough to be unguessable. Generated by Postgres `gen_random_bytes`.
-
-**`band_id` nullable on songs and setlists:** When null, the item is personal. When set, it belongs to the band and RLS policies use `band_members` to check access. This avoids a separate "personal library" vs "band library" table split.
-
-**No `set_sections` table for v1:** Per PROJECT.md, sections (Set 1, Set 2, Encore) are out of scope. The flat `setlist_songs` with `position` ordering is sufficient. Adding sections later means adding a `section_id` FK to `setlist_songs` and a `sections` table -- non-breaking migration.
-
-## Row-Level Security (RLS) Strategy
-
-```sql
--- Songs: user sees own songs + songs in their bands
-create policy "songs_select" on songs for select using (
-  owner_id = auth.uid()
-  or band_id in (
-    select band_id from band_members where user_id = auth.uid()
-  )
-);
-
--- Setlists: user sees own + band setlists
-create policy "setlists_select" on setlists for select using (
-  owner_id = auth.uid()
-  or band_id in (
-    select band_id from band_members where user_id = auth.uid()
-  )
-);
-
--- Public setlists: anyone can view via share_id
-create policy "setlists_public_select" on setlists for select using (
-  is_public = true
-);
-
--- Insert/Update/Delete: owner or band admin/owner only
--- (similar patterns, checking ownership or band role)
-```
-
-**Critical RLS principle:** Every table has RLS enabled. No table is accessible without a policy. Server-side code uses the user's session (not service role) so RLS is always enforced.
-
-## SvelteKit File Structure
-
-```
-src/
-  app.d.ts                    # Type augmentation (Locals, PageData)
-  app.html                    # HTML shell
-  hooks.server.ts             # Auth middleware (Supabase session)
-
-  lib/
-    supabase/
-      client.ts               # Browser Supabase client (singleton)
-      server.ts               # Server Supabase client factory
-      types.ts                # Generated DB types (supabase gen types)
-
-    components/
-      ui/                     # Generic UI (Button, Input, Modal, Toast)
-      songs/                  # Song-related (SongRow, SongForm)
-      setlists/               # Setlist-related (SetlistCard, SetlistSongItem)
-      dnd/                    # Drag-and-drop primitives (DragList, DragItem)
-
-    stores/                   # Svelte 5 shared state (if needed beyond page scope)
-    utils/
-      time.ts                 # Duration formatting (seconds -> "3:45")
-      validators.ts           # Input validation helpers
-
-  routes/
-    +layout.svelte            # Root layout (nav, auth state)
-    +layout.server.ts         # Load session, pass to client
-
-    (app)/                    # Route group: authenticated pages
-      +layout.svelte          # Auth guard layout (redirect if not logged in)
-      +layout.server.ts       # Verify session, redirect to /login if missing
-
-      songs/
-        +page.svelte          # Song library list
-        +page.server.ts       # Load songs, handle add/edit/delete actions
-
-      setlists/
-        +page.svelte          # Setlist list view
-        +page.server.ts       # Load setlists, handle create action
-
-        [id]/
-          +page.svelte        # Setlist builder (DnD, running time)
-          +page.server.ts     # Load setlist + songs, handle reorder/add/remove
-
-      bands/
-        +page.svelte          # Band management
-        +page.server.ts       # Load bands, handle create/invite
-
-        [id]/
-          +page.svelte        # Band detail (members, shared songs/setlists)
-          +page.server.ts     # Load band data
-
-    (public)/                 # Route group: no auth required
-      login/
-        +page.svelte          # Login page (Google OAuth button)
-        +page.server.ts       # Redirect if already logged in
-
-      s/[share_id]/
-        +page.svelte          # Public read-only setlist view
-        +page.server.ts       # Load setlist by share_id (RLS: is_public=true)
-
-    auth/
-      callback/
-        +server.ts            # OAuth callback handler (exchange code for session)
-```
-
-### Route Group Rationale
-
-**`(app)/`** groups all authenticated routes under a single layout that checks for a valid session and redirects to login if missing. This avoids repeating auth checks in every page's server load.
-
-**`(public)/`** groups unauthenticated routes. The login page and public share links live here. No auth guard in this layout.
-
-**`auth/callback/`** is a server-only route (`+server.ts`, no page) that handles the OAuth redirect from Supabase/Google.
 
 ## Patterns to Follow
 
-### Pattern 1: Supabase Auth via hooks.server.ts
+### Pattern 1: Custom Fixtures Over Global Setup
 
-**What:** Initialize Supabase server client in the hooks, attach to `event.locals`, refresh session cookies automatically.
+**What:** Extend Playwright's `test` object with custom fixtures instead of using `globalSetup`/`globalTeardown`.
 
-**When:** Every server-side request.
+**When:** Always. Every test that needs auth or test data.
 
-**Example:**
+**Why:** Fixtures provide per-worker isolation, automatic cleanup on failure, and composability. Global setup creates shared state that breaks parallel execution.
 
 ```typescript
-// src/hooks.server.ts
-import { createServerClient } from '@supabase/ssr';
-import type { Handle } from '@sveltejs/kit';
+// tests/fixtures.ts
+import { test as base, type Page } from '@playwright/test';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { faker } from '@faker-js/faker';
 
-export const handle: Handle = async ({ event, resolve }) => {
-  event.locals.supabase = createServerClient(
-    PUBLIC_SUPABASE_URL,
-    PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll: () => event.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            event.cookies.set(name, value, { ...options, path: '/' });
-          });
+type TestUser = { id: string; email: string; password: string };
+type TestFixtures = {
+  adminClient: SupabaseClient;
+  testUser: TestUser;
+  authenticatedPage: Page;
+};
+
+export const test = base.extend<TestFixtures>({
+  adminClient: async ({}, use) => {
+    const client = createClient(
+      process.env.PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    await use(client);
+  },
+
+  testUser: async ({ adminClient }, use, testInfo) => {
+    const email = `test-w${testInfo.workerIndex}-${Date.now()}@test.local`;
+    const password = faker.internet.password({ length: 20 });
+    const { data, error } = await adminClient.auth.admin.createUser({
+      email, password, email_confirm: true,
+    });
+    if (error) throw new Error(`Failed to create test user: ${error.message}`);
+
+    await use({ id: data.user.id, email, password });
+
+    // Teardown: delete user, FK cascades clean related data
+    await adminClient.auth.admin.deleteUser(data.user.id);
+  },
+
+  authenticatedPage: async ({ page, testUser }, use) => {
+    // Sign in via REST API
+    const res = await page.request.post(
+      `${process.env.PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      {
+        headers: {
+          'apikey': process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+          'Content-Type': 'application/json',
         },
-      },
-    }
-  );
+        data: { email: testUser.email, password: testUser.password },
+      }
+    );
+    const session = await res.json();
 
-  event.locals.safeGetSession = async () => {
-    const { data: { session } } = await event.locals.supabase.auth.getSession();
-    if (!session) return { session: null, user: null };
+    // Inject session into browser
+    const projectRef = new URL(process.env.PUBLIC_SUPABASE_URL!).hostname.split('.')[0];
+    await page.goto('/');
+    await page.evaluate(({ session, projectRef }) => {
+      localStorage.setItem(
+        `sb-${projectRef}-auth-token`,
+        JSON.stringify(session)
+      );
+    }, { session, projectRef });
+    await page.reload();
 
-    const { data: { user }, error } = await event.locals.supabase.auth.getUser();
-    if (error) return { session: null, user: null };
-    return { session, user };
+    // Verify auth took effect
+    await page.waitForURL(/\/(dashboard|songs|setlists|bands)/);
+
+    await use(page);
+  },
+});
+
+export { expect } from '@playwright/test';
+```
+
+### Pattern 2: Data Factories via Service Role
+
+**What:** Create test data directly in Supabase using the service role client (bypasses RLS) rather than clicking through the UI.
+
+**When:** Any test that needs pre-existing data (songs, setlists, bands).
+
+**Why:** Creating data via UI is slow and fragile. Service role inserts are fast and deterministic.
+
+```typescript
+// tests/helpers/data.ts
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { faker } from '@faker-js/faker';
+
+export async function createSong(client: SupabaseClient, userId: string, overrides = {}) {
+  const song = {
+    user_id: userId,
+    title: faker.music.songName(),
+    duration_seconds: faker.number.int({ min: 120, max: 360 }),
+    notes: null,
+    ...overrides,
   };
-
-  return resolve(event, {
-    filterSerializedResponseHeaders(name) {
-      return name === 'content-range' || name === 'x-supabase-api-version';
-    },
-  });
-};
-```
-
-**Why `safeGetSession` over `getSession`:** `getSession()` reads from the JWT without verifying it with the Supabase server. `getUser()` actually verifies the token. For server-side auth checks, always verify with `getUser()`.
-
-### Pattern 2: Optimistic DnD with Debounced Persist
-
-**What:** Update UI immediately on drag, batch-save position changes to DB after a short delay.
-
-**When:** Any reorder interaction in the setlist builder.
-
-**Example:**
-
-```typescript
-// In setlist builder +page.svelte
-let songs = $state<SetlistSong[]>(data.songs); // from server load
-let saveTimeout: ReturnType<typeof setTimeout>;
-
-function handleReorder(fromIndex: number, toIndex: number) {
-  // Optimistic: reorder immediately in local state
-  const item = songs.splice(fromIndex, 1)[0];
-  songs.splice(toIndex, 0, item);
-
-  // Debounce: save after 500ms of no more drags
-  clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(() => persistOrder(), 500);
+  const { data, error } = await client.from('songs').insert(song).select().single();
+  if (error) throw new Error(`Failed to create song: ${error.message}`);
+  return data;
 }
 
-async function persistOrder() {
-  const orderedIds = songs.map((s) => s.id);
-  const response = await fetch(`/setlists/${setlistId}?/reorder`, {
-    method: 'POST',
-    body: JSON.stringify({ order: orderedIds }),
-  });
-  if (!response.ok) {
-    // Revert to server state
-    songs = structuredClone(data.songs);
-    // Show error toast
+export async function createSetlist(client: SupabaseClient, userId: string, overrides = {}) {
+  const setlist = {
+    user_id: userId,
+    name: `Test Setlist ${faker.music.genre()}`,
+    ...overrides,
+  };
+  const { data, error } = await client.from('setlists').insert(setlist).select().single();
+  if (error) throw new Error(`Failed to create setlist: ${error.message}`);
+  return data;
+}
+
+export async function createBandWithMember(
+  client: SupabaseClient,
+  ownerId: string,
+  bandName?: string
+) {
+  const { data: band, error: bandError } = await client
+    .from('bands')
+    .insert({ name: bandName || faker.company.name(), owner_id: ownerId })
+    .select()
+    .single();
+  if (bandError) throw new Error(`Failed to create band: ${bandError.message}`);
+
+  const { error: memberError } = await client
+    .from('band_members')
+    .insert({ band_id: band.id, user_id: ownerId, role: 'owner' });
+  if (memberError) throw new Error(`Failed to add owner as member: ${memberError.message}`);
+
+  return band;
+}
+```
+
+### Pattern 3: Manual Pointer Events for DnD
+
+**What:** Use `page.mouse` API to simulate drag-and-drop instead of `locator.dragTo()`.
+
+**When:** Any test involving svelte-dnd-action reordering.
+
+```typescript
+// tests/helpers/dnd.ts
+import type { Locator, Page } from '@playwright/test';
+
+export async function dragAndDrop(
+  page: Page,
+  source: Locator,
+  target: Locator,
+  options: { steps?: number; pauseMs?: number } = {}
+) {
+  const { steps = 10, pauseMs = 50 } = options;
+
+  const sourceBox = await source.boundingBox();
+  const targetBox = await target.boundingBox();
+  if (!sourceBox || !targetBox) {
+    throw new Error('Source or target element not visible');
   }
+
+  const srcX = sourceBox.x + sourceBox.width / 2;
+  const srcY = sourceBox.y + sourceBox.height / 2;
+  const tgtX = targetBox.x + targetBox.width / 2;
+  const tgtY = targetBox.y + targetBox.height / 2;
+
+  // Move to source, press, wait for drag detection threshold
+  await page.mouse.move(srcX, srcY);
+  await page.mouse.down();
+  await page.waitForTimeout(pauseMs); // Allow svelte-dnd-action to detect drag start
+
+  // Move to target with intermediate steps
+  await page.mouse.move(tgtX, tgtY, { steps });
+
+  await page.waitForTimeout(pauseMs); // Allow drop animation
+  await page.mouse.up();
 }
 ```
 
-### Pattern 3: Server-Side Form Actions for Mutations
+### Pattern 4: Test Spec Structure
 
-**What:** Use SvelteKit form actions (`+page.server.ts` `actions`) for all data mutations (create, update, delete). Not API routes.
-
-**When:** Any data write operation.
-
-**Why:** Form actions work with progressive enhancement (no JS), integrate with SvelteKit's invalidation system (data refreshes automatically after action), and keep mutation logic on the server where RLS is enforced.
+**What:** Import custom `test` from fixtures, not from `@playwright/test` directly.
 
 ```typescript
-// src/routes/(app)/songs/+page.server.ts
-export const actions = {
-  create: async ({ request, locals }) => {
-    const form = await request.formData();
-    const name = form.get('name') as string;
-    const duration = parseInt(form.get('duration') as string);
+// tests/e2e/songs.spec.ts
+import { test, expect } from '../fixtures';
 
-    const { error } = await locals.supabase
-      .from('songs')
-      .insert({ name, duration_seconds: duration, owner_id: locals.session.user.id });
+test.describe('Song Library', () => {
+  test('can create a new song', async ({ authenticatedPage: page }) => {
+    await page.goto('/songs/new');
+    await page.getByLabel('Title').fill('Test Song');
+    await page.getByLabel('Duration').fill('3:45');
+    await page.getByRole('button', { name: 'Save' }).click();
 
-    if (error) return fail(400, { error: error.message });
-    return { success: true };
-  },
+    // Should redirect to songs list
+    await expect(page).toHaveURL('/songs');
+    await expect(page.getByText('Test Song')).toBeVisible();
+  });
 
-  delete: async ({ request, locals }) => {
-    const form = await request.formData();
-    const id = form.get('id') as string;
+  test('rejects empty title', async ({ authenticatedPage: page }) => {
+    await page.goto('/songs/new');
+    await page.getByRole('button', { name: 'Save' }).click();
 
-    const { error } = await locals.supabase
-      .from('songs')
-      .delete()
-      .eq('id', id);
-
-    if (error) return fail(400, { error: error.message });
-    return { success: true };
-  },
-};
+    // Should show validation error, not navigate away
+    await expect(page).toHaveURL('/songs/new');
+  });
+});
 ```
-
-### Pattern 4: Derived Time Calculation
-
-**What:** Compute running time totals as a derived value from the song list, not stored in the database.
-
-**When:** Displaying setlist duration.
-
-```typescript
-// Svelte 5 reactive derivation
-let songs = $state<SetlistSong[]>([]);
-
-let totalSeconds = $derived(
-  songs.reduce((sum, s) => sum + s.duration_seconds, 0)
-);
-
-let formattedTotal = $derived(formatDuration(totalSeconds));
-
-// Per-song running total for "cumulative time" column
-let runningTotals = $derived(
-  songs.reduce<number[]>((acc, s) => {
-    const prev = acc.length > 0 ? acc[acc.length - 1] : 0;
-    acc.push(prev + s.duration_seconds);
-    return acc;
-  }, [])
-);
-```
-
-**Why not store totals:** Duration is always derivable from song data. Storing it creates sync bugs. Calculating on the fly is instant for < 100 songs.
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Using Supabase Client Directly in Components for Writes
+### Anti-Pattern 1: Using Global Setup for Auth
 
-**What:** Importing the browser Supabase client and calling `.insert()` / `.update()` / `.delete()` directly from Svelte components.
+**What:** Creating a single test user in `globalSetup` and sharing credentials across all workers.
 
-**Why bad:** Bypasses SvelteKit's data invalidation. After a mutation, `data` from `+page.server.ts` is stale unless you manually re-fetch. Form actions automatically invalidate and re-run load functions. Also loses progressive enhancement.
+**Why bad:** All workers share one user's data. Tests interfere with each other. One test deletes a song another test needs. Parallel execution becomes impossible without explicit locking.
 
-**Instead:** Use SvelteKit form actions for mutations. Reserve the browser Supabase client for reads (if doing client-side filtering) or realtime subscriptions (future).
+**Instead:** Per-worker fixtures. Each worker gets its own user. Complete isolation.
 
-### Anti-Pattern 2: Storing Session in a Svelte Store
+### Anti-Pattern 2: Creating Data Through the UI
 
-**What:** Reading the Supabase session once and storing it in a global Svelte store.
+**What:** Every test starts by navigating to `/songs/new`, filling the form, saving, then navigating to the page it actually wants to test.
 
-**Why bad:** Session tokens expire. The store becomes stale. Auth state drifts from reality.
+**Why bad:** Slow (full page loads + form interactions for setup), fragile (if the create form breaks, all tests fail), and violates test isolation (one test's setup is another test's concern).
 
-**Instead:** Always get session from `+layout.server.ts` load function (runs on every navigation) and pass it down through SvelteKit's data loading. The `hooks.server.ts` refreshes the cookie-based session on every request.
+**Instead:** Use data factories via service role client to insert directly. Only test the UI for the specific interaction under test.
 
-### Anti-Pattern 3: Fractional Indexing for Song Order
+### Anti-Pattern 3: Using `page.waitForTimeout()` for Synchronization
 
-**What:** Using float/decimal positions (1.0, 1.5, 1.75) to avoid renumbering on reorder.
+**What:** Adding `await page.waitForTimeout(1000)` after actions to "wait for things to settle."
 
-**Why bad:** Overkill for setlists (max ~40-50 songs). Creates precision issues over many reorders. Adds complexity. Fractional indexing is for collaborative real-time editors with thousands of items.
+**Why bad:** Either too long (slow tests) or too short (flaky on CI). Playwright's auto-waiting locators handle this correctly.
 
-**Instead:** Integer positions. Renumber all positions in a single UPDATE statement on reorder. Wrap in a transaction.
+**Instead:** Use `await expect(locator).toBeVisible()`, `await page.waitForURL()`, or `await expect(locator).toHaveText()`. These auto-retry until the condition is met or timeout.
 
-### Anti-Pattern 4: Creating API Routes Instead of Form Actions
+### Anti-Pattern 4: Testing Supabase Internals via E2E
 
-**What:** Building `/api/songs` REST endpoints instead of using SvelteKit's form actions.
+**What:** Writing Playwright tests to verify RLS policies by trying SQL queries through the browser console.
 
-**Why bad:** Duplicates work SvelteKit already handles. Loses automatic data invalidation, progressive enhancement, and type-safe form handling.
+**Why bad:** E2E tests the wrong layer for database policies. Failures are ambiguous (is it RLS? routing? auth? rendering?).
 
-**Instead:** Use form actions for mutations triggered by user interaction. Only create `+server.ts` API routes for webhook callbacks (like the auth callback) or endpoints consumed by external clients.
+**Instead:** Test application behavior: "When User A navigates to User B's band URL, they see a 404 or redirect." Use pgTAP for direct RLS policy unit tests.
 
-## Supabase Client Architecture
+### Anti-Pattern 5: Hardcoded Test Data
 
-### Two-Client Pattern
+**What:** Every test uses `email: 'test@test.com'`, `songName: 'My Song'`.
 
-The `@supabase/ssr` package provides the pattern for SvelteKit:
+**Why bad:** Parallel workers collide on unique constraints. Tests depend on execution order. Leftover data from failed runs causes cascading failures.
 
-**Server Client** (in `hooks.server.ts`, `+page.server.ts`, `+layout.server.ts`):
-- Created per-request (not singleton)
-- Uses cookies for session (cookie-based auth)
-- Has access to the user's JWT for RLS
-- Used for all server-side data loading and mutations
+**Instead:** Use faker for unique data. Include worker index and timestamp in emails.
 
-**Browser Client** (in `.svelte` components):
-- Singleton, created once
-- Uses cookies for session (same cookies as server)
-- Needed for: auth state listeners (`onAuthStateChange`), potential realtime subscriptions
-- NOT for mutations (use form actions instead)
-
-### Type Generation
-
-```bash
-npx supabase gen types typescript --project-id <project-id> > src/lib/supabase/types.ts
-```
-
-This generates TypeScript types from the Postgres schema. Import and pass to `createClient<Database>()` for end-to-end type safety on all queries.
-
-## Scalability Considerations
-
-| Concern | At 100 users | At 10K users | At 1M users |
-|---------|--------------|--------------|-------------|
-| **Database** | Supabase free tier is fine | Supabase Pro, add indexes on `band_id`, `owner_id` | Connection pooling, read replicas, consider edge functions |
-| **Auth** | Supabase handles it | Supabase handles it | Supabase handles it (built for scale) |
-| **DnD state sync** | Debounced saves, no issues | Same pattern, no issues | Same pattern, add optimistic locking (updated_at check) |
-| **Public share links** | Direct DB query | Add CDN caching headers on public pages | Cache at CDN layer, stale-while-revalidate |
-| **Band queries (RLS)** | RLS subqueries are fine | Ensure `band_members` has composite index | Materialize user-band access as a join table with index |
-
-Scaling is not a v1 concern. Supabase + Netlify handle the first 10K users without architecture changes.
-
-## Suggested Build Order
-
-The architecture implies this dependency chain:
+## File Structure
 
 ```
-1. Supabase Project + Auth Setup
-   (everything depends on having a database and auth)
-   |
-   v
-2. Auth Flow (hooks.server.ts, login, callback, session)
-   (all authenticated features depend on this)
-   |
-   +-----+-----+
-   |           |
-   v           v
-3. Song       4. Band
-   Library       Management
-   (CRUD)        (create, invite, members)
-   |              |
-   +------+------+
-          |
-          v
-5. Setlist Builder
-   (depends on songs existing + optional band context)
-   |
-   v
-6. Drag-and-Drop + Time Calculation
-   (UI layer on top of setlist data)
-   |
-   v
-7. Public Share Links
-   (depends on setlists existing)
+project-root/
+  playwright.config.ts         # Playwright config
+  .env.test                    # Test env vars (gitignored)
+  tests/
+    fixtures.ts                # Custom test fixtures
+    helpers/
+      auth.ts                  # Auth helpers
+      data.ts                  # Data factories
+      dnd.ts                   # DnD helper
+      cleanup.ts               # Cleanup utilities
+    e2e/
+      auth.spec.ts             # Auth redirect tests
+      songs.spec.ts            # Song CRUD tests
+      setlists.spec.ts         # Setlist builder tests
+      bands.spec.ts            # Band workspace tests
+      band-invite.spec.ts      # Multi-user invite flow
+      share.spec.ts            # Public share link tests
 ```
-
-**Rationale:**
-- Auth is foundational -- everything behind login needs it
-- Songs before setlists (setlists contain songs)
-- Band management can parallel song library (independent CRUD)
-- DnD is a UI enhancement on top of working setlist data
-- Public sharing is the last feature (needs complete setlists to share)
 
 ## Sources
 
-- SvelteKit documentation (file-based routing, form actions, hooks, layouts) -- training data, HIGH confidence
-- Supabase SSR documentation (`@supabase/ssr` package pattern) -- training data, MEDIUM confidence
-- Supabase RLS documentation (policy patterns for multi-tenant) -- training data, MEDIUM confidence
-- Svelte 5 runes (`$state`, `$derived`) -- training data, HIGH confidence
-- Common drag-and-drop architectural patterns -- training data, MEDIUM confidence
-
-**Note:** Web search was unavailable during this research. The `@supabase/ssr` integration pattern and SvelteKit hooks patterns should be verified against current Supabase docs before implementation. The core architecture (RLS, form actions, optimistic DnD) is well-established and HIGH confidence.
-
----
-
-*Architecture research: 2026-02-17*
+- [Playwright Test Fixtures](https://playwright.dev/docs/test-fixtures) -- Custom fixture patterns
+- [Playwright Auth](https://playwright.dev/docs/auth) -- Session injection, storageState
+- [Playwright Actions](https://playwright.dev/docs/input) -- Mouse actions for DnD
+- [Supabase Admin API](https://supabase.com/docs/reference/javascript/auth-admin-createuser) -- User management
+- [Playwright Parallelism](https://playwright.dev/docs/test-parallel) -- Worker isolation model
+- App source: `src/hooks.server.ts`, `src/routes/auth/`, `src/lib/types/database.ts`

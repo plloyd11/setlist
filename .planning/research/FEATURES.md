@@ -1,120 +1,108 @@
-# Feature Landscape
+# Feature Landscape: Playwright E2E Test Suite
 
-**Domain:** Setlist management web app for bands/musicians
-**Researched:** 2026-02-17
-**Confidence:** MEDIUM (based on training data knowledge of competitors; web verification was unavailable)
-
-## Competitive Landscape
-
-Competitors fall into three tiers:
-
-1. **Heavy-duty band management** (BandHelper, OnSong) -- native mobile apps, $10-20/month, deep feature sets including chord charts, lyrics, MIDI control, audio playback, calendar scheduling. Overkill for "I just need to plan my set timing."
-2. **Community/archival** (Setlist.fm) -- crowd-sourced concert setlist database. Not a planning tool at all; users record what was played, not plan what will be played.
-3. **Lightweight planning** (SetlistHelper, various spreadsheet templates) -- closer to our space but typically single-user, no real-time collaboration, limited sharing.
-
-**Our gap:** A modern, collaborative, web-first setlist builder focused on timing. No native app install. No $15/month subscription for features you don't need. Share a link, see the clock, nail the set.
+**Domain:** E2E testing for SvelteKit setlist-builder app
+**Researched:** 2026-03-02
+**Confidence:** HIGH (Playwright docs are authoritative; app structure verified from source)
 
 ## Table Stakes
 
-Features users expect. Missing any of these and the app feels broken.
+Tests every E2E suite for this app must include. Missing any of these means the suite provides false confidence.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Song library (name, artist, duration) | Every competitor has this. It's the fundamental data unit. | Low | Minimum viable fields: title, duration. Artist and key are near-table-stakes. |
-| Create/edit setlists from song library | Core product loop. Drag songs into a setlist. | Medium | Needs drag-and-drop reordering. |
-| Running time calculation | This is literally the core value prop. Users need to see "Set 1: 47 min" updating live as they add/remove/reorder. | Low | Sum of durations + optional break/transition times. |
-| Multiple setlists | Bands play multiple gigs. One setlist per account is useless. | Low | Basic CRUD. |
-| Multi-set support (Set 1, Set 2, etc.) | Most gigs have 2-3 sets with breaks. A single flat list doesn't model reality. | Medium | Sets within a setlist, each with its own running time + a total. |
-| User accounts with authentication | Multi-user platform requirement. | Medium | Google OAuth via Supabase is already planned. |
-| Share setlist via link | Band leaders share setlists with members. This is the minimum collaboration. | Low | Read-only public/unlisted link. |
-| Mobile-responsive design | Musicians use phones at gigs and rehearsals. Desktop-only is a dealbreaker. | Medium | Not a native app, but must be fully usable on phone screens. |
-| Search/filter song library | Once a library hits 50+ songs, browsing is painful. | Low | Search by title at minimum. Filter by key/genre is nice-to-have. |
-| Duplicate a setlist | "Copy last week's setlist and tweak it" is the #1 workflow. | Low | Clone operation. |
+| **Auth bypass infrastructure** | Google OAuth cannot be automated. Every test depends on authenticated state. | Med | Playwright fixtures create test users via Supabase admin API, sign in via REST, inject session into browser localStorage. |
+| **Route protection smoke tests** | 12+ server routes redirect unauthenticated users to `/auth`. Must verify this works. | Low | Quick loop over all `(app)/*` routes asserting redirect. High value per line of test code. |
+| **Song CRUD journey** | Core feature: create song, verify in list, delete it | Med | Tests `/songs/new` form, `/songs` list, inline delete. Verify form validation (empty title rejected). |
+| **Setlist CRUD journey** | Core feature: create setlist, add songs, verify detail page | Med | Tests `/setlists` create + `/setlists/[id]` detail. Verify redirect to new setlist after creation. |
+| **Public share link** | The one truly public feature. Must work without auth. | Low | Test valid token shows setlist data, invalid token shows 404. No auth dependency. |
+| **Test data seeding and cleanup** | Each test needs predictable state; leftover data causes flakiness | High | Playwright fixtures with Supabase admin API. Per-worker isolation. FK cascade cleanup. |
+| **CI pipeline configuration** | Tests must run headless in CI without manual intervention | Low | `playwright.config.ts` with `webServer`, GitHub Actions workflow. |
 
 ## Differentiators
 
-Features that set the product apart. Not expected, but create "oh nice" moments.
+Tests that go beyond basic coverage. Add after table stakes pass reliably.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Real-time collaborative editing | Multiple band members edit the same setlist simultaneously. BandHelper supports sync but not real-time co-editing. Web-native advantage. | High | Supabase Realtime or similar. Big lift but huge differentiator. |
-| Transition/changeover time between songs | Account for tuning, talking to audience, instrument swaps. Most tools only sum song durations, ignoring the 1-2 min between songs that adds up fast. | Low | Per-song or global default transition time. Adds to running total. |
-| Target time with over/under indicator | "We have a 90-minute slot." Show +5:00 or -3:00 vs target. Visual red/green. BandHelper has this; most lightweight tools do not. | Low | Simple math but high UX value. Turns the app from "calculator" to "planning tool." |
-| Band/group workspaces | Shared song library and setlists within a band. A musician in multiple bands sees each band's library separately. | High | Multi-tenancy model. Core to the collaboration story. |
-| Setlist templates | Save a setlist structure (e.g., "opener, 3 uptempo, ballad, closer") without specific songs. Fill in songs later. | Medium | Template system with slot types. |
-| Gig association | Attach a setlist to a date/venue. See history: "What did we play at The Blue Note on Jan 15?" | Medium | Lightweight event model. Useful for avoiding repeats at the same venue. |
-| Song notes/annotations | Per-song notes visible in the setlist: "capo 3", "start quiet", "skip bridge." | Low | Text field per setlist-song entry (not per song globally -- notes change per gig). |
-| Print/export view | Clean printable PDF or shareable image of the setlist. Musicians tape setlists to monitors. | Medium | Server-side PDF generation or print-optimized CSS. |
-| Drag-and-drop between sets | Move a song from Set 1 to Set 2 with drag-and-drop, seeing both timings update live. | Medium | Cross-container DnD. Most competitors only support reorder within a single list. |
-| Key and tempo metadata | Store key (e.g., "Am") and BPM per song. Filter library by key to avoid three songs in a row in the same key. | Low | Additional song fields. Useful for set flow planning. |
-| Song energy/mood tagging | Tag songs as "high energy", "ballad", "mid-tempo." Visualize the energy arc of a setlist. | Medium | Tagging system + visual arc display. Helps plan set dynamics. |
-| Offline support (PWA) | Musicians are in basements and bars with bad wifi. PWA with service worker caching. | High | Service worker, IndexedDB sync. Significant complexity but real-world necessity for gig use. |
-| Import songs from Spotify/Apple Music | Auto-populate song library with title, duration, key, tempo from streaming metadata. | Medium | API integration. Spotify Web API has duration_ms and audio features (key, tempo). Saves manual entry. |
-| Setlist history/versioning | See previous versions of a setlist. Undo "who deleted that song?" | Medium | Version snapshots or event log. |
+| **Drag-and-drop setlist reordering** | Validates the core UX interaction | High | Custom `page.mouse` helper needed for svelte-dnd-action. Cannot use `locator.dragTo()`. |
+| **Multi-user band collaboration** | User A creates band, invites User B, both see shared data | High | Two separate browser contexts with different auth states. Most complex test scenario. |
+| **Band RLS isolation** | User A cannot see User B's band data even via direct URL | Med | Prevents regression of commit `5391100` RLS fix. Critical security test. |
+| **Setlist timing calculations** | Add songs with known durations, verify total time display | Med | Tests the computed `$derived` display -- the app's core value proposition. |
+| **Band member management** | Invite, verify member list, remove member | Med | Tests `/bands/[id]/members` actions and redirect flows. |
+| **Responsive viewport testing** | Key flows at mobile (375px) and desktop (1280px) | Med | Verify BottomNav on mobile, Sidebar on desktop. Playwright device profiles. |
+| **Dark/light theme rendering** | Both color schemes render without broken contrast | Low | Playwright `colorScheme` emulation. Quick smoke test. |
+| **Form validation edge cases** | Empty submissions, invalid data, duplicate entries | Med | Tests error messages appear and no server errors on bad input. |
 
 ## Anti-Features
 
-Features to explicitly NOT build. These are scope traps or misaligned with the product.
+Tests to explicitly NOT build.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| Chord charts / lyrics display | This is OnSong's entire product. Building it means competing with a mature, well-funded tool on their home turf. It also bloats scope massively (transposition, formatting, ChordPro parsing). | Link out to external chord/lyric sources. Maybe store a URL per song. |
-| MIDI/audio integration | BandHelper does MIDI program changes, backing track playback, click tracks. This is pro-audio territory requiring native app capabilities. | Stay web-focused. A web app cannot reliably send MIDI or sync audio playback. |
-| Calendar/scheduling | Band scheduling (rehearsals, gigs, availability) is a different product. BandHelper bundles it, but it's a whole separate domain. | Gig association (date + venue on a setlist) is enough. For scheduling, users have Google Calendar. |
-| Social features / public profiles | Setlist.fm is the social setlist network. Building community features dilutes focus and requires moderation infrastructure. | Share-via-link is sufficient. No need for followers, comments, or public discovery. |
-| Payment/financial tracking | Some band tools track gig payments, splits, expenses. Totally different domain. | Out of scope. Bands use Splitwise or spreadsheets. |
-| Notation/sheet music rendering | Rendering musical notation is an enormous technical challenge (LilyPond, VexFlow). Not relevant to setlist planning. | Store key and tempo as simple text fields. |
-| Native mobile app | SvelteKit web app with good responsive design covers mobile use. Native apps mean maintaining iOS + Android codebases, app store approvals, and update cycles. | PWA for offline support if needed. Responsive web-first. |
-| Complex permissions/roles | "Admin can edit, member can view, guest can comment" -- role-based access is enterprise complexity. | Two levels only: owner (edit) and viewer (read-only via share link). Add band-member editing later as a single permission level. |
+| **Automating Google OAuth login** | Google blocks automated logins with CAPTCHA. Permanently flaky. Violates ToS. | Use service role API to create password-based test users. |
+| **Visual regression on every page** | Screenshot tests are brittle across OS/CI. Font rendering differences create constant noise. | Use `toHaveScreenshot()` on landing page and share page only. Assert element visibility for layout correctness. |
+| **Cross-browser matrix** | SvelteKit + Tailwind has excellent cross-browser compat. 3x browsers = 3x CI time for marginal value. | Run Chromium only. Add Firefox/WebKit only if users report browser-specific bugs. |
+| **Exhaustive RLS policy testing via Playwright** | RLS is a database concern. Playwright tests at the wrong layer. | Use pgTAP for RLS unit tests. In Playwright, test "user cannot see other user's data" at the application level. |
+| **100% page coverage** | 15+ pages x multiple states = 50+ tests. Diminishing returns after core flows. | Test user journeys (flows across pages), not individual pages. |
+| **E2E tests for pure logic** | Duration calculations, URL parsing are unit test territory. Too slow for E2E. | Write Vitest unit tests for utility functions. |
+| **Mocking Supabase responses** | Defeats the purpose of E2E testing. Tests should hit real backend. | Test against dedicated Supabase test project. |
 
 ## Feature Dependencies
 
 ```
-User accounts (auth) --> Song library --> Setlist creation --> Running time calc
-                                      --> Multi-set support --> Drag between sets
-                                      --> Share via link
-                     --> Band workspaces --> Shared song library
-                                         --> Collaborative editing
+Auth bypass infrastructure (fixtures + session injection)
+  --> ALL authenticated tests depend on this
+      --> Song CRUD journey
+      --> Setlist CRUD journey
+      --> Band workflow tests
+      --> Settings tests
+      --> Navigation tests
 
-Song library --> Search/filter
-            --> Import from Spotify
+Test data factories (Supabase admin API helpers)
+  --> Song CRUD (needs clean user state)
+  --> Setlist tests (needs songs to exist first)
+  --> Band tests (needs two users + band + membership records)
+  --> Share link tests (needs setlist with share_token)
+  --> Multi-user tests (needs two separate authenticated users)
+  --> RLS isolation tests (needs data owned by different users)
 
-Setlist creation --> Duplicate setlist
-                --> Setlist templates
-                --> Gig association --> Setlist history
-                --> Target time indicator
-                --> Transition times
-                --> Print/export
+Song CRUD tests
+  --> Setlist builder tests (setlists need songs)
+  --> Batch entry tests (variant of song creation)
 
-Song metadata (key, tempo, energy) --> Energy arc visualization
-                                   --> Filter by key
+Setlist CRUD tests
+  --> Share link tests (share_token generated from setlist)
+  --> DnD tests (needs setlist with 3+ songs)
+  --> Timing tests (needs songs with known durations)
+
+Band creation tests
+  --> Band invite flow (needs existing band)
+  --> Band member management (needs band with 2+ members)
+  --> Band songs/setlists (needs band context)
+  --> Band RLS isolation (needs two bands owned by different users)
 ```
 
-## MVP Recommendation
+## MVP Test Suite Recommendation
 
-Build these first (Phase 1-2):
+Build these first, in this order:
 
-1. **User accounts with Google OAuth** -- gate everything behind auth
-2. **Song library CRUD** -- title, artist, duration, key (optional)
-3. **Setlist creation with drag-and-drop reorder** -- the core interaction
-4. **Running time calculation** -- the core value prop, must be live-updating
-5. **Multi-set support** (Set 1, Set 2 with break) -- models real gigs
-6. **Target time with over/under indicator** -- low complexity, high value
-7. **Transition time (global default)** -- low complexity, fixes a real pain point
-8. **Share setlist via read-only link** -- minimum viable collaboration
-9. **Duplicate setlist** -- essential workflow shortcut
-10. **Mobile-responsive layout** -- not optional for musician users
+1. **Auth bypass infrastructure** -- Playwright fixtures with Supabase admin user creation. This is the foundation.
+2. **Route protection smoke tests** -- Quick wins: verify `(app)/*` routes redirect when unauthenticated. Low effort, high confidence.
+3. **Public share link tests** -- No auth dependency. Valid token (200 with data) and invalid token (404).
+4. **Song CRUD journey** -- Create song, verify in list, search, delete, verify removal. Covers forms, nav, persistence.
+5. **Setlist builder journey** -- Create setlist, add songs, verify timing, generate share link. Core product flow.
+6. **Band creation and invite flow** -- Create band, generate invite link. Most complex journey, most likely to regress.
 
-Defer to Phase 3+:
-
-- **Band workspaces** -- High complexity, requires multi-tenancy data model. Get single-user right first.
-- **Real-time collaborative editing** -- High complexity. Share links cover 80% of the need.
-- **Offline/PWA** -- High complexity. Validate the product works online first.
-- **Spotify import** -- Nice-to-have. Manual entry is fine for libraries under 100 songs.
-- **Energy arc visualization** -- Cool differentiator but not core.
-- **Print/export** -- Medium complexity, can use browser print in the meantime.
+**Defer:**
+- DnD reordering: Add after core flows pass. High complexity.
+- Multi-user collaboration: Add after single-user band flows are stable.
+- Responsive viewport tests: Verify manually first.
 
 ## Sources
 
-- Competitor analysis based on training data knowledge of BandHelper, OnSong, SetlistHelper, and Setlist.fm feature sets (MEDIUM confidence -- unable to verify against live sites during this research session)
-- Feature prioritization based on the stated core value prop: "see how long the set runs so they can nail timing for a show"
+- [Playwright Authentication Docs](https://playwright.dev/docs/auth) -- storageState pattern
+- [Playwright Browser Contexts](https://playwright.dev/docs/browser-contexts) -- multi-user testing
+- [Playwright Emulation Docs](https://playwright.dev/docs/emulation) -- viewport, colorScheme
+- [Supabase Testing Overview](https://supabase.com/docs/guides/local-development/testing/overview)
+- [svelte-dnd-action GitHub](https://github.com/isaacHagoel/svelte-dnd-action) -- Playwright compat notes
+- App source code analysis: `src/routes/`, `src/hooks.server.ts`, `src/lib/types/database.ts`
