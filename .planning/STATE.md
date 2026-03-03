@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 7 of 10 (Test Infrastructure)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-03 -- Completed 07-01-PLAN.md
+Last activity: 2026-03-03 -- Completed 07-02-PLAN.md
 
 Progress: [██████████████░░░░░░] 70% (phases 1-6 of 10 addressed)
 
@@ -29,9 +29,10 @@ Progress: [██████████████░░░░░░] 70% (ph
 - Total execution time: 5min
 
 **v1.2:**
-- Plans completed: 1
+- Plans completed: 2
 - 4 phases, 30 requirements
 - 07-01: 5min, 2 tasks, 6 files
+- 07-02: 3min, 2 tasks, 4 files
 
 ## Accumulated Context
 
@@ -45,6 +46,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - v1.2: Simple CRUD tests before DnD, multi-user tests last (complexity ordering)
 - v1.2: Email/password form always-visible (not test-only gated) for real functionality + test automation
 - v1.2: Removed !.env.test gitignore exception to prevent test secrets from being committed
+- v1.2: Cleanup operations warn but never throw -- stale data does not fail test runs
+- v1.2: Worker-scoped fixtures share one user per worker, auth via real UI login
 
 ### Pending Todos
 
@@ -58,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 07-01-PLAN.md (Playwright setup + auth form)
-Next step: Execute 07-02-PLAN.md
+Stopped at: Completed 07-02-PLAN.md (test helpers + fixtures)
+Next step: Execute 07-03-PLAN.md
