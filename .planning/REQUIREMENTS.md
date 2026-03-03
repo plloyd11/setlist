@@ -9,9 +9,9 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 
 ### Test Infrastructure
 
-- [ ] **INFRA-01**: Playwright is configured with SvelteKit dev server and project-level setup
+- [x] **INFRA-01**: Playwright is configured with SvelteKit dev server and project-level setup
 - [ ] **INFRA-02**: Test users are created via Supabase admin API with per-worker isolation
-- [ ] **INFRA-03**: Auth sessions are injected into browser via storageState (bypassing Google OAuth)
+- [x] **INFRA-03**: Auth sessions are injected into browser via storageState (bypassing Google OAuth)
 - [ ] **INFRA-04**: Test data factories can programmatically create songs, setlists, and bands
 - [ ] **INFRA-05**: Test cleanup deletes user and cascades all related data after each worker
 
@@ -84,9 +84,9 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | Phase 7 | Pending |
+| INFRA-01 | Phase 7 | Complete |
 | INFRA-02 | Phase 7 | Pending |
-| INFRA-03 | Phase 7 | Pending |
+| INFRA-03 | Phase 7 | Complete |
 | INFRA-04 | Phase 7 | Pending |
 | INFRA-05 | Phase 7 | Pending |
 | AUTH-01 | Phase 8 | Pending |
