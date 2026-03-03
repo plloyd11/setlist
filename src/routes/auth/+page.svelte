@@ -1,18 +1,22 @@
 <script lang="ts">
 	import { page } from '$app/state';
 
-	let error = $state('');
+	let error = $state(page.url.searchParams.get('error') === 'auth_exchange_failed'
+		? 'Sign in failed. Please try again.'
+		: '');
 
 	const signInWithGoogle = async () => {
 		error = '';
+		// Store redirect target in a cookie so it survives the OAuth round-trip
+		// (query params on the callback URL can be stripped by Supabase)
 		const redirectParam = page.url.searchParams.get('redirect');
-		const callbackUrl = redirectParam
-			? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectParam)}`
-			: `${window.location.origin}/auth/callback`;
+		if (redirectParam) {
+			document.cookie = `auth_redirect=${encodeURIComponent(redirectParam)};path=/;max-age=600;SameSite=Lax`;
+		}
 		const { error: authError } = await page.data.supabase.auth.signInWithOAuth({
 			provider: 'google',
 			options: {
-				redirectTo: callbackUrl
+				redirectTo: `${window.location.origin}/auth/callback`
 			}
 		});
 		if (authError) {
