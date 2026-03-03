@@ -80,11 +80,12 @@ Plans:
   2. A test can create a unique user via Supabase admin API and authenticate as that user in the browser without Google OAuth
   3. A test can programmatically create songs, setlists, and bands via factory helpers
   4. After a test worker completes, the test user and all associated data are deleted from the database
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
+- [ ] 07-01-PLAN.md -- Install Playwright, config, and email/password auth form
+- [ ] 07-02-PLAN.md -- Supabase admin client, worker fixtures, auth helpers, and cleanup
+- [ ] 07-03-PLAN.md -- Factory functions, cleanup script, and smoke test
 
 ### Phase 8: Auth & Song Library Tests
 **Goal**: Every auth flow and song library operation has automated test coverage that catches regressions
@@ -147,7 +148,7 @@ Phases execute in numeric order: 7 -> 8 -> 9 -> 10
 | 4. Band Workspaces | v1.0 | 5/5 | Complete | 2026-02-22 |
 | 5. Landing Page Structure | v1.1 | 2/3 | In progress | - |
 | 6. Three.js Hero & Scroll Animations | v1.1 | 0/? | Not started | - |
-| 7. Test Infrastructure | v1.2 | 0/? | Not started | - |
+| 7. Test Infrastructure | v1.2 | 0/3 | Not started | - |
 | 8. Auth & Song Library Tests | v1.2 | 0/? | Not started | - |
 | 9. Setlist Builder Tests | v1.2 | 0/? | Not started | - |
 | 10. Band & Multi-User Tests | v1.2 | 0/? | Not started | - |
