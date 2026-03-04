@@ -97,11 +97,11 @@ Plans:
   3. A logged-in user can log out and is redirected to the landing page
   4. Tests exercise the full song lifecycle: add a song, verify it appears, edit its details, search/filter to find it, and delete it
   5. Batch song entry creates multiple songs in one action and all appear in the library
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 08-01: TBD
-- [ ] 08-02: TBD
+- [ ] 08-01-PLAN.md -- Auth flow E2E tests (redirect, access, session, sign-out)
+- [ ] 08-02-PLAN.md -- Song library E2E tests (add, edit, delete, search, batch)
 
 ### Phase 9: Setlist Builder Tests
 **Goal**: The core setlist-building workflow -- including drag-and-drop, live timing, and sharing -- has full automated coverage
