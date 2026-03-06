@@ -113,11 +113,12 @@ Plans:
   3. Setting a target time shows an over/under indicator, and setting transition time adjusts the total accordingly
   4. A test can duplicate, rename, and delete setlists and verify the changes persist
   5. A shared setlist is accessible via its public link to an unauthenticated browser
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 09-01: TBD
-- [ ] 09-02: TBD
+- [ ] 09-01-PLAN.md — DnD pointer event helper + drag-to-add and reorder tests (SETL-02, SETL-03)
+- [ ] 09-02-PLAN.md — Setlist create and management tests (SETL-01, SETL-07)
+- [ ] 09-03-PLAN.md — Timing updates, target over/under, transition gap, and sharing tests (SETL-04, SETL-05, SETL-06, SETL-08)
 
 ### Phase 10: Band & Multi-User Tests
 **Goal**: Band collaboration and data isolation are verified with multi-user scenarios using separate browser contexts
