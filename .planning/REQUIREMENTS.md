@@ -17,9 +17,9 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 
 ### Auth Tests
 
-- [ ] **AUTH-01**: Unauthenticated user visiting protected routes is redirected to login
-- [ ] **AUTH-02**: Authenticated user can access dashboard and all app routes
-- [ ] **AUTH-03**: User can log out and is redirected appropriately
+- [x] **AUTH-01**: Unauthenticated user visiting protected routes is redirected to login
+- [x] **AUTH-02**: Authenticated user can access dashboard and all app routes
+- [x] **AUTH-03**: User can log out and is redirected appropriately
 
 ### Song Library Tests
 
@@ -89,9 +89,9 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 | INFRA-03 | Phase 7 | Complete |
 | INFRA-04 | Phase 7 | Complete |
 | INFRA-05 | Phase 7 | Complete |
-| AUTH-01 | Phase 8 | Pending |
-| AUTH-02 | Phase 8 | Pending |
-| AUTH-03 | Phase 8 | Pending |
+| AUTH-01 | Phase 8 | Complete |
+| AUTH-02 | Phase 8 | Complete |
+| AUTH-03 | Phase 8 | Complete |
 | SONG-01 | Phase 8 | Pending |
 | SONG-02 | Phase 8 | Pending |
 | SONG-03 | Phase 8 | Pending |
