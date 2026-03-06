@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 8 of 10 (Auth & Song Library Tests)
-Plan: 1 of 2 in current phase
-Status: In Progress
-Last activity: 2026-03-05 -- Completed 08-01-PLAN.md
+Plan: 2 of 2 in current phase (COMPLETE)
+Status: Phase Complete
+Last activity: 2026-03-06 -- Completed 08-02-PLAN.md
 
-Progress: [███████████████░░░░░] 75% (phases 1-7 of 10 addressed)
+Progress: [████████████████░░░░] 80% (phases 1-8 of 10 addressed)
 
 ## Performance Metrics
 
@@ -29,12 +29,13 @@ Progress: [███████████████░░░░░] 75% (ph
 - Total execution time: 5min
 
 **v1.2:**
-- Plans completed: 4
+- Plans completed: 5
 - 4 phases, 30 requirements
 - 07-01: 5min, 2 tasks, 6 files
 - 07-02: 3min, 2 tasks, 4 files
 - 07-03: 2min, 2 tasks, 3 files
 - 08-01: 1min, 1 task, 1 file
+- 08-02: 1min, 1 task, 1 file
 
 ## Accumulated Context
 
@@ -53,6 +54,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - v1.2: Factories navigate browser to created item after insertion
 - v1.2: Cleanup script deletes bands before users due to RESTRICT constraint on owner_id
 - v1.2: Extended timeout (10s) for sign-out redirect assertions to handle async auth invalidation
+- v1.2: HTML5 validation tested via URL assertion rather than inspecting validation messages
+- v1.2: Edit mode locators use hardcoded placeholder values from SongRow.svelte
 
 ### Pending Todos
 
@@ -65,6 +68,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-05
-Stopped at: Completed 08-01-PLAN.md (auth E2E tests)
-Next step: Execute 08-02-PLAN.md (song library tests)
+Last session: 2026-03-06
+Stopped at: Completed 08-02-PLAN.md (song library E2E tests)
+Next step: Begin Phase 09 (setlist, band, DnD tests)

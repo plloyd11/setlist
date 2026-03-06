@@ -23,11 +23,11 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 
 ### Song Library Tests
 
-- [ ] **SONG-01**: User can add a song with name and duration
-- [ ] **SONG-02**: User can edit an existing song's details
-- [ ] **SONG-03**: User can delete a song from their library
-- [ ] **SONG-04**: User can search/filter songs by title
-- [ ] **SONG-05**: User can batch-add multiple songs
+- [x] **SONG-01**: User can add a song with name and duration
+- [x] **SONG-02**: User can edit an existing song's details
+- [x] **SONG-03**: User can delete a song from their library
+- [x] **SONG-04**: User can search/filter songs by title
+- [x] **SONG-05**: User can batch-add multiple songs
 
 ### Setlist Builder Tests
 
@@ -92,11 +92,11 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 | AUTH-01 | Phase 8 | Complete |
 | AUTH-02 | Phase 8 | Complete |
 | AUTH-03 | Phase 8 | Complete |
-| SONG-01 | Phase 8 | Pending |
-| SONG-02 | Phase 8 | Pending |
-| SONG-03 | Phase 8 | Pending |
-| SONG-04 | Phase 8 | Pending |
-| SONG-05 | Phase 8 | Pending |
+| SONG-01 | Phase 8 | Complete |
+| SONG-02 | Phase 8 | Complete |
+| SONG-03 | Phase 8 | Complete |
+| SONG-04 | Phase 8 | Complete |
+| SONG-05 | Phase 8 | Complete |
 | SETL-01 | Phase 9 | Pending |
 | SETL-02 | Phase 9 | Pending |
 | SETL-03 | Phase 9 | Pending |
