@@ -201,3 +201,151 @@ test.describe('Setlist DnD - Reorder Songs (SETL-03)', () => {
 		await safeDelete('songs', songB.id);
 	});
 });
+
+test.describe('Setlist - Timing Updates (SETL-04)', () => {
+	test('should show correct total time for songs in setlist', async ({ page, testUser }) => {
+		const setlist = await createSetlist(page, testUser.id, {
+			name: 'Timing Test',
+			transition_seconds: 0,
+			target_seconds: null
+		});
+		const song1 = await createSong(page, testUser.id, { title: 'Three Min', duration_seconds: 180 });
+		const song2 = await createSong(page, testUser.id, { title: 'Two Min', duration_seconds: 120 });
+
+		// Pre-populate setlist via admin
+		await adminClient.from('setlist_songs').insert([
+			{ setlist_id: setlist.id, song_id: song1.id, position: 0 },
+			{ setlist_id: setlist.id, song_id: song2.id, position: 1 }
+		]);
+
+		await page.goto(`/setlists/${setlist.id}`);
+
+		// Total = 180 + 120 = 300s = 5:00
+		await expect(page.getByText('5:00')).toBeVisible();
+
+		// Cleanup
+		await safeDelete('setlists', setlist.id);
+		await safeDelete('songs', song1.id);
+		await safeDelete('songs', song2.id);
+	});
+
+	test('should update total when a song is removed', async ({ page, testUser }) => {
+		const setlist = await createSetlist(page, testUser.id, {
+			name: 'Remove Timing Test',
+			transition_seconds: 0,
+			target_seconds: null
+		});
+		const song1 = await createSong(page, testUser.id, { title: 'Remove Me Song', duration_seconds: 180 });
+		const song2 = await createSong(page, testUser.id, { title: 'Stay Song', duration_seconds: 120 });
+
+		await adminClient.from('setlist_songs').insert([
+			{ setlist_id: setlist.id, song_id: song1.id, position: 0 },
+			{ setlist_id: setlist.id, song_id: song2.id, position: 1 }
+		]);
+
+		await page.goto(`/setlists/${setlist.id}`);
+		await expect(page.getByText('5:00')).toBeVisible();
+
+		// Remove first song
+		await page.getByLabel('Remove Remove Me Song from setlist').click();
+
+		// Total should update to 2:00
+		await expect(page.getByText('2:00')).toBeVisible();
+
+		await safeDelete('setlists', setlist.id);
+		await safeDelete('songs', song1.id);
+		await safeDelete('songs', song2.id);
+	});
+});
+
+test.describe('Setlist - Target Time (SETL-05)', () => {
+	test('should show over indicator when total exceeds target', async ({ page, testUser }) => {
+		const setlist = await createSetlist(page, testUser.id, {
+			name: 'Over Target Test',
+			transition_seconds: 0,
+			target_seconds: null
+		});
+		// Two 3:00 songs = 6:00 total
+		const song1 = await createSong(page, testUser.id, { title: 'Over Song A', duration_seconds: 180 });
+		const song2 = await createSong(page, testUser.id, { title: 'Over Song B', duration_seconds: 180 });
+
+		await adminClient.from('setlist_songs').insert([
+			{ setlist_id: setlist.id, song_id: song1.id, position: 0 },
+			{ setlist_id: setlist.id, song_id: song2.id, position: 1 }
+		]);
+
+		await page.goto(`/setlists/${setlist.id}`);
+
+		// Set target to 5:00 (total is 6:00, so 1:00 over)
+		const targetInput = page.getByPlaceholder('Set target');
+		await targetInput.fill('5:00');
+		await targetInput.press('Tab'); // Blur to trigger update
+
+		// Should show +1:00 over indicator
+		await expect(page.getByText('+1:00')).toBeVisible();
+
+		await safeDelete('setlists', setlist.id);
+		await safeDelete('songs', song1.id);
+		await safeDelete('songs', song2.id);
+	});
+
+	test('should show under indicator when total is less than target', async ({ page, testUser }) => {
+		const setlist = await createSetlist(page, testUser.id, {
+			name: 'Under Target Test',
+			transition_seconds: 0,
+			target_seconds: null
+		});
+		const song = await createSong(page, testUser.id, { title: 'Under Song', duration_seconds: 180 });
+
+		await adminClient.from('setlist_songs').insert([
+			{ setlist_id: setlist.id, song_id: song.id, position: 0 }
+		]);
+
+		await page.goto(`/setlists/${setlist.id}`);
+
+		// Set target to 5:00 (total is 3:00, so 2:00 under)
+		const targetInput = page.getByPlaceholder('Set target');
+		await targetInput.fill('5:00');
+		await targetInput.press('Tab');
+
+		// Should show -2:00 under indicator
+		await expect(page.getByText('-2:00')).toBeVisible();
+
+		await safeDelete('setlists', setlist.id);
+		await safeDelete('songs', song.id);
+	});
+});
+
+test.describe('Setlist - Transition Gap (SETL-06)', () => {
+	test('should adjust total time when transition gap is changed', async ({ page, testUser }) => {
+		const setlist = await createSetlist(page, testUser.id, {
+			name: 'Gap Test',
+			transition_seconds: 0,
+			target_seconds: null
+		});
+		// Two 3:00 songs = 6:00 base total, 1 gap between 2 songs
+		const song1 = await createSong(page, testUser.id, { title: 'Gap Song A', duration_seconds: 180 });
+		const song2 = await createSong(page, testUser.id, { title: 'Gap Song B', duration_seconds: 180 });
+
+		await adminClient.from('setlist_songs').insert([
+			{ setlist_id: setlist.id, song_id: song1.id, position: 0 },
+			{ setlist_id: setlist.id, song_id: song2.id, position: 1 }
+		]);
+
+		await page.goto(`/setlists/${setlist.id}`);
+		await expect(page.getByText('6:00')).toBeVisible();
+
+		// Increase gap by 5s (one click on +)
+		await page.getByLabel('Increase transition time').click();
+
+		// Gap display shows "5s"
+		await expect(page.getByText('5s')).toBeVisible();
+
+		// Total = 6:00 + 5s (1 gap) = 6:05
+		await expect(page.getByText('6:05')).toBeVisible();
+
+		await safeDelete('setlists', setlist.id);
+		await safeDelete('songs', song1.id);
+		await safeDelete('songs', song2.id);
+	});
+});
