@@ -130,11 +130,11 @@ Plans:
   3. A user cannot access another user's songs or setlists via direct URL navigation (RLS enforcement)
   4. An unauthenticated visitor can view a shared setlist via public link but cannot access any other data
   5. Band data (songs, setlists, members) is only visible to members of that band
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 10-01: TBD
-- [ ] 10-02: TBD
+- [ ] 10-01-PLAN.md — Multi-user helper + band collaboration tests (BAND-01, BAND-02, BAND-03, BAND-04, BAND-05)
+- [ ] 10-02-PLAN.md — RLS data isolation tests (RLS-01, RLS-02, RLS-03, RLS-04)
 
 ## Progress
 
@@ -152,4 +152,4 @@ Phases execute in numeric order: 7 -> 8 -> 9 -> 10
 | 7. Test Infrastructure | v1.2 | 0/3 | Not started | - |
 | 8. Auth & Song Library Tests | v1.2 | 0/? | Not started | - |
 | 9. Setlist Builder Tests | v1.2 | 0/? | Not started | - |
-| 10. Band & Multi-User Tests | v1.2 | 0/? | Not started | - |
+| 10. Band & Multi-User Tests | v1.2 | 0/2 | Not started | - |
