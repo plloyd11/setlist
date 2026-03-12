@@ -349,3 +349,40 @@ test.describe('Setlist - Transition Gap (SETL-06)', () => {
 		await safeDelete('songs', song2.id);
 	});
 });
+
+test.describe('Setlist - Share (SETL-08)', () => {
+	test('should share setlist and access via public link without auth', async ({ page, browser, testUser }) => {
+		const setlist = await createSetlist(page, testUser.id, { name: 'Shared Gig Set' });
+		const song = await createSong(page, testUser.id, { title: 'Shared Song', duration_seconds: 240 });
+
+		// Pre-populate setlist with song
+		await adminClient.from('setlist_songs').insert([
+			{ setlist_id: setlist.id, song_id: song.id, position: 0 }
+		]);
+
+		await page.goto(`/setlists/${setlist.id}`);
+
+		// Enable sharing
+		await page.getByRole('button', { name: /share/i }).click();
+		// Wait for "Sharing On" state (button text changes)
+		await expect(page.getByText('Sharing On')).toBeVisible();
+
+		// Extract share URL (URL in truncate span)
+		const shareUrl = await page.locator('.truncate').innerText();
+
+		// Visit in unauthenticated browser context
+		const publicContext = await browser.newContext({ storageState: undefined });
+		const publicPage = await publicContext.newPage();
+		await publicPage.goto(shareUrl);
+
+		// Verify setlist content visible to unauthenticated user
+		await expect(publicPage.getByText('Shared Gig Set')).toBeVisible();
+		await expect(publicPage.getByText('Shared Song')).toBeVisible();
+
+		await publicContext.close();
+
+		// Cleanup
+		await safeDelete('setlists', setlist.id);
+		await safeDelete('songs', song.id);
+	});
+});
