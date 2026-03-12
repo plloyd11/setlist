@@ -34,11 +34,11 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 - [x] **SETL-01**: User can create a new setlist
 - [x] **SETL-02**: User can add songs to a setlist via drag-and-drop
 - [x] **SETL-03**: User can reorder songs within a setlist via drag-and-drop
-- [ ] **SETL-04**: Running time total updates as songs are added/removed/reordered
-- [ ] **SETL-05**: User can set target time and see over/under indicator
-- [ ] **SETL-06**: User can set global transition time between songs
+- [x] **SETL-04**: Running time total updates as songs are added/removed/reordered
+- [x] **SETL-05**: User can set target time and see over/under indicator
+- [x] **SETL-06**: User can set global transition time between songs
 - [x] **SETL-07**: User can duplicate, delete, and rename setlists
-- [ ] **SETL-08**: User can share a setlist via public link
+- [x] **SETL-08**: User can share a setlist via public link
 
 ### Band Workspace Tests
 
@@ -100,11 +100,11 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 | SETL-01 | Phase 9 | Complete |
 | SETL-02 | Phase 9 | Complete |
 | SETL-03 | Phase 9 | Complete |
-| SETL-04 | Phase 9 | Pending |
-| SETL-05 | Phase 9 | Pending |
-| SETL-06 | Phase 9 | Pending |
+| SETL-04 | Phase 9 | Complete |
+| SETL-05 | Phase 9 | Complete |
+| SETL-06 | Phase 9 | Complete |
 | SETL-07 | Phase 9 | Complete |
-| SETL-08 | Phase 9 | Pending |
+| SETL-08 | Phase 9 | Complete |
 | BAND-01 | Phase 10 | Pending |
 | BAND-02 | Phase 10 | Pending |
 | BAND-03 | Phase 10 | Pending |
