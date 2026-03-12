@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.1
+milestone_name: Marketing Landing Page
+status: completed
+stopped_at: Completed 08-02-PLAN.md (song library E2E tests)
+last_updated: "2026-03-12T18:46:27.707Z"
+last_activity: 2026-03-06 -- Completed 08-02-PLAN.md
+progress:
+  total_phases: 6
+  completed_phases: 2
+  total_plans: 11
+  completed_plans: 8
+  percent: 73
+---
+
 # Project State
 
 ## Project Reference
@@ -5,16 +21,16 @@
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Musicians can build a setlist from their songs and instantly see how long the set runs, so they can nail the timing for a show.
-**Current focus:** Phase 8 - Auth & Song Library Tests (v1.2)
+**Current focus:** Phase 9 - Setlist Builder Tests (v1.2)
 
 ## Current Position
 
-Phase: 8 of 10 (Auth & Song Library Tests)
-Plan: 2 of 2 in current phase (COMPLETE)
-Status: Phase Complete
-Last activity: 2026-03-06 -- Completed 08-02-PLAN.md
+Phase: 9 of 10 (Setlist Builder Tests)
+Plan: 1 of 3 in current phase
+Status: In Progress
+Last activity: 2026-03-12 -- Completed 09-01-PLAN.md
 
-Progress: [████████████████░░░░] 80% (phases 1-8 of 10 addressed)
+Progress: [███████░░░] 73%
 
 ## Performance Metrics
 
@@ -29,13 +45,14 @@ Progress: [████████████████░░░░] 80% (ph
 - Total execution time: 5min
 
 **v1.2:**
-- Plans completed: 5
+- Plans completed: 6
 - 4 phases, 30 requirements
 - 07-01: 5min, 2 tasks, 6 files
 - 07-02: 3min, 2 tasks, 4 files
 - 07-03: 2min, 2 tasks, 3 files
 - 08-01: 1min, 1 task, 1 file
 - 08-02: 1min, 1 task, 1 file
+- 09-01: 2min, 2 tasks, 2 files
 
 ## Accumulated Context
 
@@ -56,6 +73,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - v1.2: Extended timeout (10s) for sign-out redirect assertions to handle async auth invalidation
 - v1.2: HTML5 validation tested via URL assertion rather than inspecting validation messages
 - v1.2: Edit mode locators use hardcoded placeholder values from SongRow.svelte
+- v1.2: DnD helper uses page.mouse API with configurable steps/holdMs/pauseMs (not locator.dragTo())
+- v1.2: Reorder tests pre-populate via adminClient to isolate behavior
+- v1.2: Bounding box y-coordinate comparison for positional assertions
 
 ### Pending Todos
 
@@ -68,6 +88,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-06
-Stopped at: Completed 08-02-PLAN.md (song library E2E tests)
-Next step: Begin Phase 09 (setlist, band, DnD tests)
+Last session: 2026-03-12
+Stopped at: Completed 09-01-PLAN.md (setlist DnD tests)
+Next step: Continue with 09-02-PLAN.md
