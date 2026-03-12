@@ -4,6 +4,115 @@ import { safeDelete } from './helpers/cleanup';
 import { adminClient } from './helpers/supabase-admin';
 import { dragAndDrop } from './helpers/dnd';
 
+test.describe('Setlist - Create (SETL-01)', () => {
+	test('should create a setlist via inline form and redirect to detail page', async ({ page }) => {
+		await page.goto('/setlists');
+		await page.getByLabel('New setlist').click();
+		await page.getByPlaceholder('Setlist name...').fill('Friday Night Gig');
+		await page.getByRole('button', { name: 'Create' }).click();
+
+		// Server action redirects to /setlists/[id]
+		await expect(page).toHaveURL(/\/setlists\/.+/);
+		// Verify name displayed on detail page
+		await expect(page.getByText('Friday Night Gig')).toBeVisible();
+
+		// Cleanup: extract setlist ID from URL and delete
+		const setlistId = page.url().split('/setlists/')[1];
+		await safeDelete('setlists', setlistId);
+	});
+
+	test('should show new setlist on list page after creation', async ({ page }) => {
+		await page.goto('/setlists');
+		await page.getByLabel('New setlist').click();
+		await page.getByPlaceholder('Setlist name...').fill('Saturday Matinee');
+		await page.getByRole('button', { name: 'Create' }).click();
+		await expect(page).toHaveURL(/\/setlists\/.+/);
+
+		// Extract ID for cleanup before navigating away
+		const setlistId = page.url().split('/setlists/')[1];
+
+		// Navigate back to list
+		await page.goto('/setlists');
+		await expect(page.getByText('Saturday Matinee')).toBeVisible();
+
+		// Cleanup
+		await safeDelete('setlists', setlistId);
+	});
+});
+
+test.describe('Setlist - Management (SETL-07)', () => {
+	test('should duplicate a setlist with (Copy) suffix', async ({ page, testUser }) => {
+		const setlist = await createSetlist(page, testUser.id, { name: 'Original Set' });
+
+		await page.goto('/setlists');
+		// Hover to reveal three-dot menu (opacity-0 until hover)
+		const card = page.getByText('Original Set').first();
+		await card.hover();
+		await page.getByLabel('Setlist options').click();
+		await page.getByText('Duplicate').click();
+
+		// Verify copy appears
+		await expect(page.getByText('Original Set (Copy)')).toBeVisible();
+
+		await safeDelete('setlists', setlist.id);
+	});
+
+	test('should rename a setlist via click-to-edit on card', async ({ page, testUser }) => {
+		const setlist = await createSetlist(page, testUser.id, { name: 'Before Rename' });
+
+		await page.goto('/setlists');
+		// Click the setlist name to enter edit mode (click-to-edit pattern, NOT menu item)
+		await page.getByText('Before Rename').click();
+		// Input appears -- clear and type new name
+		const nameInput = page.locator('input[type="text"]').last();
+		await nameInput.clear();
+		await nameInput.fill('After Rename');
+		await nameInput.press('Enter');
+
+		// Verify renamed
+		await expect(page.getByText('After Rename')).toBeVisible();
+		await expect(page.getByText('Before Rename')).not.toBeVisible();
+
+		await safeDelete('setlists', setlist.id);
+	});
+
+	test('should delete a setlist after confirming dialog', async ({ page, testUser }) => {
+		const setlist = await createSetlist(page, testUser.id, { name: 'Delete Me Set' });
+
+		await page.goto('/setlists');
+		const card = page.getByText('Delete Me Set').first();
+		await card.hover();
+		await page.getByLabel('Setlist options').click();
+		await page.getByText('Delete').click();
+
+		// Confirm dialog
+		await expect(page.locator('dialog')).toBeVisible();
+		await page.locator('dialog').getByRole('button', { name: 'Delete' }).click();
+
+		// Verify deleted
+		await expect(page.getByText('Delete Me Set')).not.toBeVisible();
+	});
+
+	test('should cancel delete and preserve setlist', async ({ page, testUser }) => {
+		const setlist = await createSetlist(page, testUser.id, { name: 'Keep Me Set' });
+
+		await page.goto('/setlists');
+		const card = page.getByText('Keep Me Set').first();
+		await card.hover();
+		await page.getByLabel('Setlist options').click();
+		await page.getByText('Delete').click();
+
+		// Cancel in confirm dialog
+		await expect(page.locator('dialog')).toBeVisible();
+		await page.locator('dialog').getByRole('button', { name: 'Cancel' }).click();
+
+		// Setlist still visible
+		await expect(page.getByText('Keep Me Set')).toBeVisible();
+
+		await safeDelete('setlists', setlist.id);
+	});
+});
+
 test.describe('Setlist DnD - Add Songs (SETL-02)', () => {
 	test('should add a song from library to setlist via drag-and-drop', async ({ page, testUser }) => {
 		// Create setlist (navigates to /setlists/:id)
