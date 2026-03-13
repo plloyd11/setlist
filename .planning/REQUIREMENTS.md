@@ -42,11 +42,11 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 
 ### Band Workspace Tests
 
-- [ ] **BAND-01**: User can create a band
-- [ ] **BAND-02**: User can invite another user to a band via invite link
-- [ ] **BAND-03**: Invited user can join a band via invite link
-- [ ] **BAND-04**: Band members can see shared song library
-- [ ] **BAND-05**: Band members can collaborate on shared setlists
+- [x] **BAND-01**: User can create a band
+- [x] **BAND-02**: User can invite another user to a band via invite link
+- [x] **BAND-03**: Invited user can join a band via invite link
+- [x] **BAND-04**: Band members can see shared song library
+- [x] **BAND-05**: Band members can collaborate on shared setlists
 
 ### RLS & Isolation Tests
 
@@ -105,11 +105,11 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 | SETL-06 | Phase 9 | Complete |
 | SETL-07 | Phase 9 | Complete |
 | SETL-08 | Phase 9 | Complete |
-| BAND-01 | Phase 10 | Pending |
-| BAND-02 | Phase 10 | Pending |
-| BAND-03 | Phase 10 | Pending |
-| BAND-04 | Phase 10 | Pending |
-| BAND-05 | Phase 10 | Pending |
+| BAND-01 | Phase 10 | Complete |
+| BAND-02 | Phase 10 | Complete |
+| BAND-03 | Phase 10 | Complete |
+| BAND-04 | Phase 10 | Complete |
+| BAND-05 | Phase 10 | Complete |
 | RLS-01 | Phase 10 | Pending |
 | RLS-02 | Phase 10 | Pending |
 | RLS-03 | Phase 10 | Pending |
