@@ -50,10 +50,10 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 
 ### RLS & Isolation Tests
 
-- [ ] **RLS-01**: User cannot see another user's songs via direct URL
-- [ ] **RLS-02**: User cannot see another user's setlists via direct URL
-- [ ] **RLS-03**: Unauthenticated user can view a shared setlist via public link
-- [ ] **RLS-04**: Band data is only visible to band members
+- [x] **RLS-01**: User cannot see another user's songs via direct URL
+- [x] **RLS-02**: User cannot see another user's setlists via direct URL
+- [x] **RLS-03**: Unauthenticated user can view a shared setlist via public link
+- [x] **RLS-04**: Band data is only visible to band members
 
 ## Future Requirements
 
@@ -110,10 +110,10 @@ Requirements for comprehensive Playwright E2E test coverage. Each maps to roadma
 | BAND-03 | Phase 10 | Complete |
 | BAND-04 | Phase 10 | Complete |
 | BAND-05 | Phase 10 | Complete |
-| RLS-01 | Phase 10 | Pending |
-| RLS-02 | Phase 10 | Pending |
-| RLS-03 | Phase 10 | Pending |
-| RLS-04 | Phase 10 | Pending |
+| RLS-01 | Phase 10 | Complete |
+| RLS-02 | Phase 10 | Complete |
+| RLS-03 | Phase 10 | Complete |
+| RLS-04 | Phase 10 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 30 total
