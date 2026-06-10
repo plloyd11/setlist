@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import gsap from 'gsap';
 	import ThemeToggle from './ThemeToggle.svelte';
+	import { sidebar, initSidebar, setSidebarMode, type SidebarMode } from '$lib/stores/sidebar.svelte';
 
 	interface Props {
 		user: { email?: string; user_metadata?: { full_name?: string; avatar_url?: string } } | null;
@@ -40,59 +43,267 @@
 		if (href === '/dashboard') return pathname === '/dashboard';
 		return pathname.startsWith(href);
 	}
+
+	// Rail geometry: collapsed matches the w-14 spacer; expanded matches the 14rem nav spec
+	const RAIL_WIDTH = 56;
+	const EXPANDED_WIDTH = 224;
+
+	let panel: HTMLElement;
+	let tl: gsap.core.Timeline | null = null;
+	let labels: NodeListOf<Element>;
+
+	onMount(() => {
+		initSidebar();
+		const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		labels = panel.querySelectorAll('.nav-label');
+
+		gsap.set(labels, { opacity: 0, x: -6 });
+
+		tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out', overwrite: 'auto' } });
+		tl.fromTo(
+			panel,
+			{ width: RAIL_WIDTH, boxShadow: '0 0 0 rgba(0,0,0,0)' },
+			{
+				width: EXPANDED_WIDTH,
+				boxShadow: '0 4px 16px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2)',
+				duration: reduced ? 0 : 0.25
+			},
+			0
+		).to(
+			labels,
+			{ opacity: 1, x: 0, duration: reduced ? 0 : 0.15, stagger: reduced ? 0 : 0.02 },
+			reduced ? 0 : 0.06
+		);
+
+		return () => {
+			tl?.kill();
+			tl = null;
+		};
+	});
+
+	// Pinned modes bypass the hover timeline and set the resting state directly
+	$effect(() => {
+		const mode = sidebar.mode;
+		if (!panel || !tl) return;
+		tl.pause(0);
+		if (mode === 'expanded') {
+			gsap.set(panel, { width: EXPANDED_WIDTH, boxShadow: '0 0 0 rgba(0,0,0,0)' });
+			gsap.set(labels, { opacity: 1, x: 0 });
+		} else {
+			gsap.set(panel, { width: RAIL_WIDTH, boxShadow: '0 0 0 rgba(0,0,0,0)' });
+			gsap.set(labels, { opacity: 0, x: -6 });
+		}
+	});
+
+	function expand() {
+		if (sidebar.mode !== 'hover') return;
+		tl?.play();
+	}
+
+	function collapse() {
+		if (sidebar.mode !== 'hover' || menuOpen) return;
+		tl?.reverse();
+	}
+
+	function handleFocusOut(event: FocusEvent) {
+		if (!panel.contains(event.relatedTarget as Node | null)) collapse();
+	}
+
+	// --- Sidebar control menu ---
+	let menuOpen = $state(false);
+	let menuEl = $state<HTMLElement | null>(null);
+	let triggerEl: HTMLElement;
+
+	const modeOptions: { value: SidebarMode; label: string }[] = [
+		{ value: 'expanded', label: 'Expanded' },
+		{ value: 'collapsed', label: 'Collapsed' },
+		{ value: 'hover', label: 'Expand on hover' }
+	];
+
+	function selectMode(mode: SidebarMode) {
+		setSidebarMode(mode);
+		menuOpen = false;
+	}
+
+	function closeMenu() {
+		if (!menuOpen) return;
+		menuOpen = false;
+		// In hover mode, retract unless the pointer is still over the panel
+		if (sidebar.mode === 'hover' && !panel.matches(':hover')) tl?.reverse();
+	}
+
+	function handleWindowClick(event: MouseEvent) {
+		if (!menuOpen) return;
+		const target = event.target as Node;
+		if (menuEl?.contains(target) || triggerEl.contains(target)) return;
+		closeMenu();
+	}
 </script>
 
-<aside
-	class="hidden border-r border-surface-200 bg-surface-50 md:flex md:w-56 md:flex-col dark:border-surface-800 dark:bg-surface-900"
->
-	<!-- App branding -->
-	<div class="flex h-16 items-center px-6">
-		<a
-			href="/dashboard"
-			class="focus-live font-display text-2xl text-accent-500 dark:text-accent-hot">Setlist</a
-		>
-	</div>
+<svelte:window onclick={handleWindowClick} onkeydown={(e) => e.key === 'Escape' && closeMenu()} />
 
-	<!-- Navigation -->
-	<nav class="flex-1 space-y-1 px-3 py-2">
-		{#each navItems as item}
+<!-- Spacer keeps the rail's footprint in the flex layout; the panel overlays whatever sits to its
+right when hover-expanded. In pinned-expanded mode the spacer widens so content is pushed instead. -->
+<aside class="relative hidden shrink-0 md:block {sidebar.mode === 'expanded' ? 'w-56' : 'w-14'}">
+	<div
+		bind:this={panel}
+		role="navigation"
+		aria-label="Main"
+		class="absolute inset-y-0 left-0 z-40 flex w-14 flex-col overflow-hidden border-r border-surface-200 bg-surface-50 dark:border-surface-800 dark:bg-surface-900"
+		onmouseenter={expand}
+		onmouseleave={collapse}
+		onfocusin={expand}
+		onfocusout={handleFocusOut}
+	>
+		<!-- App branding -->
+		<div class="flex h-16 shrink-0 items-center px-2">
 			<a
-				href={item.href}
-				class="focus-live flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors
-					{isActive($page.url.pathname, item.href)
-					? 'bg-surface-200/70 font-semibold text-surface-950 dark:bg-surface-800 dark:text-surface-50'
-					: 'font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'}"
+				href="/dashboard"
+				class="focus-live flex items-center rounded-lg text-accent-500 dark:text-accent-hot"
 			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="20"
-					height="20"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d={item.icon} />
-				</svg>
-				{item.label}
+				<span class="flex h-10 w-10 shrink-0 items-center justify-center">
+					<!-- list-music glyph: the setlist mark -->
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="22"
+						height="22"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M21 15V6" />
+						<path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+						<path d="M12 12H3" />
+						<path d="M16 6H3" />
+						<path d="M12 18H3" />
+					</svg>
+				</span>
+				<span class="nav-label font-display text-2xl whitespace-nowrap">Setlist</span>
 			</a>
-		{/each}
-	</nav>
+		</div>
 
-	<!-- Bottom section: user info + theme toggle -->
-	<div class="border-t border-surface-200 px-3 py-3 dark:border-surface-800">
-		{#if user}
-			<div class="mb-2 flex items-center gap-2 px-3 py-1">
-				{#if user.user_metadata?.avatar_url}
-					<img src={user.user_metadata.avatar_url} alt="" class="h-6 w-6 rounded-full" />
-				{/if}
-				<span class="truncate text-xs text-surface-500 dark:text-surface-300">
-					{user.user_metadata?.full_name || user.email}
+		<!-- Navigation -->
+		<nav class="flex flex-1 flex-col gap-1 px-2 py-2">
+			{#each navItems as item}
+				<a
+					href={item.href}
+					title={item.label}
+					class="focus-live flex h-10 items-center rounded-lg text-sm transition-colors
+						{isActive($page.url.pathname, item.href)
+						? 'bg-surface-200/70 font-semibold text-surface-950 dark:bg-surface-800 dark:text-surface-50'
+						: 'font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'}"
+				>
+					<span class="flex h-10 w-10 shrink-0 items-center justify-center">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d={item.icon} />
+						</svg>
+					</span>
+					<span class="nav-label whitespace-nowrap">{item.label}</span>
+				</a>
+			{/each}
+		</nav>
+
+		<!-- Bottom section: user info + theme toggle -->
+		<div class="shrink-0 border-t border-surface-200 px-2 py-2 dark:border-surface-800">
+			{#if user}
+				<div class="flex h-10 items-center">
+					<span class="flex h-10 w-10 shrink-0 items-center justify-center">
+						{#if user.user_metadata?.avatar_url}
+							<img src={user.user_metadata.avatar_url} alt="" class="h-6 w-6 rounded-full" />
+						{:else}
+							<span
+								class="flex h-6 w-6 items-center justify-center rounded-full bg-surface-200 text-xs font-semibold text-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							>
+								{(user.user_metadata?.full_name || user.email || '?').charAt(0).toUpperCase()}
+							</span>
+						{/if}
+					</span>
+					<span
+						class="nav-label min-w-0 flex-1 truncate text-xs text-surface-500 dark:text-surface-300"
+					>
+						{user.user_metadata?.full_name || user.email}
+					</span>
+				</div>
+			{/if}
+			<div class="flex h-10 items-center">
+				<span class="flex h-10 w-10 shrink-0 items-center justify-center">
+					<ThemeToggle />
 				</span>
 			</div>
-		{/if}
-		<ThemeToggle />
+			<button
+				bind:this={triggerEl}
+				onclick={() => (menuOpen = !menuOpen)}
+				aria-haspopup="menu"
+				aria-expanded={menuOpen}
+				title="Sidebar control"
+				class="focus-live flex h-10 w-full items-center rounded-lg text-sm font-medium text-surface-600 transition-colors hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800"
+			>
+				<span class="flex h-10 w-10 shrink-0 items-center justify-center">
+					<!-- panel-left glyph -->
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<rect width="18" height="18" x="3" y="3" rx="2" />
+						<path d="M9 3v18" />
+					</svg>
+				</span>
+				<span class="nav-label whitespace-nowrap">Sidebar control</span>
+			</button>
+		</div>
 	</div>
+
+	<!-- Sidebar control popup: lives outside the overflow-hidden panel so it can
+	overhang the collapsed rail -->
+	{#if menuOpen}
+		<div
+			bind:this={menuEl}
+			role="menu"
+			aria-label="Sidebar control"
+			class="absolute bottom-12 left-2 z-50 w-48 rounded-xl border border-surface-200 bg-surface-50 py-1.5 shadow-lg dark:border-surface-700 dark:bg-surface-800"
+		>
+			<p class="px-3 py-1.5 text-xs font-medium text-surface-500 dark:text-surface-300">
+				Sidebar control
+			</p>
+			<div class="my-1 border-t border-surface-200 dark:border-surface-700"></div>
+			{#each modeOptions as opt (opt.value)}
+				<button
+					role="menuitemradio"
+					aria-checked={sidebar.mode === opt.value}
+					onclick={() => selectMode(opt.value)}
+					class="focus-live flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-100 dark:hover:bg-surface-700
+						{sidebar.mode === opt.value
+						? 'font-medium text-surface-900 dark:text-surface-100'
+						: 'text-surface-600 dark:text-surface-300'}"
+				>
+					<span class="flex h-4 w-4 shrink-0 items-center justify-center">
+						{#if sidebar.mode === opt.value}
+							<span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+						{/if}
+					</span>
+					{opt.label}
+				</button>
+			{/each}
+		</div>
+	{/if}
 </aside>

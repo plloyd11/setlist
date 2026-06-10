@@ -1,4 +1,5 @@
 <script lang="ts">
+	import TrackCard from '$lib/components/tracks/TrackCard.svelte';
 	import { formatDuration } from '$lib/utils/duration';
 
 	let { data } = $props();
@@ -39,6 +40,7 @@
 		return s.band_id ? `/bands/${s.band_id}/setlists/${s.id}` : `/setlists/${s.id}`;
 	}
 
+	let bandNames = $derived(new Map(data.bands.map((b) => [b.id, b.name])));
 	let hero = $derived(data.hero);
 	let heroDiff = $derived(hero?.target_seconds ? hero.totalSeconds - hero.target_seconds : null);
 </script>
@@ -227,6 +229,27 @@
 					</li>
 				{/each}
 			</ul>
+		</section>
+	{/if}
+
+	{#if data.tracks.length > 0}
+		<section class="mt-10">
+			<div class="flex items-baseline gap-3">
+				<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Tracks</h2>
+				<span class="text-sm text-surface-500 dark:text-surface-300">
+					{data.tracks.length}
+					{data.tracks.length === 1 ? 'track' : 'tracks'}
+				</span>
+			</div>
+			<div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				{#each data.tracks as track (track.id)}
+					<TrackCard
+						{track}
+						basePath="/bands/{track.band_id}/tracks"
+						bandName={bandNames.get(track.band_id)}
+					/>
+				{/each}
+			</div>
 		</section>
 	{/if}
 

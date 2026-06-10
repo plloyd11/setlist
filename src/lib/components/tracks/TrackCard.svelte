@@ -21,7 +21,11 @@
 		uploaderProfile: UploaderProfile | null;
 	}
 
-	let { track, basePath }: { track: TrackListItem; basePath: string } = $props();
+	let {
+		track,
+		basePath,
+		bandName
+	}: { track: TrackListItem; basePath: string; bandName?: string } = $props();
 
 	let initial = $derived(track.uploaderProfile?.display_name?.charAt(0).toUpperCase() ?? '?');
 	let updatedLabel = $derived(
@@ -38,6 +42,13 @@
 >
 	<div class="flex items-start justify-between gap-3">
 		<div class="min-w-0">
+			{#if bandName}
+				<p
+					class="truncate text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+				>
+					{bandName}
+				</p>
+			{/if}
 			<h3 class="truncate font-display text-lg text-surface-900 dark:text-surface-100">
 				{track.title}
 			</h3>
