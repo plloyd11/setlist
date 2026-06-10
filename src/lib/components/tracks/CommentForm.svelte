@@ -103,14 +103,24 @@
 				<span
 					class="inline-flex items-center gap-1.5 rounded-full bg-accent-100 py-0.5 pr-1 pl-2.5 text-xs font-medium text-accent-700 dark:bg-accent-900/40 dark:text-accent-300"
 				>
-					Pinned at <span class="font-mono font-semibold">{formatDuration(Math.round(pinnedAt))}</span>
+					Pinned at <span class="font-mono font-semibold"
+						>{formatDuration(Math.round(pinnedAt))}</span
+					>
 					<button
 						type="button"
 						onclick={removePin}
 						aria-label="Remove pin"
 						class="focus-live flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent-200 dark:hover:bg-accent-900/60"
 					>
-						<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+						<svg
+							width="10"
+							height="10"
+							viewBox="0 0 10 10"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+						>
 							<path d="M1.5 1.5l7 7M8.5 1.5l-7 7" />
 						</svg>
 					</button>
