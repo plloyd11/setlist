@@ -90,10 +90,17 @@ export const actions: Actions = {
 			return fail(400, { error: 'Setlist ID is required' });
 		}
 
-		const { error } = await supabase.from('setlists').delete().eq('id', id);
+		// Explicit user_id scope plus .select() so an RLS-filtered no-op is
+		// reported instead of faking success.
+		const { data: deletedRows, error } = await supabase
+			.from('setlists')
+			.delete()
+			.eq('id', id)
+			.eq('user_id', session.user.id)
+			.select('id');
 
-		if (error) {
-			return fail(500, { error: 'Failed to delete setlist' });
+		if (error || !deletedRows?.length) {
+			return fail(error ? 500 : 404, { error: 'Failed to delete setlist' });
 		}
 
 		return { deleted: true };
@@ -150,13 +157,19 @@ export const actions: Actions = {
 			.order('position');
 
 		if (originalSongs?.length) {
-			await supabase.from('setlist_songs').insert(
+			const { error: copyError } = await supabase.from('setlist_songs').insert(
 				originalSongs.map((s) => ({
 					setlist_id: newSetlist.id,
 					song_id: s.song_id,
 					position: s.position
 				}))
 			);
+
+			if (copyError) {
+				// Don't leave a half-created empty copy behind
+				await supabase.from('setlists').delete().eq('id', newSetlist.id);
+				return fail(500, { error: 'Failed to duplicate setlist' });
+			}
 		}
 
 		return { duplicated: true };
@@ -176,14 +189,15 @@ export const actions: Actions = {
 			return fail(400, { error: 'ID and name are required' });
 		}
 
-		const { error } = await supabase
+		const { data: renamedRows, error } = await supabase
 			.from('setlists')
 			.update({ name })
 			.eq('id', id)
-			.eq('user_id', session.user.id);
+			.eq('user_id', session.user.id)
+			.select('id');
 
-		if (error) {
-			return fail(500, { error: 'Failed to rename setlist' });
+		if (error || !renamedRows?.length) {
+			return fail(error ? 500 : 404, { error: 'Failed to rename setlist' });
 		}
 
 		return { renamed: true };

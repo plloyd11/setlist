@@ -73,6 +73,12 @@
 		ondelete(setlist.id, setlist.name);
 	}
 
+	function handleWindowKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape' && menuOpen) {
+			menuOpen = false;
+		}
+	}
+
 	function formatDate(dateStr: string | null): string {
 		if (!dateStr) return '';
 		try {
@@ -86,6 +92,8 @@
 	let songLabel = $derived(songCount === 1 ? '1 song' : `${songCount} songs`);
 	let timeLabel = $derived(totalSeconds > 0 ? formatDuration(totalSeconds) : '--:--');
 </script>
+
+<svelte:window onkeydown={handleWindowKeydown} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="group relative">
@@ -103,7 +111,8 @@
 					onblur={saveEdit}
 					onkeydown={handleKeydown}
 					autofocus
-					class="min-w-0 flex-1 rounded border border-neon-400 bg-surface-50 px-2 py-0.5 font-display text-lg font-semibold text-surface-900 focus:outline-none focus:ring-1 focus:ring-neon-400 dark:border-neon-600 dark:bg-surface-800 dark:text-surface-100"
+					aria-label="Setlist name"
+					class="min-w-0 flex-1 rounded border border-neon-400 bg-surface-50 px-2 py-0.5 font-display text-lg font-semibold text-surface-900 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-neon-600 dark:bg-surface-800 dark:text-surface-100"
 					onclick={(e) => e.preventDefault()}
 				/>
 			{:else}
@@ -120,10 +129,18 @@
 			<div class="relative">
 				<button
 					onclick={toggleMenu}
-					class="rounded p-1 text-surface-400 opacity-0 transition-opacity hover:bg-surface-100 hover:text-surface-600 group-hover:opacity-100 dark:hover:bg-surface-700 dark:hover:text-surface-300"
+					class="rounded p-1 text-surface-400 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-surface-100 hover:text-surface-600 focus-visible:opacity-100 dark:hover:bg-surface-700 dark:hover:text-surface-300 pointer-coarse:opacity-100"
 					aria-label="Setlist options"
+					aria-haspopup="menu"
+					aria-expanded={menuOpen}
 				>
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="currentColor"
+					>
 						<circle cx="12" cy="5" r="2" />
 						<circle cx="12" cy="12" r="2" />
 						<circle cx="12" cy="19" r="2" />
@@ -133,14 +150,24 @@
 				{#if menuOpen}
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
 					<div
-						class="absolute right-0 top-8 z-10 w-36 rounded-lg border border-surface-200 bg-surface-50 py-1 shadow-lg dark:border-surface-700 dark:bg-surface-800"
+						class="absolute top-8 right-0 z-10 w-36 rounded-lg border border-surface-200 bg-surface-50 py-1 shadow-lg dark:border-surface-700 dark:bg-surface-800"
 						onclick={(e) => e.stopPropagation()}
 					>
 						<button
 							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-surface-700 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-700"
 							onclick={handleDuplicate}
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
 								<rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
 								<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
 							</svg>
@@ -150,8 +177,20 @@
 							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-danger-600 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/20"
 							onclick={handleDelete}
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path
+									d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+								/>
 							</svg>
 							Delete
 						</button>
@@ -164,7 +203,9 @@
 		{#if setlist.gig_date || setlist.venue}
 			<p class="mt-1.5 truncate text-sm text-surface-500 dark:text-surface-400">
 				{#if setlist.venue}{setlist.venue}{/if}
-				{#if setlist.venue && setlist.gig_date} &mdash; {/if}
+				{#if setlist.venue && setlist.gig_date}
+					&mdash;
+				{/if}
 				{#if setlist.gig_date}{formatDate(setlist.gig_date)}{/if}
 			</p>
 		{/if}
@@ -172,7 +213,17 @@
 		<!-- Stats: song count + total time -->
 		<div class="mt-3 flex items-center gap-3 text-sm text-surface-500 dark:text-surface-400">
 			<span class="flex items-center gap-1">
-				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
 					<path d="M9 19V6l12-3v13" />
 					<circle cx="6" cy="19" r="3" />
 					<circle cx="18" cy="16" r="3" />
@@ -180,7 +231,17 @@
 				{songLabel}
 			</span>
 			<span class="flex items-center gap-1">
-				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
 					<circle cx="12" cy="12" r="10" />
 					<polyline points="12 6 12 12 16 14" />
 				</svg>

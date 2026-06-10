@@ -61,7 +61,10 @@
 		</div>
 
 		<div>
-			<label for="duration" class="block text-sm font-medium text-surface-700 dark:text-surface-300">
+			<label
+				for="duration"
+				class="block text-sm font-medium text-surface-700 dark:text-surface-300"
+			>
 				Duration
 			</label>
 			<input

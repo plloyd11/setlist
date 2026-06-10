@@ -24,9 +24,7 @@
 
 	let isCurrentUser = $derived(member.user_id === currentUserId);
 	let isMemberOwner = $derived(member.role === 'owner');
-	let initial = $derived(
-		member.display_name ? member.display_name.charAt(0).toUpperCase() : '?'
-	);
+	let initial = $derived(member.display_name ? member.display_name.charAt(0).toUpperCase() : '?');
 
 	function formatDate(dateStr: string): string {
 		try {
@@ -53,7 +51,8 @@
 		{#if member.logo_url}
 			<img
 				src={member.logo_url}
-				alt="{member.display_name ?? 'Member'}"
+				alt={member.display_name ?? 'Member'}
+				loading="lazy"
 				class="h-9 w-9 rounded-full object-cover"
 			/>
 		{:else}
@@ -172,11 +171,7 @@
 
 		{#if !isOwner && isCurrentUser && !isMemberOwner}
 			<!-- Non-owner member can leave -->
-			<form
-				method="POST"
-				action="/bands/{bandId}/members?/leaveBand"
-				use:enhance
-			>
+			<form method="POST" action="/bands/{bandId}/members?/leaveBand" use:enhance>
 				<button
 					type="submit"
 					class="rounded-md border border-surface-300 px-2.5 py-1 text-xs font-medium text-surface-600 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-400 dark:hover:bg-surface-700"

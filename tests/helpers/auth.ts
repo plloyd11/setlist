@@ -3,10 +3,13 @@ import { faker } from '@faker-js/faker';
 
 /**
  * Create a test user via Supabase admin API.
- * Email format: test-worker{N}-{timestamp}@setlist.test
+ * Email format: test-worker{N}-{timestamp}-{random}@setlist.test
+ * The random suffix prevents collisions when two users are created in the
+ * same millisecond (e.g. parallel createSecondUser calls).
  */
 export async function createTestUser(workerIndex: number) {
-	const email = `test-worker${workerIndex}-${Date.now()}@setlist.test`;
+	const suffix = faker.string.alphanumeric(8).toLowerCase();
+	const email = `test-worker${workerIndex}-${Date.now()}-${suffix}@setlist.test`;
 	const password = faker.internet.password({ length: 20 });
 
 	const { data, error } = await adminClient.auth.admin.createUser({
@@ -31,10 +34,7 @@ export async function deleteTestUser(userId: string) {
 	// Delete bands first (owner_id has ON DELETE RESTRICT)
 	const { error: bandError } = await adminClient.from('bands').delete().eq('owner_id', userId);
 	if (bandError) {
-		console.warn(
-			`Cleanup warning: failed to delete bands for user ${userId}:`,
-			bandError.message
-		);
+		console.warn(`Cleanup warning: failed to delete bands for user ${userId}:`, bandError.message);
 	}
 
 	// Delete user (CASCADE handles songs, setlists, profiles, band_members)

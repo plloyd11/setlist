@@ -1,63 +1,42 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params, locals: { supabase } }) => {
-	// Fetch setlist by share_token (no auth required - public route)
-	const { data: setlist, error: setlistError } = await supabase
-		.from('setlists')
-		.select('id, name, gig_date, venue, user_id, band_id')
-		.eq('share_token', params.token)
-		.single();
+type SharedSetlist = {
+	name: string;
+	gig_date: string | null;
+	venue: string | null;
+	songs: Array<{ title: string }>;
+	profile: { display_name: string | null; logo_url: string | null } | null;
+};
 
-	if (setlistError || !setlist) {
+export const load: PageServerLoad = async ({ params, setHeaders, locals: { supabase } }) => {
+	// All share data comes from a token-keyed SECURITY DEFINER RPC that
+	// returns only the whitelisted fields. The broad anon RLS policies it
+	// replaces let anyone with the public key enumerate profiles, shared
+	// setlists, and song notes. An invalid/non-UUID token surfaces as an
+	// RPC error or null result -- both 404.
+	const { data, error: rpcError } = await supabase.rpc('get_shared_setlist', {
+		p_token: params.token
+	});
+
+	if (rpcError || !data) {
 		throw error(404, 'Setlist not found');
 	}
 
-	// Fetch songs with only titles (no durations for shared view)
-	const { data: setlistSongs } = await supabase
-		.from('setlist_songs')
-		.select('position, songs(title)')
-		.eq('setlist_id', setlist.id)
-		.order('position');
+	const shared = data as SharedSetlist;
 
-	// Determine display profile: band profile for band setlists, user profile for personal
-	let displayProfile: { display_name: string | null; logo_url: string | null } | null = null;
+	// Public, immutable-token page: let the CDN absorb repeat views
+	setHeaders({
+		'cache-control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=300'
+	});
 
-	if (setlist.band_id) {
-		// Band setlist: show band name and logo
-		const { data: band } = await supabase
-			.from('bands')
-			.select('name, logo_url')
-			.eq('id', setlist.band_id)
-			.single();
-
-		if (band) {
-			displayProfile = {
-				display_name: band.name,
-				logo_url: band.logo_url
-			};
-		}
-	} else {
-		// Personal setlist: show user profile
-		const { data: profile } = await supabase
-			.from('profiles')
-			.select('display_name, logo_url')
-			.eq('id', setlist.user_id)
-			.maybeSingle();
-
-		displayProfile = profile;
-	}
-
-	// Return only safe data - no id, user_id, or band_id
 	return {
 		setlist: {
-			name: setlist.name,
-			gig_date: setlist.gig_date,
-			venue: setlist.venue
+			name: shared.name,
+			gig_date: shared.gig_date,
+			venue: shared.venue
 		},
-		songs: (setlistSongs ?? []).map((ss: any) => ({
-			title: (ss.songs as any)?.title ?? 'Unknown'
-		})),
-		profile: displayProfile
+		songs: shared.songs ?? [],
+		profile: shared.profile
 	};
 };

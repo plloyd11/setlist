@@ -1,12 +1,25 @@
 <script lang="ts">
 	import { page } from '$app/state';
 
-	let error = $state(page.url.searchParams.get('error') === 'auth_exchange_failed'
-		? 'Sign in failed. Please try again.'
-		: '');
+	let error = $state(
+		page.url.searchParams.get('error') === 'auth_exchange_failed'
+			? 'Sign in failed. Please try again.'
+			: ''
+	);
 
 	let email = $state('');
 	let password = $state('');
+
+	// Only allow same-origin relative paths — an attacker-supplied
+	// ?redirect=https://evil.com must not be followed after sign-in.
+	const safeRedirect = (value: string | null): string => {
+		if (!value) return '/dashboard';
+		const decoded = decodeURIComponent(value);
+		if (decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.startsWith('/\\')) {
+			return decoded;
+		}
+		return '/dashboard';
+	};
 
 	const signInWithEmail = async (e: Event) => {
 		e.preventDefault();
@@ -19,10 +32,7 @@
 			error = authError.message;
 			return;
 		}
-		const redirectParam = page.url.searchParams.get('redirect');
-		window.location.href = redirectParam
-			? decodeURIComponent(redirectParam)
-			: '/dashboard';
+		window.location.href = safeRedirect(page.url.searchParams.get('redirect'));
 	};
 
 	const signInWithGoogle = async () => {
@@ -47,7 +57,9 @@
 
 <div class="flex min-h-screen items-center justify-center bg-surface-50 dark:bg-surface-950">
 	<div class="w-full max-w-sm px-6">
-		<div class="rounded-2xl bg-surface-50 p-8 shadow-lg dark:bg-surface-900 dark:shadow-surface-900/50">
+		<div
+			class="rounded-2xl bg-surface-50 p-8 shadow-lg dark:bg-surface-900 dark:shadow-surface-900/50"
+		>
 			<!-- Logo / App Name -->
 			<div class="mb-8 text-center">
 				<h1 class="text-4xl font-bold tracking-tight text-accent-500">Setlist</h1>
@@ -120,6 +132,8 @@
 		</div>
 
 		<!-- Footer -->
-		<p class="mt-6 text-center text-xs text-surface-400 dark:text-surface-600">Built for musicians</p>
+		<p class="mt-6 text-center text-xs text-surface-400 dark:text-surface-600">
+			Built for musicians
+		</p>
 	</div>
 </div>

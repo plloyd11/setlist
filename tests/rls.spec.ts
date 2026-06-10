@@ -6,7 +6,7 @@ import { adminClient } from './helpers/supabase-admin';
 import crypto from 'node:crypto';
 
 test.describe('Song data isolation (RLS-01)', () => {
-	test('should not show another user\'s songs in the song library', async ({
+	test("should not show another user's songs in the song library", async ({
 		page,
 		browser,
 		testUser
@@ -32,7 +32,7 @@ test.describe('Song data isolation (RLS-01)', () => {
 });
 
 test.describe('Setlist data isolation (RLS-02)', () => {
-	test('should block access to another user\'s setlist via direct URL', async ({
+	test("should block access to another user's setlist via direct URL", async ({
 		page,
 		browser,
 		testUser
@@ -92,9 +92,7 @@ test.describe('Unauthenticated shared access (RLS-03)', () => {
 		}
 	});
 
-	test('should block unauthenticated user from accessing protected routes', async ({
-		browser
-	}) => {
+	test('should block unauthenticated user from accessing protected routes', async ({ browser }) => {
 		// Open an unauthenticated browser context
 		const unauthContext = await browser.newContext({ storageState: undefined });
 		try {
@@ -114,11 +112,7 @@ test.describe('Unauthenticated shared access (RLS-03)', () => {
 });
 
 test.describe('Band membership enforcement (RLS-04)', () => {
-	test('should block non-member from accessing band data', async ({
-		page,
-		browser,
-		testUser
-	}) => {
+	test('should block non-member from accessing band data', async ({ page, browser, testUser }) => {
 		// User A creates a band
 		const band = await createBand(page, testUser.id, { name: 'Members Only Band' });
 

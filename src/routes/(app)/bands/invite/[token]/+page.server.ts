@@ -1,7 +1,11 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 
-export const load: PageServerLoad = async ({ params, url, locals: { supabase, safeGetSession } }) => {
+export const load: PageServerLoad = async ({
+	params,
+	url,
+	locals: { supabase, safeGetSession }
+}) => {
 	const { session } = await safeGetSession();
 	if (!session) {
 		// Redirect to auth with return URL so user comes back after login
@@ -10,8 +14,9 @@ export const load: PageServerLoad = async ({ params, url, locals: { supabase, sa
 	}
 
 	// Look up invite + band info via RPC (bypasses RLS safely with token check)
-	const { data: rows } = await supabase
-		.rpc('get_band_by_invite_token', { invite_token: params.token });
+	const { data: rows } = await supabase.rpc('get_band_by_invite_token', {
+		invite_token: params.token
+	});
 
 	const invite = rows?.[0];
 	if (!invite) {
@@ -43,57 +48,24 @@ export const actions: Actions = {
 			return fail(401, { error: 'Not authenticated' });
 		}
 
-		// Re-query invite (validate still valid -- someone could accept between load and action)
-		const { data: invite } = await supabase
-			.from('band_invites')
-			.select('id, band_id')
-			.eq('token', params.token)
-			.is('used_at', null)
-			.gt('expires_at', new Date().toISOString())
-			.single();
+		// Atomic accept via RPC: validates the token, inserts the member, and
+		// marks the invite used in one transaction. (Direct table access is no
+		// longer possible — invite SELECT is owner-only and the token-less
+		// self-insert policy was removed.)
+		const { data: rows, error: acceptError } = await supabase.rpc('accept_band_invite', {
+			invite_token: params.token
+		});
 
-		if (!invite) {
-			return fail(404, { error: 'Invite expired or already used' });
-		}
+		const result = rows?.[0];
 
-		// Check if already a member
-		const { data: existingMember } = await supabase
-			.from('band_members')
-			.select('id')
-			.eq('band_id', invite.band_id)
-			.eq('user_id', session.user.id)
-			.single();
-
-		if (existingMember) {
-			throw redirect(303, `/bands/${invite.band_id}`);
-		}
-
-		// Insert new member
-		const { error: insertError } = await supabase
-			.from('band_members')
-			.insert({
-				band_id: invite.band_id,
-				user_id: session.user.id,
-				role: 'member'
-			});
-
-		if (insertError) {
-			// Handle unique constraint violation (23505) -- already a member
-			if (insertError.code === '23505') {
-				throw redirect(303, `/bands/${invite.band_id}`);
-			}
+		if (acceptError || !result) {
 			return fail(500, { error: 'Failed to join band' });
 		}
 
-		// Mark invite as used
-		await supabase
-			.from('band_invites')
-			.update({
-				used_by: session.user.id,
-				used_at: new Date().toISOString()
-			})
-			.eq('id', invite.id);
+		if (result.status === 'invalid' || !result.band_id) {
+			return fail(404, { error: 'Invite expired or already used' });
+		}
 
-		throw redirect(303, `/bands/${invite.band_id}`);
+		throw redirect(303, `/bands/${result.band_id}`);
 	}
 };

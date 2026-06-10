@@ -16,10 +16,33 @@
 	let dateValue = $state('');
 	let venueValue = $state('');
 
-	// Sync local state when prop changes
-	$effect(() => { nameValue = setlist.name; });
-	$effect(() => { dateValue = setlist.gig_date ?? ''; });
-	$effect(() => { venueValue = setlist.venue ?? ''; });
+	// Sync local state only when the SERVER value actually changes — an
+	// invalidateAll elsewhere gives `setlist` a new reference with the same
+	// values, and unconditionally syncing would wipe in-progress typing.
+	let lastServerName: string | undefined;
+	let lastServerDate: string | undefined;
+	let lastServerVenue: string | undefined;
+
+	$effect(() => {
+		if (setlist.name !== lastServerName) {
+			lastServerName = setlist.name;
+			nameValue = setlist.name;
+		}
+	});
+	$effect(() => {
+		const serverDate = setlist.gig_date ?? '';
+		if (serverDate !== lastServerDate) {
+			lastServerDate = serverDate;
+			dateValue = serverDate;
+		}
+	});
+	$effect(() => {
+		const serverVenue = setlist.venue ?? '';
+		if (serverVenue !== lastServerVenue) {
+			lastServerVenue = serverVenue;
+			venueValue = serverVenue;
+		}
+	});
 
 	function startNameEdit() {
 		nameValue = setlist.name;
@@ -66,11 +89,7 @@
 <div class="mb-4 text-center">
 	<!-- Logo -->
 	{#if profile?.logo_url}
-		<img
-			src={profile.logo_url}
-			alt=""
-			class="mx-auto mb-3 max-h-24 w-auto"
-		/>
+		<img src={profile.logo_url} alt="" loading="lazy" class="mx-auto mb-3 max-h-24 w-auto" />
 	{/if}
 
 	<!-- Setlist name (editable) -->
@@ -82,7 +101,8 @@
 			onblur={saveName}
 			onkeydown={handleNameKeydown}
 			autofocus
-			class="w-full max-w-md rounded border border-neon-400 bg-transparent px-2 py-1 text-center font-display text-2xl text-surface-900 focus:outline-none focus:ring-1 focus:ring-neon-400 dark:border-neon-600 dark:text-surface-100"
+			aria-label="Setlist name"
+			class="w-full max-w-md rounded border border-neon-400 bg-transparent px-2 py-1 text-center font-display text-2xl text-surface-900 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-neon-600 dark:text-surface-100"
 		/>
 	{:else}
 		<button
@@ -100,6 +120,7 @@
 			type="date"
 			bind:value={dateValue}
 			onchange={handleDateChange}
+			aria-label="Gig date"
 			class="rounded border border-surface-300 bg-transparent px-2 py-1 text-sm text-surface-600 focus:border-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-400"
 			placeholder="Date"
 		/>
@@ -109,6 +130,7 @@
 			onblur={handleVenueBlur}
 			onkeydown={handleVenueKeydown}
 			placeholder="Venue"
+			aria-label="Venue"
 			class="rounded border border-surface-300 bg-transparent px-2 py-1 text-sm text-surface-600 placeholder-surface-400 focus:border-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-400 dark:placeholder-surface-500"
 		/>
 	</div>

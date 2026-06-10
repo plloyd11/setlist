@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
+
 	let visible = $state(false);
 	let message = $state('');
 	let timeout: ReturnType<typeof setTimeout>;
@@ -11,6 +13,8 @@
 			visible = false;
 		}, duration);
 	}
+
+	onDestroy(() => clearTimeout(timeout));
 </script>
 
 {#if visible}

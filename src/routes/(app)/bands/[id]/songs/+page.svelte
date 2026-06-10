@@ -35,6 +35,19 @@
 	// Component refs
 	let toast: Toast;
 	let confirmDialog: ConfirmDialog;
+	let removeForm: HTMLFormElement;
+	let removeInput: HTMLInputElement;
+
+	async function handleRemoveSong(song: { bandSongId: string; title: string }) {
+		const confirmed = await confirmDialog.confirm(
+			'Remove Song',
+			`Are you sure you want to remove "${song.title}" from the band library?`
+		);
+		if (confirmed) {
+			removeInput.value = song.bandSongId;
+			removeForm.requestSubmit();
+		}
+	}
 
 	// Get band songs with flattened song data
 	let bandSongs = $derived(
@@ -554,39 +567,26 @@
 									<p class="mt-0.5 text-sm text-surface-400 dark:text-surface-500">{song.notes}</p>
 								{/if}
 							</button>
-							<form
-								method="POST"
-								action="?/removeSong"
-								use:enhance={() => {
-									return async ({ result, update }) => {
-										if (result.type === 'success') {
-											toast.show('Song removed from band');
-											await update();
-										}
-									};
-								}}
+							<button
+								type="button"
+								onclick={() => handleRemoveSong(song)}
+								class="mr-2 rounded p-1.5 text-surface-400 hover:bg-danger-50 hover:text-danger-500 dark:hover:bg-danger-900/20 dark:hover:text-danger-400"
+								aria-label="Remove {song.title} from band"
 							>
-								<input type="hidden" name="band_song_id" value={song.bandSongId} />
-								<button
-									type="submit"
-									class="mr-2 rounded p-1.5 text-surface-400 hover:bg-danger-50 hover:text-danger-500 dark:hover:bg-danger-900/20 dark:hover:text-danger-400"
-									aria-label="Remove {song.title} from band"
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
 								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										width="16"
-										height="16"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-									>
-										<path d="M18 6 6 18M6 6l12 12" />
-									</svg>
-								</button>
-							</form>
+									<path d="M18 6 6 18M6 6l12 12" />
+								</svg>
+							</button>
 						</div>
 					{/if}
 				{/each}
@@ -661,6 +661,24 @@
 
 <!-- Confirm dialog -->
 <ConfirmDialog bind:this={confirmDialog} />
+
+<!-- Hidden remove form (submitted after ConfirmDialog confirmation) -->
+<form
+	bind:this={removeForm}
+	method="POST"
+	action="?/removeSong"
+	class="hidden"
+	use:enhance={() => {
+		return async ({ result, update }) => {
+			if (result.type === 'success') {
+				toast.show('Song removed from band');
+				await update();
+			}
+		};
+	}}
+>
+	<input bind:this={removeInput} type="hidden" name="band_song_id" value="" />
+</form>
 
 <!-- Toast -->
 <Toast bind:this={toast} />

@@ -56,7 +56,7 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		bind:this={menuEl}
-		class="fixed z-50 min-w-[160px] rounded-lg border border-surface-200 bg-surface-50 py-1 shadow-lg dark:border-surface-700 dark:bg-surface-800"
+		class="fixed z-[60] min-w-[160px] rounded-lg border border-surface-200 bg-surface-50 py-1 shadow-lg dark:border-surface-700 dark:bg-surface-800"
 		style="left: {adjustedX}px; top: {adjustedY}px;"
 		onclick={(e) => e.stopPropagation()}
 		oncontextmenu={(e) => e.preventDefault()}

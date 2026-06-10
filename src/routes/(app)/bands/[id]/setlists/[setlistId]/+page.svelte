@@ -35,12 +35,37 @@
 		[SHADOW_ITEM_MARKER_PROPERTY_NAME]?: boolean;
 	};
 
-	// Mutation guard: prevents $effect from overwriting optimistic state during async operations
-	let isMutating = $state(false);
+	// Mutation epoch guard: prevents the $effect sync (and stale async responses)
+	// from overwriting newer optimistic state. Each mutation start bumps the epoch;
+	// a response is only applied if its captured epoch is still current.
+	let mutationEpoch = $state(0);
+	let inFlightEpoch = $state(0); // 0 = no mutation in flight
 
-	// State for DnD zones (populated by $effect blocks below that sync with data)
-	let libraryItems = $state<LibraryItem[]>([]);
-	let setlistItems = $state<SetlistItem[]>([]);
+	function beginMutation(): number {
+		mutationEpoch += 1;
+		inFlightEpoch = mutationEpoch;
+		return mutationEpoch;
+	}
+
+	function endMutation(epoch: number) {
+		// Only release the guard if no newer mutation started since
+		if (epoch === mutationEpoch) inFlightEpoch = 0;
+	}
+
+	// State for DnD zones — initialized inline so SSR renders the setlist
+	// immediately; the $effect blocks below resync after invalidateAll.
+	// svelte-ignore state_referenced_locally
+	let libraryItems = $state<LibraryItem[]>(data.songs.map((s: Song) => ({ ...s, id: s.id })));
+	let setlistItems = $state<SetlistItem[]>(
+		// svelte-ignore state_referenced_locally
+		data.setlistSongs.map((ss: any) => ({
+			id: ss.id,
+			song_id: ss.song_id,
+			title: (ss.songs as any).title,
+			duration_seconds: (ss.songs as any).duration_seconds,
+			position: ss.position
+		}))
+	);
 
 	// Filtered library items (search)
 	let filteredLibraryItems = $derived.by(() => {
@@ -58,10 +83,10 @@
 	});
 
 	$effect(() => {
-		// Track only data.setlistSongs -- NOT isMutating (untracked read-time guard)
+		// Track only data.setlistSongs -- NOT the mutation guard (untracked read-time guard)
 		const serverItems = data.setlistSongs;
-		// Don't overwrite during optimistic mutations (untracked so changing isMutating won't re-trigger)
-		if (untrack(() => isMutating)) return;
+		// Don't overwrite during optimistic mutations (untracked so guard changes won't re-trigger)
+		if (untrack(() => inFlightEpoch !== 0)) return;
 		setlistItems = serverItems.map((ss: any) => ({
 			id: ss.id,
 			song_id: ss.song_id,
@@ -114,7 +139,7 @@
 
 	// Persist order to DB
 	async function persistOrder(items: SetlistItem[]) {
-		isMutating = true;
+		const epoch = beginMutation();
 		const formData = new FormData();
 		formData.set(
 			'items',
@@ -141,14 +166,24 @@
 					const result = deserialize(text);
 					if (result.type === 'success' && result.data) {
 						const savedItems = (result.data as any).items;
-						if (Array.isArray(savedItems) && savedItems.length > 0) {
-							setlistItems = savedItems.map((ss: any) => ({
-								id: ss.id,
-								song_id: ss.song_id,
-								title: (ss.songs as any)?.title ?? ss.title ?? 'Unknown',
-								duration_seconds: (ss.songs as any)?.duration_seconds ?? ss.duration_seconds ?? 0,
-								position: ss.position
-							}));
+						// Only apply if no newer mutation started while we awaited
+						if (Array.isArray(savedItems) && savedItems.length > 0 && epoch === mutationEpoch) {
+							// Saved rows are raw setlist_songs rows (no joined songs) --
+							// merge title/duration from the current optimistic items
+							// (existing row IDs are stable) and the library (new rows).
+							const byRowId = new Map(setlistItems.map((item) => [item.id, item]));
+							const bySongId = new Map(data.songs.map((s: Song) => [s.id, s]));
+							setlistItems = savedItems.map((ss: any) => {
+								const existing = byRowId.get(ss.id);
+								const song = bySongId.get(ss.song_id);
+								return {
+									id: ss.id,
+									song_id: ss.song_id,
+									title: existing?.title ?? song?.title ?? 'Unknown',
+									duration_seconds: existing?.duration_seconds ?? song?.duration_seconds ?? 0,
+									position: ss.position
+								};
+							});
 						}
 					}
 				} catch {
@@ -158,13 +193,13 @@
 		} catch {
 			toast?.show('Failed to save order');
 		} finally {
-			isMutating = false;
+			endMutation(epoch);
 		}
 	}
 
 	// Add song via tap (mobile)
 	async function handleAddSong(song: Song) {
-		isMutating = true;
+		const epoch = beginMutation();
 		const formData = new FormData();
 		formData.set('song_id', song.id);
 
@@ -173,21 +208,50 @@
 				method: 'POST',
 				body: formData
 			});
-			if (response.ok) {
-				isMutating = false;
-				await invalidateAll();
-				toast?.show(`Added "${song.title}"`);
+			if (!response.ok) {
+				toast?.show('Failed to add song');
 				return;
+			}
+			// Append the returned row directly -- no invalidateAll needed
+			const text = await response.text();
+			let appended = false;
+			try {
+				const result = deserialize(text);
+				if (result.type === 'success' && result.data) {
+					const ss = (result.data as any).setlistSong;
+					// Only apply if no newer mutation started while we awaited
+					if (ss && epoch === mutationEpoch) {
+						setlistItems = [
+							...setlistItems,
+							{
+								id: ss.id,
+								song_id: ss.song_id ?? song.id,
+								title: ss.songs?.title ?? song.title,
+								duration_seconds: ss.songs?.duration_seconds ?? song.duration_seconds,
+								position: ss.position ?? setlistItems.length
+							}
+						];
+						appended = true;
+					}
+				}
+			} catch {
+				// Response parsing failed -- fall back to a server resync below
+			}
+			toast?.show(`Added "${song.title}"`);
+			if (!appended && epoch === mutationEpoch) {
+				endMutation(epoch);
+				await invalidateAll();
 			}
 		} catch {
 			toast?.show('Failed to add song');
+		} finally {
+			endMutation(epoch);
 		}
-		isMutating = false;
 	}
 
 	// Remove song from setlist
 	async function handleRemoveSong(setlistSongId: string) {
-		isMutating = true;
+		const epoch = beginMutation();
 		// Optimistic removal
 		setlistItems = setlistItems.filter((s) => s.id !== setlistSongId);
 
@@ -200,18 +264,20 @@
 				body: formData
 			});
 			if (!response.ok) {
-				isMutating = false;
+				// Revert (e.g. 404 row didn't exist): release guard then
+				// invalidate so $effect resyncs from the server
+				endMutation(epoch);
 				await invalidateAll();
 				return;
 			}
+			// Server confirmed the removal -- optimistic state is already correct
 		} catch {
 			toast?.show('Failed to remove song');
-			isMutating = false;
+			endMutation(epoch);
 			await invalidateAll();
 			return;
 		}
-		isMutating = false;
-		await invalidateAll();
+		endMutation(epoch);
 	}
 
 	// Update target time
@@ -294,7 +360,8 @@
 	<div class="flex border-b border-surface-200 md:hidden dark:border-surface-700">
 		<button
 			onclick={() => (activeTab = 'library')}
-			class="flex-1 px-4 py-3 text-center text-sm font-medium transition-colors {activeTab === 'library'
+			class="flex-1 px-4 py-3 text-center text-sm font-medium transition-colors {activeTab ===
+			'library'
 				? 'border-b-2 border-accent-500 text-accent-600 dark:text-accent-400'
 				: 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300'}"
 		>
@@ -302,13 +369,16 @@
 		</button>
 		<button
 			onclick={() => (activeTab = 'setlist')}
-			class="flex-1 px-4 py-3 text-center text-sm font-medium transition-colors {activeTab === 'setlist'
+			class="flex-1 px-4 py-3 text-center text-sm font-medium transition-colors {activeTab ===
+			'setlist'
 				? 'border-b-2 border-accent-500 text-accent-600 dark:text-accent-400'
 				: 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300'}"
 		>
 			Setlist
 			{#if setlistItems.length > 0}
-				<span class="ml-1 rounded-full bg-accent-100 px-1.5 text-xs text-accent-700 dark:bg-accent-900/30 dark:text-accent-400">
+				<span
+					class="ml-1 rounded-full bg-accent-100 px-1.5 text-xs text-accent-700 dark:bg-accent-900/30 dark:text-accent-400"
+				>
 					{setlistItems.length}
 				</span>
 			{/if}
@@ -319,7 +389,10 @@
 	<div class="flex min-h-0 flex-1 md:grid md:grid-cols-[320px_1fr]">
 		<!-- Library panel -->
 		<div
-			class="flex flex-col border-r border-surface-200 bg-surface-50 md:flex dark:border-surface-700 dark:bg-surface-900/50 {activeTab === 'library' ? 'flex' : 'hidden'}"
+			class="flex flex-col border-r border-surface-200 bg-surface-50 md:flex dark:border-surface-700 dark:bg-surface-900/50 {activeTab ===
+			'library'
+				? 'flex'
+				: 'hidden'}"
 		>
 			<div class="p-3">
 				<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Band Library</h2>
@@ -328,29 +401,35 @@
 					type="text"
 					bind:value={searchQuery}
 					placeholder="Search band songs..."
-					class="mt-2 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:outline-none focus:ring-1 focus:ring-neon-400 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
+					aria-label="Search band songs"
+					class="mt-2 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
 				/>
 			</div>
 
-			<!-- Library DnD zone -->
-			<div
-				class="flex-1 overflow-y-auto p-3 pt-0"
-				use:dndzone={{
-					items: filteredLibraryItems,
-					flipDurationMs,
-					type: 'setlist-songs',
-					dropFromOthersDisabled: true
-				}}
-				onconsider={handleLibraryConsider}
-				onfinalize={handleLibraryFinalize}
-			>
-				{#each filteredLibraryItems as song (song.id)}
-					<div class="mb-1.5 {songsInSetlist.has(song.id) ? 'opacity-50' : ''}">
-						<LibrarySongRow {song} onTap={handleAddSong} />
-					</div>
-				{/each}
+			<!-- Library DnD zone (empty-state overlay lives outside the zone:
+			     all direct children of a dndzone must correspond to items) -->
+			<div class="relative flex min-h-0 flex-1 flex-col">
+				<div
+					class="flex-1 overflow-y-auto p-3 pt-0"
+					use:dndzone={{
+						items: filteredLibraryItems,
+						flipDurationMs,
+						type: 'setlist-songs',
+						dropFromOthersDisabled: true
+					}}
+					onconsider={handleLibraryConsider}
+					onfinalize={handleLibraryFinalize}
+				>
+					{#each filteredLibraryItems as song (song.id)}
+						<div class="mb-1.5 {songsInSetlist.has(song.id) ? 'opacity-50' : ''}">
+							<LibrarySongRow {song} onTap={handleAddSong} />
+						</div>
+					{/each}
+				</div>
 				{#if filteredLibraryItems.length === 0}
-					<p class="py-8 text-center text-sm text-surface-400 dark:text-surface-500">
+					<p
+						class="pointer-events-none absolute inset-x-0 top-0 py-8 text-center text-sm text-surface-400 dark:text-surface-500"
+					>
 						{searchQuery ? 'No songs match your search' : 'No songs in band library'}
 					</p>
 				{/if}
@@ -358,16 +437,10 @@
 		</div>
 
 		<!-- Setlist panel -->
-		<div
-			class="flex flex-col md:flex {activeTab === 'setlist' ? 'flex' : 'hidden'}"
-		>
+		<div class="flex flex-col md:flex {activeTab === 'setlist' ? 'flex' : 'hidden'}">
 			<div class="flex-1 overflow-y-auto p-4 md:p-6">
 				<!-- Setlist header -->
-				<SetlistHeader
-					setlist={data.setlist}
-					profile={null}
-					onUpdate={handleUpdateSetlist}
-				/>
+				<SetlistHeader setlist={data.setlist} profile={null} onUpdate={handleUpdateSetlist} />
 
 				<!-- Share toggle -->
 				<div class="mb-4 flex flex-col items-center gap-2">
@@ -380,20 +453,45 @@
 					>
 						{#if shareLoading}
 							<svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25" />
-								<path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" class="opacity-75" />
+								<circle
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+									class="opacity-25"
+								/>
+								<path
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+									class="opacity-75"
+								/>
 							</svg>
 						{:else}
-							<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+							<svg
+								class="h-4 w-4"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+								/>
 							</svg>
 						{/if}
 						{isShared ? 'Sharing On' : 'Share'}
 					</button>
 
 					{#if isShared && shareUrl}
-						<div class="flex items-center gap-2 rounded-lg bg-surface-100 px-3 py-1.5 dark:bg-surface-800">
-							<span class="max-w-[200px] truncate text-xs text-surface-500 dark:text-surface-400 md:max-w-sm">
+						<div
+							class="flex items-center gap-2 rounded-lg bg-surface-100 px-3 py-1.5 dark:bg-surface-800"
+						>
+							<span
+								class="max-w-[200px] truncate text-xs text-surface-500 md:max-w-sm dark:text-surface-400"
+							>
 								{shareUrl}
 							</span>
 							<button
@@ -406,24 +504,31 @@
 					{/if}
 				</div>
 
-				<!-- Setlist DnD zone -->
-				<div
-					class="min-h-[120px] rounded-lg {setlistItems.length === 0 ? 'border-2 border-dashed border-surface-300 p-8 dark:border-surface-700' : ''}"
-					use:dndzone={{
-						items: setlistItems,
-						flipDurationMs,
-						type: 'setlist-songs'
-					}}
-					onconsider={handleSetlistConsider}
-					onfinalize={handleSetlistFinalize}
-				>
-					{#each setlistItems as song (song.id)}
-						<div class="mb-1.5">
-							<SetlistSongRow {song} onRemove={handleRemoveSong} />
-						</div>
-					{/each}
+				<!-- Setlist DnD zone (empty-state overlay lives outside the zone:
+				     all direct children of a dndzone must correspond to items) -->
+				<div class="relative">
+					<div
+						class="min-h-[120px] rounded-lg {setlistItems.length === 0
+							? 'border-2 border-dashed border-surface-300 p-8 dark:border-surface-700'
+							: ''}"
+						use:dndzone={{
+							items: setlistItems,
+							flipDurationMs,
+							type: 'setlist-songs'
+						}}
+						onconsider={handleSetlistConsider}
+						onfinalize={handleSetlistFinalize}
+					>
+						{#each setlistItems as song (song.id)}
+							<div class="mb-1.5">
+								<SetlistSongRow {song} onRemove={handleRemoveSong} />
+							</div>
+						{/each}
+					</div>
 					{#if setlistItems.length === 0}
-						<div class="pointer-events-none text-center">
+						<div
+							class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center"
+						>
 							<p class="text-sm text-surface-500 dark:text-surface-400">
 								Drag songs here to build your setlist
 							</p>

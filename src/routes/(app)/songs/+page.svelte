@@ -110,12 +110,11 @@
 		if (!contextSongId) return;
 		const confirmed = await confirmDialog.confirm(
 			'Delete Song',
-			`Are you sure you want to delete "${contextSongTitle}"?`
+			`Are you sure you want to delete "${contextSongTitle}"? It will also be removed from every setlist that uses it, including band setlists.`
 		);
 		if (confirmed) {
 			deleteInput.value = contextSongId;
 			deleteForm.requestSubmit();
-			// Phase 3: check setlist usage and show warning
 		}
 	}
 
@@ -223,7 +222,11 @@
 					<SongRow
 						{song}
 						supabase={data.supabase}
-						editing={editingSongId === song.id}
+						bind:editing={
+							() => editingSongId === song.id,
+							(v) =>
+								(editingSongId = v ? song.id : editingSongId === song.id ? null : editingSongId)
+						}
 						oncontextmenu={(pos) => showContextMenu(song.id, song.title, pos)}
 					/>
 				{/each}

@@ -9,9 +9,16 @@
 	let displayName = $state('');
 	let profileSaved = $state(false);
 
-	// Sync display name when data changes
+	// Sync display name only when the SERVER value actually changes — an
+	// invalidateAll elsewhere gives `data` a new reference with the same
+	// values, and unconditionally syncing would wipe in-progress typing.
+	let lastServerDisplayName: string | undefined;
 	$effect(() => {
-		displayName = data.profile?.display_name ?? '';
+		const serverName = data.profile?.display_name ?? '';
+		if (serverName !== lastServerDisplayName) {
+			lastServerDisplayName = serverName;
+			displayName = serverName;
+		}
 	});
 
 	async function handleSignOut() {

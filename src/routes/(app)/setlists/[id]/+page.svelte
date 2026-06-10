@@ -35,12 +35,29 @@
 		[SHADOW_ITEM_MARKER_PROPERTY_NAME]?: boolean;
 	};
 
-	// Mutation guard: prevents $effect from overwriting optimistic state during async operations
-	let isMutating = $state(false);
+	// Mutation epoch guard: prevents the $effect sync (and stale async responses)
+	// from overwriting newer optimistic state. Each mutation start bumps the epoch;
+	// a response is only applied if its captured epoch is still current.
+	let mutationEpoch = $state(0);
+	let inFlightEpoch = $state(0); // 0 = no mutation in flight
 
-	// State for DnD zones
+	function beginMutation(): number {
+		mutationEpoch += 1;
+		inFlightEpoch = mutationEpoch;
+		return mutationEpoch;
+	}
+
+	function endMutation(epoch: number) {
+		// Only release the guard if no newer mutation started since
+		if (epoch === mutationEpoch) inFlightEpoch = 0;
+	}
+
+	// State for DnD zones — initialized inline so SSR renders the setlist
+	// immediately; the $effect blocks below resync after invalidateAll.
+	// svelte-ignore state_referenced_locally
 	let libraryItems = $state<LibraryItem[]>(data.songs.map((s: Song) => ({ ...s, id: s.id })));
 	let setlistItems = $state<SetlistItem[]>(
+		// svelte-ignore state_referenced_locally
 		data.setlistSongs.map((ss: any) => ({
 			id: ss.id,
 			song_id: ss.song_id,
@@ -66,10 +83,10 @@
 	});
 
 	$effect(() => {
-		// Track only data.setlistSongs — NOT isMutating (untracked read-time guard)
+		// Track only data.setlistSongs — NOT the mutation guard (untracked read-time guard)
 		const serverItems = data.setlistSongs;
-		// Don't overwrite during optimistic mutations (untracked so changing isMutating won't re-trigger)
-		if (untrack(() => isMutating)) return;
+		// Don't overwrite during optimistic mutations (untracked so guard changes won't re-trigger)
+		if (untrack(() => inFlightEpoch !== 0)) return;
 		setlistItems = serverItems.map((ss: any) => ({
 			id: ss.id,
 			song_id: ss.song_id,
@@ -122,7 +139,7 @@
 
 	// Persist order to DB
 	async function persistOrder(items: SetlistItem[]) {
-		isMutating = true;
+		const epoch = beginMutation();
 		const formData = new FormData();
 		formData.set(
 			'items',
@@ -150,14 +167,24 @@
 					const result = deserialize(text);
 					if (result.type === 'success' && result.data) {
 						const savedItems = (result.data as any).items;
-						if (Array.isArray(savedItems) && savedItems.length > 0) {
-							setlistItems = savedItems.map((ss: any) => ({
-								id: ss.id,
-								song_id: ss.song_id,
-								title: (ss.songs as any)?.title ?? ss.title ?? 'Unknown',
-								duration_seconds: (ss.songs as any)?.duration_seconds ?? ss.duration_seconds ?? 0,
-								position: ss.position
-							}));
+						// Only apply if no newer mutation started while we awaited
+						if (Array.isArray(savedItems) && savedItems.length > 0 && epoch === mutationEpoch) {
+							// Saved rows are raw setlist_songs rows (no joined songs) —
+							// merge title/duration from the current optimistic items
+							// (existing row IDs are stable) and the library (new rows).
+							const byRowId = new Map(setlistItems.map((item) => [item.id, item]));
+							const bySongId = new Map(data.songs.map((s: Song) => [s.id, s]));
+							setlistItems = savedItems.map((ss: any) => {
+								const existing = byRowId.get(ss.id);
+								const song = bySongId.get(ss.song_id);
+								return {
+									id: ss.id,
+									song_id: ss.song_id,
+									title: existing?.title ?? song?.title ?? 'Unknown',
+									duration_seconds: existing?.duration_seconds ?? song?.duration_seconds ?? 0,
+									position: ss.position
+								};
+							});
 						}
 					}
 				} catch {
@@ -167,13 +194,13 @@
 		} catch {
 			toast?.show('Failed to save order');
 		} finally {
-			isMutating = false;
+			endMutation(epoch);
 		}
 	}
 
 	// Add song via tap (mobile)
 	async function handleAddSong(song: Song) {
-		isMutating = true;
+		const epoch = beginMutation();
 		const formData = new FormData();
 		formData.set('song_id', song.id);
 
@@ -182,21 +209,50 @@
 				method: 'POST',
 				body: formData
 			});
-			if (response.ok) {
-				isMutating = false;
-				await invalidateAll();
-				toast?.show(`Added "${song.title}"`);
+			if (!response.ok) {
+				toast?.show('Failed to add song');
 				return;
+			}
+			// Append the returned row directly — no invalidateAll needed
+			const text = await response.text();
+			let appended = false;
+			try {
+				const result = deserialize(text);
+				if (result.type === 'success' && result.data) {
+					const ss = (result.data as any).setlistSong;
+					// Only apply if no newer mutation started while we awaited
+					if (ss && epoch === mutationEpoch) {
+						setlistItems = [
+							...setlistItems,
+							{
+								id: ss.id,
+								song_id: ss.song_id ?? song.id,
+								title: ss.songs?.title ?? song.title,
+								duration_seconds: ss.songs?.duration_seconds ?? song.duration_seconds,
+								position: ss.position ?? setlistItems.length
+							}
+						];
+						appended = true;
+					}
+				}
+			} catch {
+				// Response parsing failed — fall back to a server resync below
+			}
+			toast?.show(`Added "${song.title}"`);
+			if (!appended && epoch === mutationEpoch) {
+				endMutation(epoch);
+				await invalidateAll();
 			}
 		} catch {
 			toast?.show('Failed to add song');
+		} finally {
+			endMutation(epoch);
 		}
-		isMutating = false;
 	}
 
 	// Remove song from setlist
 	async function handleRemoveSong(setlistSongId: string) {
-		isMutating = true;
+		const epoch = beginMutation();
 		// Optimistic removal
 		setlistItems = setlistItems.filter((s) => s.id !== setlistSongId);
 
@@ -209,20 +265,20 @@
 				body: formData
 			});
 			if (!response.ok) {
-				// Revert: release guard then invalidate so $effect syncs from server
-				isMutating = false;
+				// Revert (e.g. 404 row didn't exist): release guard then
+				// invalidate so $effect resyncs from the server
+				endMutation(epoch);
 				await invalidateAll();
 				return;
 			}
+			// Server confirmed the removal — optimistic state is already correct
 		} catch {
 			toast?.show('Failed to remove song');
-			isMutating = false;
+			endMutation(epoch);
 			await invalidateAll();
 			return;
 		}
-		// Release guard then refresh — $effect will sync from fresh data (song gone)
-		isMutating = false;
-		await invalidateAll();
+		endMutation(epoch);
 	}
 
 	// Update target time
@@ -348,29 +404,35 @@
 					type="text"
 					bind:value={searchQuery}
 					placeholder="Search songs..."
+					aria-label="Search songs"
 					class="mt-2 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
 				/>
 			</div>
 
-			<!-- Library DnD zone -->
-			<div
-				class="flex-1 overflow-y-auto p-3 pt-0"
-				use:dndzone={{
-					items: filteredLibraryItems,
-					flipDurationMs,
-					type: 'setlist-songs',
-					dropFromOthersDisabled: true
-				}}
-				onconsider={handleLibraryConsider}
-				onfinalize={handleLibraryFinalize}
-			>
-				{#each filteredLibraryItems as song (song.id)}
-					<div class="mb-1.5 {songsInSetlist.has(song.id) ? 'opacity-50' : ''}">
-						<LibrarySongRow {song} onTap={handleAddSong} />
-					</div>
-				{/each}
+			<!-- Library DnD zone (empty-state overlay lives outside the zone:
+			     all direct children of a dndzone must correspond to items) -->
+			<div class="relative flex min-h-0 flex-1 flex-col">
+				<div
+					class="flex-1 overflow-y-auto p-3 pt-0"
+					use:dndzone={{
+						items: filteredLibraryItems,
+						flipDurationMs,
+						type: 'setlist-songs',
+						dropFromOthersDisabled: true
+					}}
+					onconsider={handleLibraryConsider}
+					onfinalize={handleLibraryFinalize}
+				>
+					{#each filteredLibraryItems as song (song.id)}
+						<div class="mb-1.5 {songsInSetlist.has(song.id) ? 'opacity-50' : ''}">
+							<LibrarySongRow {song} onTap={handleAddSong} />
+						</div>
+					{/each}
+				</div>
 				{#if filteredLibraryItems.length === 0}
-					<p class="py-8 text-center text-sm text-surface-400 dark:text-surface-500">
+					<p
+						class="pointer-events-none absolute inset-x-0 top-0 py-8 text-center text-sm text-surface-400 dark:text-surface-500"
+					>
 						{searchQuery ? 'No songs match your search' : 'No songs in your library'}
 					</p>
 				{/if}
@@ -449,26 +511,31 @@
 					{/if}
 				</div>
 
-				<!-- Setlist DnD zone -->
-				<div
-					class="min-h-[120px] rounded-lg {setlistItems.length === 0
-						? 'border-2 border-dashed border-surface-300 p-8 dark:border-surface-700'
-						: ''}"
-					use:dndzone={{
-						items: setlistItems,
-						flipDurationMs,
-						type: 'setlist-songs'
-					}}
-					onconsider={handleSetlistConsider}
-					onfinalize={handleSetlistFinalize}
-				>
-					{#each setlistItems as song (song.id)}
-						<div class="mb-1.5">
-							<SetlistSongRow {song} onRemove={handleRemoveSong} />
-						</div>
-					{/each}
+				<!-- Setlist DnD zone (empty-state overlay lives outside the zone:
+				     all direct children of a dndzone must correspond to items) -->
+				<div class="relative">
+					<div
+						class="min-h-[120px] rounded-lg {setlistItems.length === 0
+							? 'border-2 border-dashed border-surface-300 p-8 dark:border-surface-700'
+							: ''}"
+						use:dndzone={{
+							items: setlistItems,
+							flipDurationMs,
+							type: 'setlist-songs'
+						}}
+						onconsider={handleSetlistConsider}
+						onfinalize={handleSetlistFinalize}
+					>
+						{#each setlistItems as song (song.id)}
+							<div class="mb-1.5">
+								<SetlistSongRow {song} onRemove={handleRemoveSong} />
+							</div>
+						{/each}
+					</div>
 					{#if setlistItems.length === 0}
-						<div class="pointer-events-none text-center">
+						<div
+							class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center"
+						>
 							<p class="text-sm text-surface-500 dark:text-surface-400">
 								Drag songs here to build your setlist
 							</p>

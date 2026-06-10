@@ -7,7 +7,9 @@
 	<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">
 		Welcome back, {data.user?.user_metadata?.full_name || 'there'}
 	</h1>
-	<p class="mt-2 text-surface-500 dark:text-surface-400">Here's what's happening with your music.</p>
+	<p class="mt-2 text-surface-500 dark:text-surface-400">
+		Here's what's happening with your music.
+	</p>
 
 	<!-- Quick stats cards -->
 	<div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -63,7 +65,9 @@
 					</svg>
 				</div>
 				<div>
-					<p class="text-2xl font-bold text-surface-900 dark:text-surface-100">{data.setlistCount}</p>
+					<p class="text-2xl font-bold text-surface-900 dark:text-surface-100">
+						{data.setlistCount}
+					</p>
 					<p class="text-sm text-surface-500 dark:text-surface-400">setlists created</p>
 				</div>
 			</div>

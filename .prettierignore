@@ -7,3 +7,6 @@ bun.lockb
 
 # Miscellaneous
 /static/
+
+# GSD planning artifacts — machine-generated, not subject to formatting
+.planning/

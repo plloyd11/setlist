@@ -93,7 +93,10 @@
 {#if editing}
 	<!-- Edit mode -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="border-b border-surface-200 px-4 py-3 dark:border-surface-700" onkeydown={handleKeydown}>
+	<div
+		class="border-b border-surface-200 px-4 py-3 dark:border-surface-700"
+		onkeydown={handleKeydown}
+	>
 		<div class="flex items-center gap-2">
 			<input
 				type="text"

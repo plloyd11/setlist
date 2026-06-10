@@ -114,7 +114,10 @@ test.describe('Setlist - Management (SETL-07)', () => {
 });
 
 test.describe('Setlist DnD - Add Songs (SETL-02)', () => {
-	test('should add a song from library to setlist via drag-and-drop', async ({ page, testUser }) => {
+	test('should add a song from library to setlist via drag-and-drop', async ({
+		page,
+		testUser
+	}) => {
 		// Create setlist (navigates to /setlists/:id)
 		const setlist = await createSetlist(page, testUser.id, {
 			name: 'DnD Add Test',
@@ -158,8 +161,14 @@ test.describe('Setlist DnD - Reorder Songs (SETL-03)', () => {
 			transition_seconds: 0,
 			target_seconds: null
 		});
-		const songA = await createSong(page, testUser.id, { title: 'Song Alpha', duration_seconds: 120 });
-		const songB = await createSong(page, testUser.id, { title: 'Song Beta', duration_seconds: 180 });
+		const songA = await createSong(page, testUser.id, {
+			title: 'Song Alpha',
+			duration_seconds: 120
+		});
+		const songB = await createSong(page, testUser.id, {
+			title: 'Song Beta',
+			duration_seconds: 180
+		});
 
 		// Pre-populate setlist with songs via admin client (isolate reorder from add behavior)
 		await adminClient.from('setlist_songs').insert([
@@ -209,7 +218,10 @@ test.describe('Setlist - Timing Updates (SETL-04)', () => {
 			transition_seconds: 0,
 			target_seconds: null
 		});
-		const song1 = await createSong(page, testUser.id, { title: 'Three Min', duration_seconds: 180 });
+		const song1 = await createSong(page, testUser.id, {
+			title: 'Three Min',
+			duration_seconds: 180
+		});
 		const song2 = await createSong(page, testUser.id, { title: 'Two Min', duration_seconds: 120 });
 
 		// Pre-populate setlist via admin
@@ -235,8 +247,14 @@ test.describe('Setlist - Timing Updates (SETL-04)', () => {
 			transition_seconds: 0,
 			target_seconds: null
 		});
-		const song1 = await createSong(page, testUser.id, { title: 'Remove Me Song', duration_seconds: 180 });
-		const song2 = await createSong(page, testUser.id, { title: 'Stay Song', duration_seconds: 120 });
+		const song1 = await createSong(page, testUser.id, {
+			title: 'Remove Me Song',
+			duration_seconds: 180
+		});
+		const song2 = await createSong(page, testUser.id, {
+			title: 'Stay Song',
+			duration_seconds: 120
+		});
 
 		await adminClient.from('setlist_songs').insert([
 			{ setlist_id: setlist.id, song_id: song1.id, position: 0 },
@@ -266,8 +284,14 @@ test.describe('Setlist - Target Time (SETL-05)', () => {
 			target_seconds: null
 		});
 		// Two 3:00 songs = 6:00 total
-		const song1 = await createSong(page, testUser.id, { title: 'Over Song A', duration_seconds: 180 });
-		const song2 = await createSong(page, testUser.id, { title: 'Over Song B', duration_seconds: 180 });
+		const song1 = await createSong(page, testUser.id, {
+			title: 'Over Song A',
+			duration_seconds: 180
+		});
+		const song2 = await createSong(page, testUser.id, {
+			title: 'Over Song B',
+			duration_seconds: 180
+		});
 
 		await adminClient.from('setlist_songs').insert([
 			{ setlist_id: setlist.id, song_id: song1.id, position: 0 },
@@ -295,11 +319,14 @@ test.describe('Setlist - Target Time (SETL-05)', () => {
 			transition_seconds: 0,
 			target_seconds: null
 		});
-		const song = await createSong(page, testUser.id, { title: 'Under Song', duration_seconds: 180 });
+		const song = await createSong(page, testUser.id, {
+			title: 'Under Song',
+			duration_seconds: 180
+		});
 
-		await adminClient.from('setlist_songs').insert([
-			{ setlist_id: setlist.id, song_id: song.id, position: 0 }
-		]);
+		await adminClient
+			.from('setlist_songs')
+			.insert([{ setlist_id: setlist.id, song_id: song.id, position: 0 }]);
 
 		await page.goto(`/setlists/${setlist.id}`);
 
@@ -324,8 +351,14 @@ test.describe('Setlist - Transition Gap (SETL-06)', () => {
 			target_seconds: null
 		});
 		// Two 3:00 songs = 6:00 base total, 1 gap between 2 songs
-		const song1 = await createSong(page, testUser.id, { title: 'Gap Song A', duration_seconds: 180 });
-		const song2 = await createSong(page, testUser.id, { title: 'Gap Song B', duration_seconds: 180 });
+		const song1 = await createSong(page, testUser.id, {
+			title: 'Gap Song A',
+			duration_seconds: 180
+		});
+		const song2 = await createSong(page, testUser.id, {
+			title: 'Gap Song B',
+			duration_seconds: 180
+		});
 
 		await adminClient.from('setlist_songs').insert([
 			{ setlist_id: setlist.id, song_id: song1.id, position: 0 },
@@ -351,14 +384,21 @@ test.describe('Setlist - Transition Gap (SETL-06)', () => {
 });
 
 test.describe('Setlist - Share (SETL-08)', () => {
-	test('should share setlist and access via public link without auth', async ({ page, browser, testUser }) => {
+	test('should share setlist and access via public link without auth', async ({
+		page,
+		browser,
+		testUser
+	}) => {
 		const setlist = await createSetlist(page, testUser.id, { name: 'Shared Gig Set' });
-		const song = await createSong(page, testUser.id, { title: 'Shared Song', duration_seconds: 240 });
+		const song = await createSong(page, testUser.id, {
+			title: 'Shared Song',
+			duration_seconds: 240
+		});
 
 		// Pre-populate setlist with song
-		await adminClient.from('setlist_songs').insert([
-			{ setlist_id: setlist.id, song_id: song.id, position: 0 }
-		]);
+		await adminClient
+			.from('setlist_songs')
+			.insert([{ setlist_id: setlist.id, song_id: song.id, position: 0 }]);
 
 		await page.goto(`/setlists/${setlist.id}`);
 
@@ -367,8 +407,10 @@ test.describe('Setlist - Share (SETL-08)', () => {
 		// Wait for "Sharing On" state (button text changes)
 		await expect(page.getByText('Sharing On')).toBeVisible();
 
-		// Extract share URL (URL in truncate span)
-		const shareUrl = await page.locator('.truncate').innerText();
+		// Extract share URL (the span next to the Copy button is the only element
+		// containing "/share/" -- a bare .truncate locator matches multiple elements
+		// on this page and trips strict mode)
+		const shareUrl = await page.locator('span.truncate', { hasText: '/share/' }).innerText();
 
 		// Visit in unauthenticated browser context
 		const publicContext = await browser.newContext({ storageState: undefined });

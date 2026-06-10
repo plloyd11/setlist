@@ -7,36 +7,34 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 		throw error(401, 'Not authenticated');
 	}
 
-	// Validate setlist belongs to this band
-	const { data: setlist } = await supabase
-		.from('setlists')
-		.select('*')
-		.eq('id', params.setlistId)
-		.eq('band_id', params.id)
-		.single();
+	// The three queries are independent — run them concurrently instead of as
+	// a waterfall. The setlist result still gates the 404.
+	const [{ data: setlist }, { data: setlistSongs }, { data: bandSongs }] = await Promise.all([
+		supabase
+			.from('setlists')
+			.select('*')
+			.eq('id', params.setlistId)
+			.eq('band_id', params.id)
+			.single(),
+		supabase
+			.from('setlist_songs')
+			.select('id, position, song_id, songs(id, title, duration_seconds)')
+			.eq('setlist_id', params.setlistId)
+			.order('position'),
+		// Band songs (library panel) -- KEY DIFFERENCE from personal builder
+		supabase
+			.from('band_songs')
+			.select('song_id, songs(id, title, duration_seconds, notes)')
+			.eq('band_id', params.id)
+			.order('songs(title)')
+	]);
 
 	if (!setlist) {
 		throw error(404, 'Setlist not found');
 	}
 
-	// Load setlist songs with joined song data
-	const { data: setlistSongs } = await supabase
-		.from('setlist_songs')
-		.select('id, position, song_id, songs(id, title, duration_seconds)')
-		.eq('setlist_id', params.setlistId)
-		.order('position');
-
-	// Load band songs (library panel) -- KEY DIFFERENCE from personal builder
-	const { data: bandSongs } = await supabase
-		.from('band_songs')
-		.select('song_id, songs(id, title, duration_seconds, notes)')
-		.eq('band_id', params.id)
-		.order('songs(title)');
-
 	// Flatten band songs into Song-like objects for the library panel
-	const librarySongs = (bandSongs ?? [])
-		.map((bs: any) => bs.songs)
-		.filter(Boolean);
+	const librarySongs = (bandSongs ?? []).map((bs: any) => bs.songs).filter(Boolean);
 
 	return {
 		setlist,
@@ -92,27 +90,15 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid items data' });
 		}
 
-		// Delete all and re-insert to avoid unique(setlist_id, position) constraint
-		// violations during reorder (individual position updates conflict)
-		await supabase.from('setlist_songs').delete().eq('setlist_id', params.setlistId);
+		// Atomic reorder via RPC: applies position changes, removals, and new
+		// rows in one transaction (the old delete-all/re-insert could wipe the
+		// setlist on partial failure) and keeps existing row IDs stable.
+		const { data: savedRows, error: saveError } = await supabase.rpc('save_setlist_order', {
+			p_setlist_id: params.setlistId,
+			p_items: items.map((item) => ({ id: item.id ?? null, song_id: item.song_id }))
+		});
 
-		if (items.length > 0) {
-			const { error: insertError } = await supabase.from('setlist_songs').insert(
-				items.map((item) => ({
-					setlist_id: params.setlistId,
-					song_id: item.song_id,
-					position: item.position
-				}))
-			);
-			if (insertError) return fail(500, { error: 'Failed to save order' });
-		}
-
-		// Return the full set of rows so the client can sync IDs
-		const { data: savedRows } = await supabase
-			.from('setlist_songs')
-			.select('id, position, song_id, songs(id, title, duration_seconds)')
-			.eq('setlist_id', params.setlistId)
-			.order('position');
+		if (saveError) return fail(500, { error: 'Failed to save order' });
 
 		return { saved: true, items: savedRows ?? [] };
 	},
@@ -125,28 +111,34 @@ export const actions: Actions = {
 		const song_id = formData.get('song_id') as string;
 		if (!song_id) return fail(400, { error: 'Song ID is required' });
 
-		// Get max position
-		const { data: existing } = await supabase
-			.from('setlist_songs')
-			.select('position')
-			.eq('setlist_id', params.setlistId)
-			.order('position', { ascending: false })
-			.limit(1);
+		// Read-max-then-insert races with concurrent adds (two band members,
+		// double-tap) on the unique(setlist_id, position) constraint — retry
+		// on 23505.
+		for (let attempt = 0; attempt < 3; attempt++) {
+			const { data: existing } = await supabase
+				.from('setlist_songs')
+				.select('position')
+				.eq('setlist_id', params.setlistId)
+				.order('position', { ascending: false })
+				.limit(1);
 
-		const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
+			const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
 
-		const { data: newRow, error: insertError } = await supabase
-			.from('setlist_songs')
-			.insert({
-				setlist_id: params.setlistId,
-				song_id,
-				position: nextPosition
-			})
-			.select('id, position, song_id, songs(id, title, duration_seconds)')
-			.single();
+			const { data: newRow, error: insertError } = await supabase
+				.from('setlist_songs')
+				.insert({
+					setlist_id: params.setlistId,
+					song_id,
+					position: nextPosition
+				})
+				.select('id, position, song_id, songs(id, title, duration_seconds)')
+				.single();
 
-		if (insertError) return fail(500, { error: 'Failed to add song' });
-		return { added: true, setlistSong: newRow };
+			if (!insertError) return { added: true, setlistSong: newRow };
+			if (insertError.code !== '23505') break;
+		}
+
+		return fail(500, { error: 'Failed to add song' });
 	},
 
 	toggleShare: async ({ params, request, locals: { supabase, safeGetSession } }) => {
@@ -174,7 +166,16 @@ export const actions: Actions = {
 		const setlist_song_id = formData.get('setlist_song_id') as string;
 		if (!setlist_song_id) return fail(400, { error: 'Setlist song ID is required' });
 
-		await supabase.from('setlist_songs').delete().eq('id', setlist_song_id);
+		// .select() so an RLS-filtered no-op is reported instead of faking success
+		const { data: deletedRows, error: deleteError } = await supabase
+			.from('setlist_songs')
+			.delete()
+			.eq('id', setlist_song_id)
+			.select('id');
+
+		if (deleteError || !deletedRows?.length) {
+			return fail(404, { error: 'Song not found in setlist' });
+		}
 
 		return { removed: true };
 	}

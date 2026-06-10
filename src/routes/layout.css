@@ -203,6 +203,11 @@
 	--shadow-glow-neon: 0 0 10px rgba(209, 216, 149, 0.3), 0 0 20px rgba(209, 216, 149, 0.1);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
 	font-family: var(--font-display);
 }

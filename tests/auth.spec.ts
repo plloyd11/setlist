@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { createSecondUser } from './helpers/multi-user';
 
 test.describe('Unauthenticated redirect (AUTH-01)', () => {
 	test('should redirect to login when unauthenticated user visits protected route', async ({
@@ -47,17 +48,30 @@ test.describe('Authenticated access (AUTH-02)', () => {
 });
 
 test.describe('Sign-out (AUTH-03)', () => {
-	test('should redirect to auth page after signing out', async ({ page }) => {
-		await page.goto('/settings');
-		await page.getByRole('button', { name: /sign out/i }).click();
-		await expect(page).toHaveURL(/\/auth/, { timeout: 10000 });
+	// Sign-out revokes the user's refresh tokens globally, so these tests use a
+	// dedicated user instead of the worker-scoped shared user -- otherwise later
+	// tests in the same worker can fail when their session tries to refresh.
+	test('should redirect to auth page after signing out', async ({ browser }) => {
+		const signOutUser = await createSecondUser(browser);
+		try {
+			await signOutUser.page.goto('/settings');
+			await signOutUser.page.getByRole('button', { name: /sign out/i }).click();
+			await expect(signOutUser.page).toHaveURL(/\/auth/, { timeout: 10000 });
+		} finally {
+			await signOutUser.cleanup();
+		}
 	});
 
-	test('should block access to protected routes after signing out', async ({ page }) => {
-		await page.goto('/settings');
-		await page.getByRole('button', { name: /sign out/i }).click();
-		await expect(page).toHaveURL(/\/auth/, { timeout: 10000 });
-		await page.goto('/dashboard');
-		await expect(page).toHaveURL(/\/auth/);
+	test('should block access to protected routes after signing out', async ({ browser }) => {
+		const signOutUser = await createSecondUser(browser);
+		try {
+			await signOutUser.page.goto('/settings');
+			await signOutUser.page.getByRole('button', { name: /sign out/i }).click();
+			await expect(signOutUser.page).toHaveURL(/\/auth/, { timeout: 10000 });
+			await signOutUser.page.goto('/dashboard');
+			await expect(signOutUser.page).toHaveURL(/\/auth/);
+		} finally {
+			await signOutUser.cleanup();
+		}
 	});
 });

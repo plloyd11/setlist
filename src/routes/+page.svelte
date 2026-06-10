@@ -2,14 +2,23 @@
 	import { onMount } from 'svelte';
 
 	onMount(() => {
-		const script = document.createElement('script');
-		script.src =
+		const src =
 			'https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.0.5/dist/unicornStudio.umd.js';
-		script.onload = () => {
-			// @ts-ignore — UnicornStudio is loaded via external script
+
+		// Only append the script once — revisits reuse the already-loaded global
+		// @ts-ignore — UnicornStudio is loaded via external script
+		if (window.UnicornStudio) {
+			// @ts-ignore
 			window.UnicornStudio.init();
-		};
-		document.head.appendChild(script);
+		} else if (!document.querySelector(`script[src="${src}"]`)) {
+			const script = document.createElement('script');
+			script.src = src;
+			script.onload = () => {
+				// @ts-ignore
+				window.UnicornStudio.init();
+			};
+			document.head.appendChild(script);
+		}
 
 		return () => {
 			// @ts-ignore

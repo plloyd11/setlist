@@ -30,10 +30,17 @@ export const actions: Actions = {
 			return fail(400, { error: 'Song ID is required' });
 		}
 
-		const { error } = await supabase.from('songs').delete().eq('id', id);
+		// Explicit user_id scope plus .select() so an RLS-filtered no-op is
+		// reported instead of faking success.
+		const { data: deletedRows, error } = await supabase
+			.from('songs')
+			.delete()
+			.eq('id', id)
+			.eq('user_id', session.user.id)
+			.select('id');
 
-		if (error) {
-			return fail(500, { error: 'Failed to delete song' });
+		if (error || !deletedRows?.length) {
+			return fail(error ? 500 : 404, { error: 'Failed to delete song' });
 		}
 
 		return { deleted: true };

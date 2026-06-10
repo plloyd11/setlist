@@ -14,7 +14,8 @@ export const actions: Actions = {
 			.eq('user_id', session.user.id)
 			.single();
 
-		if (membership?.role !== 'owner') return fail(403, { error: 'Only the owner can edit band settings' });
+		if (membership?.role !== 'owner')
+			return fail(403, { error: 'Only the owner can edit band settings' });
 
 		const formData = await request.formData();
 		const name = (formData.get('name') as string)?.trim();
@@ -42,7 +43,8 @@ export const actions: Actions = {
 			.eq('user_id', session.user.id)
 			.single();
 
-		if (membership?.role !== 'owner') return fail(403, { error: 'Only the owner can delete this band' });
+		if (membership?.role !== 'owner')
+			return fail(403, { error: 'Only the owner can delete this band' });
 
 		const { error: deleteError } = await supabase.from('bands').delete().eq('id', params.id);
 

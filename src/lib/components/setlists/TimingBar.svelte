@@ -70,9 +70,7 @@
 	}
 
 	let transitionLabel = $derived(
-		transitionSeconds >= 60
-			? formatDuration(transitionSeconds)
-			: `${transitionSeconds}s`
+		transitionSeconds >= 60 ? formatDuration(transitionSeconds) : `${transitionSeconds}s`
 	);
 
 	let overUnderLabel = $derived.by(() => {
@@ -83,12 +81,18 @@
 	});
 </script>
 
-<div class="sticky bottom-0 z-10 border-t border-surface-200 bg-surface-50 px-4 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] dark:border-surface-700 dark:bg-surface-900 dark:shadow-[0_-2px_8px_rgba(0,0,0,0.3)]">
+<div
+	class="sticky bottom-0 z-10 border-t border-surface-200 bg-surface-50 px-4 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] dark:border-surface-700 dark:bg-surface-900 dark:shadow-[0_-2px_8px_rgba(0,0,0,0.3)]"
+>
 	<!-- Desktop layout: single row -->
 	<div class="hidden items-center gap-4 md:flex">
 		<!-- Total time -->
 		<div class="text-center">
-			<p class="text-[10px] font-medium uppercase tracking-wider text-surface-400 dark:text-surface-500">Total</p>
+			<p
+				class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+			>
+				Total
+			</p>
 			<p class="font-display text-xl font-bold text-surface-900 dark:text-surface-100">
 				{formatDuration(totalSeconds)}
 			</p>
@@ -96,13 +100,18 @@
 
 		<!-- Target time input -->
 		<div class="text-center">
-			<p class="text-[10px] font-medium uppercase tracking-wider text-surface-400 dark:text-surface-500">Target</p>
+			<p
+				class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+			>
+				Target
+			</p>
 			<input
 				type="text"
 				bind:value={targetInput}
 				onblur={handleTargetBlur}
 				onkeydown={handleTargetKeydown}
 				placeholder="Set target"
+				aria-label="Target set duration"
 				class="w-20 rounded border border-surface-300 bg-transparent px-1.5 py-0.5 text-center text-sm text-surface-700 placeholder-surface-400 focus:border-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-300 dark:placeholder-surface-500"
 			/>
 		</div>
@@ -110,7 +119,11 @@
 		<!-- Over/under indicator -->
 		{#if targetSeconds}
 			<div class="text-center">
-				<p class="text-[10px] font-medium uppercase tracking-wider text-surface-400 dark:text-surface-500">Diff</p>
+				<p
+					class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+				>
+					Diff
+				</p>
 				<p class="text-sm font-bold {isOver ? 'text-danger-500' : 'text-success-400'}">
 					{overUnderLabel}
 				</p>
@@ -128,14 +141,18 @@
 
 		<!-- Transition stepper -->
 		<div class="text-center">
-			<p class="text-[10px] font-medium uppercase tracking-wider text-surface-400 dark:text-surface-500">Gap</p>
+			<p
+				class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+			>
+				Gap
+			</p>
 			<div class="flex items-center gap-1">
 				<button
 					onclick={decrementTransition}
 					disabled={transitionSeconds <= 0}
 					class="rounded px-1.5 py-0.5 text-xs text-surface-500 hover:bg-surface-100 disabled:opacity-30 dark:text-surface-400 dark:hover:bg-surface-800"
-					aria-label="Decrease transition time"
-				>-</button>
+					aria-label="Decrease transition time">-</button
+				>
 				<span class="w-10 text-center text-sm font-medium text-surface-700 dark:text-surface-300">
 					{transitionLabel}
 				</span>
@@ -143,8 +160,8 @@
 					onclick={incrementTransition}
 					disabled={transitionSeconds >= 300}
 					class="rounded px-1.5 py-0.5 text-xs text-surface-500 hover:bg-surface-100 disabled:opacity-30 dark:text-surface-400 dark:hover:bg-surface-800"
-					aria-label="Increase transition time"
-				>+</button>
+					aria-label="Increase transition time">+</button
+				>
 			</div>
 		</div>
 	</div>
@@ -154,7 +171,10 @@
 		<div class="flex items-center justify-between gap-3">
 			<!-- Total -->
 			<div>
-				<span class="text-[10px] font-medium uppercase tracking-wider text-surface-400 dark:text-surface-500">Total </span>
+				<span
+					class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+					>Total
+				</span>
 				<span class="font-display text-lg font-bold text-surface-900 dark:text-surface-100">
 					{formatDuration(totalSeconds)}
 				</span>
@@ -169,31 +189,42 @@
 
 			<!-- Target input -->
 			<div class="flex items-center gap-1">
-				<span class="text-[10px] font-medium uppercase tracking-wider text-surface-400 dark:text-surface-500">Tgt </span>
+				<span
+					class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+					>Tgt
+				</span>
 				<input
 					type="text"
 					bind:value={targetInput}
 					onblur={handleTargetBlur}
 					onkeydown={handleTargetKeydown}
 					placeholder="--:--"
+					aria-label="Target set duration"
 					class="w-14 rounded border border-surface-300 bg-transparent px-1 py-0.5 text-center text-xs text-surface-700 placeholder-surface-400 focus:border-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-300 dark:placeholder-surface-500"
 				/>
 			</div>
 
 			<!-- Gap stepper -->
 			<div class="flex items-center gap-0.5">
-				<span class="text-[10px] font-medium uppercase tracking-wider text-surface-400 dark:text-surface-500">Gap </span>
+				<span
+					class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+					>Gap
+				</span>
 				<button
 					onclick={decrementTransition}
 					disabled={transitionSeconds <= 0}
 					class="rounded px-1 text-xs text-surface-500 disabled:opacity-30 dark:text-surface-400"
-				>-</button>
-				<span class="text-xs font-medium text-surface-700 dark:text-surface-300">{transitionLabel}</span>
+					aria-label="Decrease transition time">-</button
+				>
+				<span class="text-xs font-medium text-surface-700 dark:text-surface-300"
+					>{transitionLabel}</span
+				>
 				<button
 					onclick={incrementTransition}
 					disabled={transitionSeconds >= 300}
 					class="rounded px-1 text-xs text-surface-500 disabled:opacity-30 dark:text-surface-400"
-				>+</button>
+					aria-label="Increase transition time">+</button
+				>
 			</div>
 		</div>
 

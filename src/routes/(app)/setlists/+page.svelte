@@ -163,7 +163,9 @@
 			>
 				<path d="M4 6h16M4 10h16M4 14h10M4 18h10" />
 			</svg>
-			<p class="mt-4 font-display text-lg text-surface-700 dark:text-surface-300">No setlists yet</p>
+			<p class="mt-4 font-display text-lg text-surface-700 dark:text-surface-300">
+				No setlists yet
+			</p>
 			<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">
 				Create your first setlist to get started.
 			</p>

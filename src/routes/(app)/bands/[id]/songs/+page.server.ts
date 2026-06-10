@@ -99,13 +99,15 @@ export const actions: Actions = {
 			.insert({ band_id: params.id, song_id: newSong.id, added_by: session.user.id });
 
 		if (linkError) {
-			return fail(500, { error: 'Song created but failed to add to band library' });
+			// Don't leave an orphaned personal song behind
+			await supabase.from('songs').delete().eq('id', newSong.id);
+			return fail(500, { error: 'Failed to add song to band library' });
 		}
 
 		return { added: true };
 	},
 
-	removeSong: async ({ request, locals: { supabase, safeGetSession } }) => {
+	removeSong: async ({ params, request, locals: { supabase, safeGetSession } }) => {
 		const { session } = await safeGetSession();
 		if (!session) {
 			return fail(401, { error: 'Not authenticated' });
@@ -118,16 +120,23 @@ export const actions: Actions = {
 			return fail(400, { error: 'Band song ID is required' });
 		}
 
-		const { error } = await supabase.from('band_songs').delete().eq('id', band_song_id);
+		// Explicit band scope plus .select() so an RLS-filtered no-op is
+		// reported instead of faking success.
+		const { data: deletedRows, error } = await supabase
+			.from('band_songs')
+			.delete()
+			.eq('id', band_song_id)
+			.eq('band_id', params.id)
+			.select('id');
 
-		if (error) {
-			return fail(500, { error: 'Failed to remove song from band' });
+		if (error || !deletedRows?.length) {
+			return fail(error ? 500 : 404, { error: 'Failed to remove song from band' });
 		}
 
 		return { removed: true };
 	},
 
-	updateSong: async ({ request, locals: { supabase, safeGetSession } }) => {
+	updateSong: async ({ params, request, locals: { supabase, safeGetSession } }) => {
 		const { session } = await safeGetSession();
 		if (!session) {
 			return fail(401, { error: 'Not authenticated' });
@@ -152,17 +161,32 @@ export const actions: Actions = {
 			return fail(400, { error: 'Duration must be in mm:ss format (e.g., 3:45)' });
 		}
 
-		const { error } = await supabase
+		// Verify the song actually belongs to THIS band's library before
+		// editing — RLS alone would let a member edit songs linked to any of
+		// their bands through this action.
+		const { data: link } = await supabase
+			.from('band_songs')
+			.select('id')
+			.eq('band_id', params.id)
+			.eq('song_id', song_id)
+			.maybeSingle();
+
+		if (!link) {
+			return fail(404, { error: 'Song not found in this band library' });
+		}
+
+		const { data: updatedRows, error } = await supabase
 			.from('songs')
 			.update({
 				title: title.trim(),
 				duration_seconds: durationSeconds,
 				notes: notes?.trim() || null
 			})
-			.eq('id', song_id);
+			.eq('id', song_id)
+			.select('id');
 
-		if (error) {
-			return fail(500, { error: 'Failed to update song' });
+		if (error || !updatedRows?.length) {
+			return fail(error ? 500 : 404, { error: 'Failed to update song' });
 		}
 
 		return { updated: true };

@@ -7,38 +7,32 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 		throw error(401, 'Not authenticated');
 	}
 
-	// Validate setlist belongs to user
-	const { data: setlist } = await supabase
-		.from('setlists')
-		.select('*')
-		.eq('id', params.id)
-		.eq('user_id', session.user.id)
-		.single();
+	// The four queries are independent — run them concurrently instead of as
+	// a 4-deep waterfall. The setlist result still gates the 404.
+	const [{ data: setlist }, { data: setlistSongs }, { data: songs }, { data: profile }] =
+		await Promise.all([
+			supabase
+				.from('setlists')
+				.select('*')
+				.eq('id', params.id)
+				.eq('user_id', session.user.id)
+				.single(),
+			supabase
+				.from('setlist_songs')
+				.select('id, position, song_id, songs(id, title, duration_seconds)')
+				.eq('setlist_id', params.id)
+				.order('position'),
+			supabase
+				.from('songs')
+				.select('id, user_id, title, duration_seconds, notes, created_at')
+				.eq('user_id', session.user.id)
+				.order('title'),
+			supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle()
+		]);
 
 	if (!setlist) {
 		throw error(404, 'Setlist not found');
 	}
-
-	// Load setlist songs with joined song data
-	const { data: setlistSongs } = await supabase
-		.from('setlist_songs')
-		.select('id, position, song_id, songs(id, title, duration_seconds)')
-		.eq('setlist_id', params.id)
-		.order('position');
-
-	// Load user's full song library
-	const { data: songs } = await supabase
-		.from('songs')
-		.select('*')
-		.eq('user_id', session.user.id)
-		.order('title');
-
-	// Load user's profile (for logo_url in header)
-	const { data: profile } = await supabase
-		.from('profiles')
-		.select('*')
-		.eq('id', session.user.id)
-		.maybeSingle();
 
 	return {
 		setlist,
@@ -95,27 +89,15 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid items data' });
 		}
 
-		// Delete all and re-insert to avoid unique(setlist_id, position) constraint
-		// violations during reorder (individual position updates conflict)
-		await supabase.from('setlist_songs').delete().eq('setlist_id', params.id);
+		// Atomic reorder via RPC: applies position changes, removals, and new
+		// rows in one transaction (the old delete-all/re-insert could wipe the
+		// setlist on partial failure) and keeps existing row IDs stable.
+		const { data: savedRows, error: saveError } = await supabase.rpc('save_setlist_order', {
+			p_setlist_id: params.id,
+			p_items: items.map((item) => ({ id: item.id ?? null, song_id: item.song_id }))
+		});
 
-		if (items.length > 0) {
-			const { error: insertError } = await supabase.from('setlist_songs').insert(
-				items.map((item) => ({
-					setlist_id: params.id,
-					song_id: item.song_id,
-					position: item.position
-				}))
-			);
-			if (insertError) return fail(500, { error: 'Failed to save order' });
-		}
-
-		// Return the full set of rows so the client can sync IDs
-		const { data: savedRows } = await supabase
-			.from('setlist_songs')
-			.select('id, position, song_id, songs(id, title, duration_seconds)')
-			.eq('setlist_id', params.id)
-			.order('position');
+		if (saveError) return fail(500, { error: 'Failed to save order' });
 
 		return { saved: true, items: savedRows ?? [] };
 	},
@@ -128,28 +110,33 @@ export const actions: Actions = {
 		const song_id = formData.get('song_id') as string;
 		if (!song_id) return fail(400, { error: 'Song ID is required' });
 
-		// Get max position
-		const { data: existing } = await supabase
-			.from('setlist_songs')
-			.select('position')
-			.eq('setlist_id', params.id)
-			.order('position', { ascending: false })
-			.limit(1);
+		// Read-max-then-insert races with concurrent adds on the
+		// unique(setlist_id, position) constraint — retry on 23505.
+		for (let attempt = 0; attempt < 3; attempt++) {
+			const { data: existing } = await supabase
+				.from('setlist_songs')
+				.select('position')
+				.eq('setlist_id', params.id)
+				.order('position', { ascending: false })
+				.limit(1);
 
-		const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
+			const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
 
-		const { data: newRow, error: insertError } = await supabase
-			.from('setlist_songs')
-			.insert({
-				setlist_id: params.id,
-				song_id,
-				position: nextPosition
-			})
-			.select('id, position, song_id, songs(id, title, duration_seconds)')
-			.single();
+			const { data: newRow, error: insertError } = await supabase
+				.from('setlist_songs')
+				.insert({
+					setlist_id: params.id,
+					song_id,
+					position: nextPosition
+				})
+				.select('id, position, song_id, songs(id, title, duration_seconds)')
+				.single();
 
-		if (insertError) return fail(500, { error: 'Failed to add song' });
-		return { added: true, setlistSong: newRow };
+			if (!insertError) return { added: true, setlistSong: newRow };
+			if (insertError.code !== '23505') break;
+		}
+
+		return fail(500, { error: 'Failed to add song' });
 	},
 
 	toggleShare: async ({ params, request, locals: { supabase, safeGetSession } }) => {
@@ -177,9 +164,18 @@ export const actions: Actions = {
 		const setlist_song_id = formData.get('setlist_song_id') as string;
 		if (!setlist_song_id) return fail(400, { error: 'Setlist song ID is required' });
 
-		// Delete the single row -- no re-normalization needed
-		// Positions can have gaps; the client assigns contiguous positions from array index on next save
-		await supabase.from('setlist_songs').delete().eq('id', setlist_song_id);
+		// Delete the single row -- no re-normalization needed.
+		// Positions can have gaps; the client assigns contiguous positions from array index on next save.
+		// .select() so an RLS-filtered no-op is reported instead of faking success.
+		const { data: deletedRows, error: deleteError } = await supabase
+			.from('setlist_songs')
+			.delete()
+			.eq('id', setlist_song_id)
+			.select('id');
+
+		if (deleteError || !deletedRows?.length) {
+			return fail(404, { error: 'Song not found in setlist' });
+		}
 
 		return { removed: true };
 	}

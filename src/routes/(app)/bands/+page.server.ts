@@ -7,43 +7,25 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		throw redirect(303, '/auth');
 	}
 
-	// Load user's bands with member counts
+	// Load user's bands with all three counts embedded — one query instead of
+	// 1 + 2N (two count round-trips per band).
 	const { data: bands } = await supabase
 		.from('bands')
-		.select('*, band_members(count)')
+		.select('*, band_members(count), band_songs(count), setlists(count)')
 		.order('created_at', { ascending: false });
 
-	const bandList = bands ?? [];
-
-	// Enrich with song counts and setlist counts
-	const enrichedBands = await Promise.all(
-		bandList.map(async (band) => {
-			const { count: songCount } = await supabase
-				.from('band_songs')
-				.select('*', { count: 'exact', head: true })
-				.eq('band_id', band.id);
-
-			const { count: setlistCount } = await supabase
-				.from('setlists')
-				.select('*', { count: 'exact', head: true })
-				.eq('band_id', band.id);
-
-			const memberCount = band.band_members?.[0]?.count ?? 0;
-
-			return {
-				id: band.id,
-				name: band.name,
-				owner_id: band.owner_id,
-				logo_url: band.logo_url,
-				created_at: band.created_at,
-				updated_at: band.updated_at,
-				member_count: memberCount,
-				song_count: songCount ?? 0,
-				setlist_count: setlistCount ?? 0,
-				isOwner: band.owner_id === session.user.id
-			};
-		})
-	);
+	const enrichedBands = (bands ?? []).map((band) => ({
+		id: band.id,
+		name: band.name,
+		owner_id: band.owner_id,
+		logo_url: band.logo_url,
+		created_at: band.created_at,
+		updated_at: band.updated_at,
+		member_count: band.band_members?.[0]?.count ?? 0,
+		song_count: band.band_songs?.[0]?.count ?? 0,
+		setlist_count: band.setlists?.[0]?.count ?? 0,
+		isOwner: band.owner_id === session.user.id
+	}));
 
 	return { bands: enrichedBands };
 };
@@ -74,11 +56,17 @@ export const actions: Actions = {
 		}
 
 		// Add creator as owner member
-		await supabase.from('band_members').insert({
+		const { error: memberError } = await supabase.from('band_members').insert({
 			band_id: band.id,
 			user_id: session.user.id,
 			role: 'owner'
 		});
+
+		if (memberError) {
+			// Don't leave a band behind that has no member rows
+			await supabase.from('bands').delete().eq('id', band.id);
+			return fail(500, { error: 'Failed to create band' });
+		}
 
 		throw redirect(303, `/bands/${band.id}`);
 	}

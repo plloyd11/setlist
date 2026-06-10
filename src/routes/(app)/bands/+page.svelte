@@ -8,9 +8,7 @@
 	let newName = $state('');
 
 	let hasBands = $derived(data.bands.length > 0);
-	let bandCountLabel = $derived(
-		data.bands.length === 1 ? '1 band' : `${data.bands.length} bands`
-	);
+	let bandCountLabel = $derived(data.bands.length === 1 ? '1 band' : `${data.bands.length} bands`);
 
 	function toggleCreate() {
 		showCreateForm = !showCreateForm;
@@ -52,12 +50,7 @@
 
 	<!-- Inline create form -->
 	{#if showCreateForm}
-		<form
-			method="POST"
-			action="?/create"
-			class="mt-4 flex items-center gap-2"
-			use:enhance
-		>
+		<form method="POST" action="?/create" class="mt-4 flex items-center gap-2" use:enhance>
 			<!-- svelte-ignore a11y_autofocus -->
 			<input
 				type="text"

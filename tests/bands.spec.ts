@@ -64,11 +64,7 @@ test.describe('Band invite flow (BAND-02, BAND-03)', () => {
 });
 
 test.describe('Shared band songs (BAND-04)', () => {
-	test('should show shared songs to both band members', async ({
-		page,
-		browser,
-		testUser
-	}) => {
+	test('should show shared songs to both band members', async ({ page, browser, testUser }) => {
 		// Create band and add User B as member via admin API
 		const band = await createBand(page, testUser.id);
 		const userB = await createSecondUser(browser);
@@ -103,11 +99,7 @@ test.describe('Shared band songs (BAND-04)', () => {
 });
 
 test.describe('Band setlist collaboration (BAND-05)', () => {
-	test('should allow both members to see band setlists', async ({
-		page,
-		browser,
-		testUser
-	}) => {
+	test('should allow both members to see band setlists', async ({ page, browser, testUser }) => {
 		// Create band and add User B as member via admin API
 		const band = await createBand(page, testUser.id);
 		const userB = await createSecondUser(browser);
@@ -125,7 +117,10 @@ test.describe('Band setlist collaboration (BAND-05)', () => {
 			await page.getByPlaceholder('Setlist name...').fill(setlistName);
 			await page.getByRole('button', { name: 'Create' }).click();
 
-			// Wait for setlist to be created (redirects to setlist detail or stays on list)
+			// Wait for the post-submit redirect to the setlist detail page before
+			// navigating away -- an immediate goto() can cancel the form POST
+			await expect(page).toHaveURL(new RegExp(`/bands/${band.id}/setlists/.+`));
+
 			// Navigate back to setlists list to verify
 			await page.goto(`/bands/${band.id}/setlists`);
 			await expect(page.getByText(setlistName)).toBeVisible();

@@ -183,7 +183,12 @@
 			? 'border-accent-500 bg-accent-50 dark:border-accent-400 dark:bg-accent-900/20'
 			: 'border-surface-300 bg-surface-50 hover:border-accent-400 dark:border-surface-600 dark:bg-surface-800/50 dark:hover:border-accent-600'}"
 		onclick={triggerFileSelect}
-		onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); triggerFileSelect(); } }}
+		onkeydown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				triggerFileSelect();
+			}
+		}}
 		ondrop={handleDrop}
 		ondragover={handleDragOver}
 		ondragleave={handleDragLeave}
@@ -198,7 +203,10 @@
 						Replace
 					</span>
 					<button
-						onclick={(e) => { e.stopPropagation(); removeLogo(); }}
+						onclick={(e) => {
+							e.stopPropagation();
+							removeLogo();
+						}}
 						disabled={uploading}
 						class="rounded px-3 py-1 text-xs font-medium text-danger-600 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/20"
 					>

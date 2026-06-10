@@ -1,11 +1,20 @@
 import { test, expect } from './fixtures';
 import { createSong } from './helpers/factories';
 import { safeDelete } from './helpers/cleanup';
+import { createSecondUser } from './helpers/multi-user';
 
 test.describe('Song Library - Empty State', () => {
-	test('should show empty state when no songs exist', async ({ page }) => {
-		await page.goto('/songs');
-		await expect(page.getByText('Your song library is empty')).toBeVisible();
+	// Uses a dedicated fresh user: other tests in this worker create songs for
+	// the shared worker user (some intentionally leave them behind), so the
+	// shared user's library is not reliably empty regardless of test order.
+	test('should show empty state when no songs exist', async ({ browser }) => {
+		const freshUser = await createSecondUser(browser);
+		try {
+			await freshUser.page.goto('/songs');
+			await expect(freshUser.page.getByText('Your song library is empty')).toBeVisible();
+		} finally {
+			await freshUser.cleanup();
+		}
 	});
 });
 

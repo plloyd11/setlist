@@ -69,14 +69,18 @@
 	</div>
 
 	{#if form?.error}
-		<div class="mt-4 rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-800 dark:bg-danger-900/20 dark:text-danger-400">
+		<div
+			class="mt-4 rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-800 dark:bg-danger-900/20 dark:text-danger-400"
+		>
 			{form.error}
 		</div>
 	{/if}
 
 	<!-- Invite URL display -->
 	{#if showInviteUrl && inviteUrl}
-		<div class="mt-4 rounded-lg border border-accent-200 bg-accent-50 p-4 dark:border-accent-800 dark:bg-accent-900/20">
+		<div
+			class="mt-4 rounded-lg border border-accent-200 bg-accent-50 p-4 dark:border-accent-800 dark:bg-accent-900/20"
+		>
 			<p class="mb-2 text-sm font-medium text-accent-800 dark:text-accent-300">
 				Share this one-time invite link:
 			</p>

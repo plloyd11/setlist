@@ -1,25 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { theme, initTheme, toggleTheme } from '$lib/stores/theme.svelte';
 
-	let isDark = $state(false);
-
-	onMount(() => {
-		isDark = document.documentElement.classList.contains('dark');
-	});
-
-	function toggle() {
-		isDark = !isDark;
-		document.documentElement.classList.toggle('dark', isDark);
-		localStorage.setItem('theme', isDark ? 'dark' : 'light');
-	}
+	// Shared runes state — multiple instances (Sidebar + settings) stay in sync
+	onMount(initTheme);
 </script>
 
 <button
-	onclick={toggle}
+	onclick={toggleTheme}
 	aria-label="Toggle dark mode"
 	class="rounded-lg p-2 text-surface-500 transition-colors hover:text-neon-400 dark:text-surface-400 dark:hover:text-neon-400"
 >
-	{#if isDark}
+	{#if theme.dark}
 		<!-- Sun icon (click to go light) -->
 		<svg
 			xmlns="http://www.w3.org/2000/svg"

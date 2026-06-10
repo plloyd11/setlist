@@ -6,11 +6,7 @@ import { adminClient } from './supabase-admin';
  * Create a song via admin API and navigate the browser to /songs.
  * Uses service-role client to bypass RLS.
  */
-export async function createSong(
-	page: Page,
-	userId: string,
-	overrides?: Record<string, unknown>
-) {
+export async function createSong(page: Page, userId: string, overrides?: Record<string, unknown>) {
 	const song = {
 		user_id: userId,
 		title: faker.music.songName(),
@@ -56,11 +52,7 @@ export async function createSetlist(
  * Create a band via admin API with the owner as first member, then navigate to the band page.
  * Uses service-role client to bypass RLS.
  */
-export async function createBand(
-	page: Page,
-	userId: string,
-	overrides?: Record<string, unknown>
-) {
+export async function createBand(page: Page, userId: string, overrides?: Record<string, unknown>) {
 	const band = {
 		owner_id: userId,
 		name: `${faker.music.genre()} ${faker.animal.type()}s`,
@@ -74,7 +66,8 @@ export async function createBand(
 	const { error: memberError } = await adminClient
 		.from('band_members')
 		.insert({ band_id: data.id, user_id: userId, role: 'owner' });
-	if (memberError) throw new Error(`Factory createBand member insert failed: ${memberError.message}`);
+	if (memberError)
+		throw new Error(`Factory createBand member insert failed: ${memberError.message}`);
 
 	await page.goto(`/bands/${data.id}`);
 	return data;

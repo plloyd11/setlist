@@ -23,6 +23,7 @@
 			<img
 				src={band.logo_url}
 				alt="{band.name} logo"
+				loading="lazy"
 				class="h-10 w-10 rounded-full object-cover"
 			/>
 		{:else}
@@ -46,7 +47,9 @@
 				</svg>
 			</div>
 		{/if}
-		<h2 class="min-w-0 flex-1 truncate font-display text-lg font-semibold text-surface-900 dark:text-surface-100">
+		<h2
+			class="min-w-0 flex-1 truncate font-display text-lg font-semibold text-surface-900 dark:text-surface-100"
+		>
 			{band.name}
 		</h2>
 	</div>

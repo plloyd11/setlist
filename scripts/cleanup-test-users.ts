@@ -7,7 +7,7 @@
  */
 
 import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type User } from '@supabase/supabase-js';
 
 dotenv.config({ path: '.env.test' });
 
@@ -24,14 +24,23 @@ if (!url || !serviceRoleKey) {
 const admin = createClient(url, serviceRoleKey);
 
 async function main() {
-	const {
-		data: { users },
-		error: listError
-	} = await admin.auth.admin.listUsers();
+	// listUsers() is paginated (default 50 per page) -- loop until a short page
+	// so stale users beyond the first page are not silently skipped.
+	const perPage = 1000;
+	const users: User[] = [];
+	for (let pageNum = 1; ; pageNum++) {
+		const {
+			data: { users: pageUsers },
+			error: listError
+		} = await admin.auth.admin.listUsers({ page: pageNum, perPage });
 
-	if (listError) {
-		console.error('Failed to list users:', listError.message);
-		process.exit(1);
+		if (listError) {
+			console.error('Failed to list users:', listError.message);
+			process.exit(1);
+		}
+
+		users.push(...pageUsers);
+		if (pageUsers.length < perPage) break;
 	}
 
 	const testUsers = users.filter((u) => u.email?.endsWith('@setlist.test'));
@@ -40,10 +49,7 @@ async function main() {
 	for (const user of testUsers) {
 		try {
 			// Delete bands first (RESTRICT constraint on owner_id)
-			const { error: bandError } = await admin
-				.from('bands')
-				.delete()
-				.eq('owner_id', user.id);
+			const { error: bandError } = await admin.from('bands').delete().eq('owner_id', user.id);
 			if (bandError) {
 				console.warn(`Warning: could not delete bands for ${user.email}: ${bandError.message}`);
 			}

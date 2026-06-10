@@ -123,7 +123,9 @@
 						<span class="font-medium text-surface-900 dark:text-surface-100">{setlist.name}</span>
 						<span class="text-sm text-surface-500 dark:text-surface-400">
 							{#if setlist.venue}{setlist.venue}{/if}
-							{#if setlist.venue && setlist.gig_date} &mdash; {/if}
+							{#if setlist.venue && setlist.gig_date}
+								&mdash;
+							{/if}
 							{#if setlist.gig_date}{formatDate(setlist.gig_date)}{/if}
 						</span>
 					</a>

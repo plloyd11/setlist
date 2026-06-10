@@ -9,8 +9,16 @@
 	let confirmDelete = $state(false);
 	let deleting = $state(false);
 
+	// Sync band name only when the SERVER value actually changes — an
+	// invalidateAll elsewhere gives `data` a new reference with the same
+	// values, and unconditionally syncing would wipe in-progress typing.
+	let lastServerBandName: string | undefined;
 	$effect(() => {
-		bandName = data.band?.name ?? '';
+		const serverName = data.band?.name ?? '';
+		if (serverName !== lastServerBandName) {
+			lastServerBandName = serverName;
+			bandName = serverName;
+		}
 	});
 </script>
 
@@ -20,7 +28,9 @@
 	<div class="mt-8 space-y-8">
 		<!-- Band Name -->
 		<section>
-			<h2 class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500">
+			<h2
+				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500"
+			>
 				General
 			</h2>
 			<div
@@ -72,7 +82,9 @@
 
 		<!-- Logo -->
 		<section>
-			<h2 class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500">
+			<h2
+				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500"
+			>
 				Logo
 			</h2>
 			<div
@@ -126,13 +138,17 @@
 								its songs, setlists, and members. This cannot be undone.
 							</p>
 							<div class="flex gap-2">
-								<form method="POST" action="?/deleteBand" use:enhance={() => {
-									deleting = true;
-									return async ({ update }) => {
-										await update();
-										deleting = false;
-									};
-								}}>
+								<form
+									method="POST"
+									action="?/deleteBand"
+									use:enhance={() => {
+										deleting = true;
+										return async ({ update }) => {
+											await update();
+											deleting = false;
+										};
+									}}
+								>
 									<button
 										type="submit"
 										disabled={deleting}

@@ -1,21 +1,25 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 
-export const load: PageServerLoad = async ({ params, locals: { supabase, safeGetSession }, parent }) => {
+export const load: PageServerLoad = async ({
+	params,
+	locals: { supabase, safeGetSession },
+	parent
+}) => {
 	const { session } = await safeGetSession();
 	if (!session) {
 		throw error(401, 'Not authenticated');
 	}
 
-	// Get parent layout data for isOwner
-	const parentData = await parent();
-
-	// Load band members with profile info
-	const { data: membersRaw } = await supabase
+	// Fire the members query before awaiting the parent layout load so the
+	// two don't run as a waterfall.
+	const membersPromise = supabase
 		.from('band_members')
 		.select('id, user_id, role, joined_at')
 		.eq('band_id', params.id)
 		.order('joined_at');
+
+	const [parentData, { data: membersRaw }] = await Promise.all([parent(), membersPromise]);
 
 	const members = membersRaw ?? [];
 
@@ -166,25 +170,18 @@ export const actions: Actions = {
 			return fail(400, { error: 'New owner must be a member of the band' });
 		}
 
-		// Update band owner
-		await supabase
-			.from('bands')
-			.update({ owner_id: newOwnerId })
-			.eq('id', params.id)
-			.eq('owner_id', session.user.id);
+		// Atomic transfer via RPC: bands.owner_id + both member roles change in
+		// one transaction (direct updates are blocked by RLS — bands UPDATE
+		// WITH CHECK rejects rows the caller no longer owns, and band_members
+		// has no UPDATE policy).
+		const { error: transferError } = await supabase.rpc('transfer_band_ownership', {
+			p_band_id: params.id,
+			p_new_owner_id: newOwnerId
+		});
 
-		// Update roles: new owner gets 'owner', current user gets 'member'
-		await supabase
-			.from('band_members')
-			.update({ role: 'owner' })
-			.eq('band_id', params.id)
-			.eq('user_id', newOwnerId);
-
-		await supabase
-			.from('band_members')
-			.update({ role: 'member' })
-			.eq('band_id', params.id)
-			.eq('user_id', session.user.id);
+		if (transferError) {
+			return fail(500, { error: 'Failed to transfer ownership' });
+		}
 
 		return { transferred: true };
 	},
@@ -206,13 +203,16 @@ export const actions: Actions = {
 			return fail(400, { error: 'Owner cannot leave the band. Transfer ownership first.' });
 		}
 
-		const { error: deleteError } = await supabase
+		// .select() so an RLS-filtered no-op (0 rows) is reported as a failure
+		// instead of silently pretending the user left.
+		const { data: deletedRows, error: deleteError } = await supabase
 			.from('band_members')
 			.delete()
 			.eq('band_id', params.id)
-			.eq('user_id', session.user.id);
+			.eq('user_id', session.user.id)
+			.select('id');
 
-		if (deleteError) {
+		if (deleteError || !deletedRows?.length) {
 			return fail(500, { error: 'Failed to leave band' });
 		}
 

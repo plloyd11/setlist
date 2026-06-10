@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  # Dummy values: $env/static/public requires these to be defined at build
+  # time, but nothing contacts Supabase during build (no prerendered routes).
+  PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Reads the pinned version from the "packageManager" field in package.json
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check (svelte-check)
+        run: npx svelte-kit sync && npx svelte-check --tsconfig ./tsconfig.json
+
+      - name: Lint (prettier)
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+  # NOTE: the Playwright suite is intentionally NOT run in CI -- it requires
+  # production Supabase credentials (.env.test) and mutates live data.
