@@ -41,10 +41,10 @@
 	{#each navItems as item}
 		<a
 			href={item.href}
-			class="flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors
+			class="focus-live flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] transition-colors
 				{isActive($page.url.pathname, item.href)
-				? 'text-neon-400'
-				: 'text-surface-400 dark:text-surface-500'}"
+				? 'font-bold text-surface-950 dark:text-surface-50'
+				: 'font-medium text-surface-500 dark:text-surface-300'}"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"

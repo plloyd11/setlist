@@ -72,3 +72,39 @@ export interface BandInvite {
 	created_at: string;
 	expires_at: string;
 }
+
+export interface Track {
+	id: string;
+	band_id: string;
+	title: string;
+	description: string | null;
+	created_by: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface TrackVersion {
+	id: string;
+	track_id: string;
+	version_number: number;
+	storage_path: string;
+	file_name: string;
+	mime_type: string;
+	file_size_bytes: number;
+	duration_seconds: number | null;
+	waveform_peaks: number[] | null;
+	uploaded_by: string | null;
+	created_at: string;
+}
+
+export interface TrackComment {
+	id: string;
+	version_id: string;
+	parent_id: string | null;
+	author_id: string | null;
+	body: string;
+	timestamp_seconds: number | null;
+	resolved_at: string | null;
+	resolved_by: string | null;
+	created_at: string;
+}

@@ -24,7 +24,7 @@
 		<div class="flex items-baseline gap-3">
 			<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Bands</h1>
 			{#if hasBands}
-				<span class="text-sm text-surface-500 dark:text-surface-400">{bandCountLabel}</span>
+				<span class="text-sm text-surface-500 dark:text-surface-300">{bandCountLabel}</span>
 			{/if}
 		</div>
 		<button
@@ -59,7 +59,7 @@
 				placeholder="Band name..."
 				autofocus
 				required
-				class="flex-1 rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
+				class="focus-live flex-1 rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 			/>
 			<button
 				type="submit"
@@ -71,7 +71,7 @@
 			<button
 				type="button"
 				onclick={toggleCreate}
-				class="rounded-lg px-3 py-2 text-sm text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300"
+				class="rounded-lg px-3 py-2 text-sm text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100"
 			>
 				Cancel
 			</button>
@@ -107,7 +107,7 @@
 				/>
 			</svg>
 			<p class="mt-4 font-display text-lg text-surface-700 dark:text-surface-300">No bands yet</p>
-			<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">
+			<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
 				Create your first band to collaborate with other musicians.
 			</p>
 			<button

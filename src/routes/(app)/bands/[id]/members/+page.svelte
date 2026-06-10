@@ -12,7 +12,7 @@
 	async function copyToClipboard() {
 		try {
 			await navigator.clipboard.writeText(inviteUrl);
-			toast.show('Invite link copied');
+			toast.show('Invite link copied', { variant: 'success' });
 		} catch {
 			// Fallback: select the input text
 			const input = document.querySelector<HTMLInputElement>('#invite-url-input');
@@ -37,7 +37,7 @@
 						if (result.type === 'success' && result.data?.inviteUrl) {
 							inviteUrl = result.data.inviteUrl as string;
 							showInviteUrl = true;
-							toast.show('Invite link generated');
+							toast.show('Invite link generated', { variant: 'success' });
 						} else {
 							await update();
 						}
@@ -46,7 +46,7 @@
 			>
 				<button
 					type="submit"
-					class="inline-flex items-center gap-1.5 rounded-lg bg-accent-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-accent-600 focus:ring-2 focus:ring-neon-400/50 focus:ring-offset-2 focus:outline-none dark:focus:ring-offset-surface-900"
+					class="focus-live inline-flex items-center gap-1.5 rounded-lg bg-accent-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-accent-600"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -118,7 +118,7 @@
 		{/each}
 
 		{#if data.members.length === 0}
-			<p class="py-8 text-center text-sm text-surface-500 dark:text-surface-400">
+			<p class="py-8 text-center text-sm text-surface-500 dark:text-surface-300">
 				No members yet. Generate an invite link to add members.
 			</p>
 		{/if}

@@ -65,7 +65,7 @@
 		<div class="flex items-baseline gap-3">
 			<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Setlists</h1>
 			{#if hasSetlists}
-				<span class="text-sm text-surface-500 dark:text-surface-400">{setlistCountLabel}</span>
+				<span class="text-sm text-surface-500 dark:text-surface-300">{setlistCountLabel}</span>
 			{/if}
 		</div>
 		<button
@@ -100,7 +100,7 @@
 					if (result.type === 'redirect') {
 						await update();
 					} else if (result.type === 'failure') {
-						toast.show('Failed to create setlist');
+						toast.show('Failed to create setlist', { variant: 'error' });
 					}
 				};
 			}}
@@ -113,7 +113,7 @@
 				placeholder="Setlist name..."
 				autofocus
 				required
-				class="flex-1 rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
+				class="focus-live flex-1 rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 			/>
 			<button
 				type="submit"
@@ -125,7 +125,7 @@
 			<button
 				type="button"
 				onclick={toggleCreate}
-				class="rounded-lg px-3 py-2 text-sm text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300"
+				class="rounded-lg px-3 py-2 text-sm text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100"
 			>
 				Cancel
 			</button>
@@ -169,7 +169,7 @@
 			<p class="mt-4 font-display text-lg text-surface-700 dark:text-surface-300">
 				No setlists yet
 			</p>
-			<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">
+			<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
 				No setlists yet. Create one to start building your band's set.
 			</p>
 			<button
@@ -194,7 +194,7 @@
 	use:enhance={() => {
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
-				toast.show('Setlist deleted');
+				toast.show('Setlist deleted', { variant: 'success' });
 				await update();
 			}
 		};
@@ -212,7 +212,7 @@
 	use:enhance={() => {
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
-				toast.show('Setlist duplicated');
+				toast.show('Setlist duplicated', { variant: 'success' });
 				await update();
 			}
 		};
@@ -230,7 +230,7 @@
 	use:enhance={() => {
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
-				toast.show('Setlist renamed');
+				toast.show('Setlist renamed', { variant: 'success' });
 				await update();
 			}
 		};

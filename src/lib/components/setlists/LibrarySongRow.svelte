@@ -20,14 +20,14 @@
 	</span>
 
 	<!-- Duration -->
-	<span class="shrink-0 text-xs text-surface-500 dark:text-surface-400">
+	<span class="shrink-0 text-xs text-surface-500 dark:text-surface-300">
 		{formatDuration(song.duration_seconds)}
 	</span>
 
 	<!-- Add button (mobile) -->
 	<button
 		onclick={() => onTap(song)}
-		class="shrink-0 rounded p-0.5 text-surface-400 hover:bg-accent-50 hover:text-accent-500 md:hidden dark:text-surface-500 dark:hover:bg-accent-900/20 dark:hover:text-accent-400"
+		class="shrink-0 rounded p-0.5 text-surface-400 hover:bg-accent-50 hover:text-accent-500 md:hidden dark:text-surface-300 dark:hover:bg-accent-900/20 dark:hover:text-accent-400"
 		aria-label="Add {song.title} to setlist"
 	>
 		<svg

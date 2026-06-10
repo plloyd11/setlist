@@ -35,12 +35,12 @@
 		<h3 class="font-display text-lg font-semibold text-surface-900 dark:text-surface-100">
 			{title}
 		</h3>
-		<p class="mt-2 text-sm text-surface-600 dark:text-surface-400">
+		<p class="mt-2 text-sm text-surface-600 dark:text-surface-300">
 			{message}
 		</p>
 		<div class="mt-6 flex justify-end gap-3">
 			<button
-				class="rounded-lg px-4 py-2 text-sm font-medium text-surface-600 hover:text-surface-800 dark:text-surface-400 dark:hover:text-surface-200"
+				class="rounded-lg px-4 py-2 text-sm font-medium text-surface-600 hover:text-surface-800 dark:text-surface-300 dark:hover:text-surface-200"
 				onclick={handleCancel}
 			>
 				Cancel

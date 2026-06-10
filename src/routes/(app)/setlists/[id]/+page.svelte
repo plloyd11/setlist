@@ -20,6 +20,9 @@
 	// Search state
 	let searchQuery = $state('');
 
+	// Drag-in-flight: lights the setlist drop zone (Limelight = live)
+	let dragActive = $state(false);
+
 	// Toast
 	let toast: Toast;
 
@@ -98,20 +101,24 @@
 
 	// Library zone handlers (copy-on-drag: songs stay in library)
 	function handleLibraryConsider(e: CustomEvent<{ items: LibraryItem[] }>) {
+		dragActive = true;
 		libraryItems = e.detail.items;
 	}
 
 	function handleLibraryFinalize(e: CustomEvent<{ items: LibraryItem[] }>) {
 		// Reset library to original (copy-on-drag pattern)
 		libraryItems = data.songs.map((s: Song) => ({ ...s, id: s.id }));
+		dragActive = false;
 	}
 
 	// Setlist zone handlers
 	function handleSetlistConsider(e: CustomEvent<{ items: SetlistItem[] }>) {
+		dragActive = true;
 		setlistItems = e.detail.items;
 	}
 
 	function handleSetlistFinalize(e: CustomEvent<{ items: SetlistItem[] }>) {
+		dragActive = false;
 		const items = e.detail.items;
 
 		// Detect new items from library: library items have no song_id field (they ARE the song)
@@ -158,7 +165,7 @@
 				body: formData
 			});
 			if (!response.ok) {
-				toast?.show('Failed to save order');
+				toast?.show('Failed to save order', { variant: 'error' });
 			} else {
 				// Parse the response to get server-generated IDs
 				// SvelteKit form actions use devalue serialization, not plain JSON
@@ -192,7 +199,7 @@
 				}
 			}
 		} catch {
-			toast?.show('Failed to save order');
+			toast?.show('Failed to save order', { variant: 'error' });
 		} finally {
 			endMutation(epoch);
 		}
@@ -210,7 +217,7 @@
 				body: formData
 			});
 			if (!response.ok) {
-				toast?.show('Failed to add song');
+				toast?.show('Failed to add song', { variant: 'error' });
 				return;
 			}
 			// Append the returned row directly — no invalidateAll needed
@@ -238,13 +245,13 @@
 			} catch {
 				// Response parsing failed — fall back to a server resync below
 			}
-			toast?.show(`Added "${song.title}"`);
+			toast?.show(`Added "${song.title}"`, { variant: 'success' });
 			if (!appended && epoch === mutationEpoch) {
 				endMutation(epoch);
 				await invalidateAll();
 			}
 		} catch {
-			toast?.show('Failed to add song');
+			toast?.show('Failed to add song', { variant: 'error' });
 		} finally {
 			endMutation(epoch);
 		}
@@ -273,7 +280,7 @@
 			}
 			// Server confirmed the removal — optimistic state is already correct
 		} catch {
-			toast?.show('Failed to remove song');
+			toast?.show('Failed to remove song', { variant: 'error' });
 			endMutation(epoch);
 			await invalidateAll();
 			return;
@@ -307,7 +314,7 @@
 				await invalidateAll();
 			}
 		} catch {
-			toast?.show('Failed to update setlist');
+			toast?.show('Failed to update setlist', { variant: 'error' });
 		}
 	}
 
@@ -340,7 +347,7 @@
 				await invalidateAll();
 			}
 		} catch {
-			toast?.show('Failed to update sharing');
+			toast?.show('Failed to update sharing', { variant: 'error' });
 		} finally {
 			shareLoading = false;
 		}
@@ -353,7 +360,7 @@
 			copiedShareLink = true;
 			setTimeout(() => (copiedShareLink = false), 2000);
 		} catch {
-			toast?.show('Failed to copy link');
+			toast?.show('Failed to copy link', { variant: 'error' });
 		}
 	}
 </script>
@@ -365,8 +372,8 @@
 			onclick={() => (activeTab = 'library')}
 			class="flex-1 px-4 py-3 text-center text-sm font-medium transition-colors {activeTab ===
 			'library'
-				? 'border-b-2 border-neon-400 text-neon-600 dark:text-neon-400'
-				: 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300'}"
+				? 'border-b-2 border-accent-500 text-accent-700 dark:border-accent-400 dark:text-accent-300'
+				: 'text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100'}"
 		>
 			Library
 		</button>
@@ -374,13 +381,13 @@
 			onclick={() => (activeTab = 'setlist')}
 			class="flex-1 px-4 py-3 text-center text-sm font-medium transition-colors {activeTab ===
 			'setlist'
-				? 'border-b-2 border-neon-400 text-neon-600 dark:text-neon-400'
-				: 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300'}"
+				? 'border-b-2 border-accent-500 text-accent-700 dark:border-accent-400 dark:text-accent-300'
+				: 'text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100'}"
 		>
 			Setlist
 			{#if setlistItems.length > 0}
 				<span
-					class="ml-1 rounded-full bg-neon-100 px-1.5 text-xs text-neon-700 dark:bg-neon-900/30 dark:text-neon-400"
+					class="ml-1 rounded-full bg-accent-100 px-1.5 text-xs text-accent-700 dark:bg-accent-900/40 dark:text-accent-300"
 				>
 					{setlistItems.length}
 				</span>
@@ -405,7 +412,7 @@
 					bind:value={searchQuery}
 					placeholder="Search songs..."
 					aria-label="Search songs"
-					class="mt-2 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
+					class="focus-live mt-2 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 				/>
 			</div>
 
@@ -431,7 +438,7 @@
 				</div>
 				{#if filteredLibraryItems.length === 0}
 					<p
-						class="pointer-events-none absolute inset-x-0 top-0 py-8 text-center text-sm text-surface-400 dark:text-surface-500"
+						class="pointer-events-none absolute inset-x-0 top-0 py-8 text-center text-sm text-surface-500 dark:text-surface-300"
 					>
 						{searchQuery ? 'No songs match your search' : 'No songs in your library'}
 					</p>
@@ -455,8 +462,8 @@
 						onclick={toggleShare}
 						disabled={shareLoading}
 						class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {isShared
-							? 'bg-accent-100 text-accent-700 hover:bg-accent-200 dark:bg-accent-900/30 dark:text-accent-400 dark:hover:bg-accent-900/50'
-							: 'bg-surface-100 text-surface-600 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-surface-700'}"
+							? 'bg-accent-100 text-accent-800 shadow-glow-accent hover:bg-accent-200 dark:bg-accent-900/40 dark:text-accent-300 dark:hover:bg-accent-900/60'
+							: 'bg-surface-100 text-surface-600 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700'}"
 					>
 						{#if shareLoading}
 							<svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -497,7 +504,7 @@
 							class="flex items-center gap-2 rounded-lg bg-surface-100 px-3 py-1.5 dark:bg-surface-800"
 						>
 							<span
-								class="max-w-[200px] truncate text-xs text-surface-500 md:max-w-sm dark:text-surface-400"
+								class="max-w-[200px] truncate text-xs text-surface-500 md:max-w-sm dark:text-surface-300"
 							>
 								{shareUrl}
 							</span>
@@ -515,7 +522,9 @@
 				     all direct children of a dndzone must correspond to items) -->
 				<div class="relative">
 					<div
-						class="min-h-[120px] rounded-lg {setlistItems.length === 0
+						class="min-h-[120px] rounded-lg transition-shadow duration-150 motion-reduce:transition-none {dragActive
+							? 'shadow-glow-neon ring-2 ring-neon-600 dark:ring-neon-400'
+							: ''} {setlistItems.length === 0
 							? 'border-2 border-dashed border-surface-300 p-8 dark:border-surface-700'
 							: ''}"
 						use:dndzone={{
@@ -536,10 +545,10 @@
 						<div
 							class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center"
 						>
-							<p class="text-sm text-surface-500 dark:text-surface-400">
+							<p class="text-sm text-surface-500 dark:text-surface-300">
 								Drag songs here to build your setlist
 							</p>
-							<p class="mt-1 text-xs text-surface-400 dark:text-surface-500">
+							<p class="mt-1 text-xs text-surface-500 dark:text-surface-300">
 								or tap + on mobile to add songs
 							</p>
 						</div>

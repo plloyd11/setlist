@@ -36,7 +36,7 @@
 		<!-- Profile section -->
 		<section>
 			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500"
+				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
 			>
 				Profile
 			</h2>
@@ -61,7 +61,7 @@
 					>
 						Display name
 					</label>
-					<p class="mt-0.5 text-xs text-surface-400 dark:text-surface-500">
+					<p class="mt-0.5 text-xs text-surface-500 dark:text-surface-300">
 						Shown on shared setlists (e.g. your band name)
 					</p>
 					<div class="mt-2 flex gap-2">
@@ -71,7 +71,7 @@
 							name="display_name"
 							bind:value={displayName}
 							placeholder="Your name or band name"
-							class="flex-1 rounded-lg border border-surface-300 bg-transparent px-3 py-2 text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-100 dark:placeholder-surface-500"
+							class="focus-live flex-1 rounded-lg border border-surface-300 bg-transparent px-3 py-2 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:text-surface-100 dark:placeholder-surface-300"
 						/>
 						<button
 							type="submit"
@@ -95,7 +95,7 @@
 		<!-- Theme section -->
 		<section>
 			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500"
+				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
 			>
 				Appearance
 			</h2>
@@ -110,7 +110,7 @@
 		<!-- Account section -->
 		<section>
 			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500"
+				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
 			>
 				Account
 			</h2>
@@ -133,7 +133,7 @@
 										{data.user.user_metadata.full_name}
 									</p>
 								{/if}
-								<p class="text-sm text-surface-500 dark:text-surface-400">
+								<p class="text-sm text-surface-500 dark:text-surface-300">
 									{data.user.email}
 								</p>
 							</div>

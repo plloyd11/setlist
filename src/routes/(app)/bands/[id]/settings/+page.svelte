@@ -29,7 +29,7 @@
 		<!-- Band Name -->
 		<section>
 			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500"
+				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
 			>
 				General
 			</h2>
@@ -61,7 +61,7 @@
 								name="name"
 								bind:value={bandName}
 								placeholder="Band name"
-								class="flex-1 rounded-lg border border-surface-300 bg-transparent px-3 py-2 text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-100 dark:placeholder-surface-500"
+								class="focus-live flex-1 rounded-lg border border-surface-300 bg-transparent px-3 py-2 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:text-surface-100 dark:placeholder-surface-300"
 							/>
 							<button
 								type="submit"
@@ -83,7 +83,7 @@
 		<!-- Logo -->
 		<section>
 			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-500"
+				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
 			>
 				Logo
 			</h2>
@@ -102,7 +102,7 @@
 						<img src={data.band.logo_url} alt="Band logo" class="max-h-24 w-auto rounded" />
 					</div>
 				{:else}
-					<p class="text-sm text-surface-400 dark:text-surface-500">No logo uploaded.</p>
+					<p class="text-sm text-surface-500 dark:text-surface-300">No logo uploaded.</p>
 				{/if}
 			</div>
 		</section>
@@ -120,7 +120,7 @@
 								<p class="text-sm font-medium text-surface-700 dark:text-surface-300">
 									Delete band
 								</p>
-								<p class="text-xs text-surface-400 dark:text-surface-500">
+								<p class="text-xs text-surface-500 dark:text-surface-300">
 									Permanently delete this band and all its data.
 								</p>
 							</div>

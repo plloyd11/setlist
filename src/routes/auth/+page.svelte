@@ -63,13 +63,13 @@
 			<!-- Logo / App Name -->
 			<div class="mb-8 text-center">
 				<h1 class="text-4xl font-bold tracking-tight text-accent-500">Setlist</h1>
-				<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">Build your perfect set</p>
+				<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">Build your perfect set</p>
 			</div>
 
 			<!-- Google Sign-In Button -->
 			<button
 				onclick={signInWithGoogle}
-				class="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg bg-accent-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-accent-600 focus:ring-2 focus:ring-neon-400 focus:ring-offset-2 focus:outline-none dark:focus:ring-offset-surface-900"
+				class="focus-live flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg bg-accent-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-accent-600"
 			>
 				<svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
 					<path
@@ -95,7 +95,7 @@
 			<!-- Divider -->
 			<div class="mt-6 flex items-center gap-3">
 				<div class="h-px flex-1 bg-surface-200 dark:bg-surface-700"></div>
-				<span class="text-xs text-surface-400 dark:text-surface-500">or</span>
+				<span class="text-xs text-surface-500 dark:text-surface-300">or</span>
 				<div class="h-px flex-1 bg-surface-200 dark:bg-surface-700"></div>
 			</div>
 
@@ -106,18 +106,18 @@
 					bind:value={email}
 					placeholder="Email"
 					aria-label="Email"
-					class="w-full rounded-lg border border-surface-300 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 placeholder-surface-400 focus:border-accent-500 focus:ring-1 focus:ring-accent-500 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
+					class="focus-live w-full rounded-lg border border-surface-300 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 				/>
 				<input
 					type="password"
 					bind:value={password}
 					placeholder="Password"
 					aria-label="Password"
-					class="w-full rounded-lg border border-surface-300 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 placeholder-surface-400 focus:border-accent-500 focus:ring-1 focus:ring-accent-500 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
+					class="focus-live w-full rounded-lg border border-surface-300 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 				/>
 				<button
 					type="submit"
-					class="w-full cursor-pointer rounded-lg bg-surface-200 px-6 py-2.5 text-sm font-semibold text-surface-700 transition-colors hover:bg-surface-300 focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 focus:outline-none dark:bg-surface-700 dark:text-surface-200 dark:hover:bg-surface-600 dark:focus:ring-offset-surface-900"
+					class="focus-live w-full cursor-pointer rounded-lg bg-surface-200 px-6 py-2.5 text-sm font-semibold text-surface-700 transition-colors hover:bg-surface-300 dark:bg-surface-700 dark:text-surface-200 dark:hover:bg-surface-600"
 				>
 					Sign in with email
 				</button>
@@ -132,7 +132,7 @@
 		</div>
 
 		<!-- Footer -->
-		<p class="mt-6 text-center text-xs text-surface-400 dark:text-surface-600">
+		<p class="mt-6 text-center text-xs text-surface-500 dark:text-surface-600">
 			Built for musicians
 		</p>
 	</div>

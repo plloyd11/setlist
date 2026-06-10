@@ -89,11 +89,11 @@
 		<!-- Total time -->
 		<div class="text-center">
 			<p
-				class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
 			>
 				Total
 			</p>
-			<p class="font-display text-xl font-bold text-surface-900 dark:text-surface-100">
+			<p class="font-display text-xl font-bold text-accent-600 dark:text-accent-hot">
 				{formatDuration(totalSeconds)}
 			</p>
 		</div>
@@ -101,7 +101,7 @@
 		<!-- Target time input -->
 		<div class="text-center">
 			<p
-				class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
 			>
 				Target
 			</p>
@@ -112,7 +112,7 @@
 				onkeydown={handleTargetKeydown}
 				placeholder="Set target"
 				aria-label="Target set duration"
-				class="w-20 rounded border border-surface-300 bg-transparent px-1.5 py-0.5 text-center text-sm text-surface-700 placeholder-surface-400 focus:border-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-300 dark:placeholder-surface-500"
+				class="focus-live w-20 rounded border border-surface-300 bg-transparent px-1.5 py-0.5 text-center text-sm text-surface-700 placeholder-surface-500 dark:border-surface-600 dark:text-surface-300 dark:placeholder-surface-300"
 			/>
 		</div>
 
@@ -120,11 +120,15 @@
 		{#if targetSeconds}
 			<div class="text-center">
 				<p
-					class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
 				>
 					Diff
 				</p>
-				<p class="text-sm font-bold {isOver ? 'text-danger-500' : 'text-success-400'}">
+				<p
+					class="text-sm font-bold {isOver
+						? 'text-danger-600 dark:text-danger-300'
+						: 'text-success-600 dark:text-success-300'}"
+				>
 					{overUnderLabel}
 				</p>
 			</div>
@@ -133,7 +137,7 @@
 		<!-- Progress bar -->
 		{#if targetSeconds}
 			<div class="flex-1">
-				<ProgressBar percent={progressPercent} {isOver} />
+				<ProgressBar percent={progressPercent} {isOver} ariaLabel="Setlist duration progress" />
 			</div>
 		{:else}
 			<div class="flex-1"></div>
@@ -142,7 +146,7 @@
 		<!-- Transition stepper -->
 		<div class="text-center">
 			<p
-				class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
 			>
 				Gap
 			</p>
@@ -150,7 +154,7 @@
 				<button
 					onclick={decrementTransition}
 					disabled={transitionSeconds <= 0}
-					class="rounded px-1.5 py-0.5 text-xs text-surface-500 hover:bg-surface-100 disabled:opacity-30 dark:text-surface-400 dark:hover:bg-surface-800"
+					class="rounded px-1.5 py-0.5 text-xs text-surface-500 hover:bg-surface-100 disabled:opacity-30 dark:text-surface-300 dark:hover:bg-surface-800"
 					aria-label="Decrease transition time">-</button
 				>
 				<span class="w-10 text-center text-sm font-medium text-surface-700 dark:text-surface-300">
@@ -159,7 +163,7 @@
 				<button
 					onclick={incrementTransition}
 					disabled={transitionSeconds >= 300}
-					class="rounded px-1.5 py-0.5 text-xs text-surface-500 hover:bg-surface-100 disabled:opacity-30 dark:text-surface-400 dark:hover:bg-surface-800"
+					class="rounded px-1.5 py-0.5 text-xs text-surface-500 hover:bg-surface-100 disabled:opacity-30 dark:text-surface-300 dark:hover:bg-surface-800"
 					aria-label="Increase transition time">+</button
 				>
 			</div>
@@ -172,17 +176,21 @@
 			<!-- Total -->
 			<div>
 				<span
-					class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
 					>Total
 				</span>
-				<span class="font-display text-lg font-bold text-surface-900 dark:text-surface-100">
+				<span class="font-display text-lg font-bold text-accent-600 dark:text-accent-hot">
 					{formatDuration(totalSeconds)}
 				</span>
 			</div>
 
 			<!-- Over/under -->
 			{#if targetSeconds}
-				<span class="text-sm font-bold {isOver ? 'text-danger-500' : 'text-success-400'}">
+				<span
+					class="text-sm font-bold {isOver
+						? 'text-danger-600 dark:text-danger-300'
+						: 'text-success-600 dark:text-success-300'}"
+				>
 					{overUnderLabel}
 				</span>
 			{/if}
@@ -190,7 +198,7 @@
 			<!-- Target input -->
 			<div class="flex items-center gap-1">
 				<span
-					class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
 					>Tgt
 				</span>
 				<input
@@ -200,20 +208,20 @@
 					onkeydown={handleTargetKeydown}
 					placeholder="--:--"
 					aria-label="Target set duration"
-					class="w-14 rounded border border-surface-300 bg-transparent px-1 py-0.5 text-center text-xs text-surface-700 placeholder-surface-400 focus:border-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-300 dark:placeholder-surface-500"
+					class="focus-live w-14 rounded border border-surface-300 bg-transparent px-1 py-0.5 text-center text-xs text-surface-700 placeholder-surface-500 dark:border-surface-600 dark:text-surface-300 dark:placeholder-surface-300"
 				/>
 			</div>
 
 			<!-- Gap stepper -->
 			<div class="flex items-center gap-0.5">
 				<span
-					class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
 					>Gap
 				</span>
 				<button
 					onclick={decrementTransition}
 					disabled={transitionSeconds <= 0}
-					class="rounded px-1 text-xs text-surface-500 disabled:opacity-30 dark:text-surface-400"
+					class="rounded px-1 text-xs text-surface-500 disabled:opacity-30 dark:text-surface-300"
 					aria-label="Decrease transition time">-</button
 				>
 				<span class="text-xs font-medium text-surface-700 dark:text-surface-300"
@@ -222,7 +230,7 @@
 				<button
 					onclick={incrementTransition}
 					disabled={transitionSeconds >= 300}
-					class="rounded px-1 text-xs text-surface-500 disabled:opacity-30 dark:text-surface-400"
+					class="rounded px-1 text-xs text-surface-500 disabled:opacity-30 dark:text-surface-300"
 					aria-label="Increase transition time">+</button
 				>
 			</div>
@@ -231,7 +239,7 @@
 		<!-- Progress bar (mobile) -->
 		{#if targetSeconds}
 			<div class="mt-2">
-				<ProgressBar percent={progressPercent} {isOver} />
+				<ProgressBar percent={progressPercent} {isOver} ariaLabel="Setlist duration progress" />
 			</div>
 		{/if}
 	</div>

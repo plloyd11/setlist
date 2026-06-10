@@ -9,7 +9,7 @@
 <button
 	onclick={toggleTheme}
 	aria-label="Toggle dark mode"
-	class="rounded-lg p-2 text-surface-500 transition-colors hover:text-neon-400 dark:text-surface-400 dark:hover:text-neon-400"
+	class="focus-live rounded-lg p-2 text-surface-500 transition-colors hover:text-accent-600 dark:text-surface-300 dark:hover:text-accent-300"
 >
 	{#if theme.dark}
 		<!-- Sun icon (click to go light) -->

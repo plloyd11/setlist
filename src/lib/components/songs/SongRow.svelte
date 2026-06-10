@@ -102,14 +102,14 @@
 				type="text"
 				bind:value={editTitle}
 				placeholder="Song title"
-				class="flex-1 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-base font-medium text-surface-900 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
+				class="focus-live flex-1 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-base font-medium text-surface-900 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
 			/>
 			<input
 				type="text"
 				bind:value={editDuration}
 				placeholder="3:45"
 				inputmode="numeric"
-				class="w-16 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-center text-sm text-surface-900 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
+				class="focus-live w-16 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-center text-sm text-surface-900 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
 			/>
 		</div>
 		<div class="mt-2 flex items-center gap-2">
@@ -117,7 +117,7 @@
 				type="text"
 				bind:value={editNotes}
 				placeholder="Notes (optional)"
-				class="flex-1 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-sm text-surface-500 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-400"
+				class="focus-live flex-1 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-sm text-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
 			/>
 			<button
 				onclick={saveEdit}
@@ -174,12 +174,12 @@
 	>
 		<div class="flex items-center justify-between">
 			<span class="text-base font-medium text-surface-900 dark:text-surface-100">{song.title}</span>
-			<span class="ml-4 shrink-0 text-sm text-surface-500 dark:text-surface-400"
+			<span class="ml-4 shrink-0 text-sm text-surface-500 dark:text-surface-300"
 				>{formatDuration(song.duration_seconds)}</span
 			>
 		</div>
 		{#if song.notes}
-			<p class="mt-0.5 text-sm text-surface-400 dark:text-surface-500">{song.notes}</p>
+			<p class="mt-0.5 text-sm text-surface-500 dark:text-surface-300">{song.notes}</p>
 		{/if}
 	</button>
 {/if}

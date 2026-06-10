@@ -43,18 +43,18 @@
 
 		{#if data.invite.alreadyMember}
 			<!-- Already a member -->
-			<p class="mt-3 text-surface-600 dark:text-surface-400">
+			<p class="mt-3 text-surface-600 dark:text-surface-300">
 				You're already a member of this band.
 			</p>
 			<a
 				href="/bands/{data.invite.bandId}"
-				class="mt-6 inline-block rounded-lg bg-accent-500 px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-accent-600 focus:ring-2 focus:ring-neon-400/50 focus:ring-offset-2 focus:outline-none dark:focus:ring-offset-surface-900"
+				class="focus-live mt-6 inline-block rounded-lg bg-accent-500 px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-accent-600"
 			>
 				Go to Band
 			</a>
 		{:else}
 			<!-- Invite to join -->
-			<p class="mt-3 text-surface-600 dark:text-surface-400">
+			<p class="mt-3 text-surface-600 dark:text-surface-300">
 				You've been invited to join this band.
 			</p>
 
@@ -69,7 +69,7 @@
 			<form method="POST" action="?/accept" use:enhance class="mt-6">
 				<button
 					type="submit"
-					class="w-full rounded-lg bg-accent-500 px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-accent-600 focus:ring-2 focus:ring-neon-400/50 focus:ring-offset-2 focus:outline-none dark:focus:ring-offset-surface-900"
+					class="focus-live w-full rounded-lg bg-accent-500 px-6 py-2.5 font-semibold text-white shadow-sm hover:bg-accent-600"
 				>
 					Join Band
 				</button>

@@ -140,7 +140,10 @@
 	--color-surface-900: #0f1720; /* dark mode bg */
 	--color-surface-950: #080c13; /* deepest dark */
 
-	/* ---- Accent / Primary (copper #a78265) ---- */
+	/* ---- Accent / Primary (copper #a78265) ----
+	   50-900 is the tonal/action ramp (AA-verified button ladder).
+	   `hot` is the energized signal step — hero CTA, set total (dark),
+	   glow shadows. oklch(0.70 0.12 55). Reserve for charged moments. */
 	--color-accent-50: #f8f2ed;
 	--color-accent-100: #ede0d5;
 	--color-accent-200: #dbc1ab;
@@ -151,16 +154,22 @@
 	--color-accent-700: #533e2e;
 	--color-accent-800: #392a1f;
 	--color-accent-900: #1f1610;
+	--color-accent-hot: #d78951;
 
-	/* ---- Neon / Secondary (chartreuse #d1d895) ---- */
+	/* ---- Neon / Secondary (Limelight chartreuse) ----
+	   300-700 are hot signal steps (oklch C 0.17 at the bright end):
+	   300/400 for dark surfaces, 600/700 for light surfaces.
+	   50-200 stay as muted tonal fills; 800/900 as deep recesses.
+	   Limelight is a lamp, not a paint: focus, active drop targets,
+	   charged highlights only. */
 	--color-neon-50: #f7f8ec;
 	--color-neon-100: #eef0d5;
 	--color-neon-200: #e2e6b5;
-	--color-neon-300: #d1d895;
-	--color-neon-400: #bcc56e;
-	--color-neon-500: #a0ab4d;
-	--color-neon-600: #7f8a3a;
-	--color-neon-700: #5e672b;
+	--color-neon-300: #d1e14a;
+	--color-neon-400: #bbc92a;
+	--color-neon-500: #96a228;
+	--color-neon-600: #676f22;
+	--color-neon-700: #4c5218;
 	--color-neon-800: #3f451d;
 	--color-neon-900: #21240f;
 
@@ -199,8 +208,8 @@
 	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
 	--shadow-md: 0 2px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15);
 	--shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
-	--shadow-glow-accent: 0 0 10px rgba(167, 130, 101, 0.3), 0 0 20px rgba(167, 130, 101, 0.1);
-	--shadow-glow-neon: 0 0 10px rgba(209, 216, 149, 0.3), 0 0 20px rgba(209, 216, 149, 0.1);
+	--shadow-glow-accent: 0 0 12px rgba(215, 137, 81, 0.45), 0 0 28px rgba(215, 137, 81, 0.18);
+	--shadow-glow-neon: 0 0 12px rgba(187, 201, 42, 0.45), 0 0 28px rgba(187, 201, 42, 0.18);
 }
 
 h1,
@@ -210,4 +219,26 @@ h4,
 h5,
 h6 {
 	font-family: var(--font-display);
+}
+
+/* ---- Focus: the Limelight comes on ----
+   One utility instead of per-element focus classes. 2px outline with
+   offset (per DESIGN.md), theme-split so it clears 3:1 in both themes:
+   neon-600 on light surfaces, neon-400 on dark. The :focus rule
+   neutralizes the @tailwindcss/forms default blue ring on inputs. */
+@layer utilities {
+	.focus-live {
+		--focus-live-color: var(--color-neon-600);
+	}
+	:where(.dark, .dark *) .focus-live {
+		--focus-live-color: var(--color-neon-400);
+	}
+	.focus-live:focus {
+		box-shadow: none;
+		border-color: var(--focus-live-color);
+	}
+	.focus-live:focus-visible {
+		outline: 2px solid var(--focus-live-color);
+		outline-offset: 1px;
+	}
 }

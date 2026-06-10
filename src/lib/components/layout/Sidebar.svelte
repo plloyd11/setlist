@@ -47,7 +47,10 @@
 >
 	<!-- App branding -->
 	<div class="flex h-16 items-center px-6">
-		<a href="/dashboard" class="font-display text-2xl text-accent-500">Setlist</a>
+		<a
+			href="/dashboard"
+			class="focus-live font-display text-2xl text-accent-500 dark:text-accent-hot">Setlist</a
+		>
 	</div>
 
 	<!-- Navigation -->
@@ -55,10 +58,10 @@
 		{#each navItems as item}
 			<a
 				href={item.href}
-				class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors
+				class="focus-live flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors
 					{isActive($page.url.pathname, item.href)
-					? 'bg-neon-500/10 text-neon-600 dark:text-neon-400'
-					: 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800'}"
+					? 'bg-surface-200/70 font-semibold text-surface-950 dark:bg-surface-800 dark:text-surface-50'
+					: 'font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'}"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -85,7 +88,7 @@
 				{#if user.user_metadata?.avatar_url}
 					<img src={user.user_metadata.avatar_url} alt="" class="h-6 w-6 rounded-full" />
 				{/if}
-				<span class="truncate text-xs text-surface-500 dark:text-surface-400">
+				<span class="truncate text-xs text-surface-500 dark:text-surface-300">
 					{user.user_metadata?.full_name || user.email}
 				</span>
 			</div>

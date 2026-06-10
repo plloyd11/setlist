@@ -102,12 +102,12 @@
 			onkeydown={handleNameKeydown}
 			autofocus
 			aria-label="Setlist name"
-			class="w-full max-w-md rounded border border-neon-400 bg-transparent px-2 py-1 text-center font-display text-2xl text-surface-900 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-neon-600 dark:text-surface-100"
+			class="focus-live w-full max-w-md rounded border border-neon-600 bg-transparent px-2 py-1 text-center font-display text-2xl text-surface-900 dark:border-neon-400 dark:text-surface-100"
 		/>
 	{:else}
 		<button
 			onclick={startNameEdit}
-			class="font-display text-2xl text-surface-900 hover:text-neon-500 dark:text-surface-100 dark:hover:text-neon-400"
+			class="font-display text-2xl text-surface-900 hover:text-accent-600 dark:text-surface-100 dark:hover:text-accent-300"
 			title="Click to rename"
 		>
 			{setlist.name}
@@ -121,7 +121,7 @@
 			bind:value={dateValue}
 			onchange={handleDateChange}
 			aria-label="Gig date"
-			class="rounded border border-surface-300 bg-transparent px-2 py-1 text-sm text-surface-600 focus:border-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-400"
+			class="focus-live rounded border border-surface-300 bg-transparent px-2 py-1 text-sm text-surface-600 dark:border-surface-600 dark:text-surface-300"
 			placeholder="Date"
 		/>
 		<input
@@ -131,7 +131,7 @@
 			onkeydown={handleVenueKeydown}
 			placeholder="Venue"
 			aria-label="Venue"
-			class="rounded border border-surface-300 bg-transparent px-2 py-1 text-sm text-surface-600 placeholder-surface-400 focus:border-neon-400 focus:outline-none dark:border-surface-600 dark:text-surface-400 dark:placeholder-surface-500"
+			class="focus-live rounded border border-surface-300 bg-transparent px-2 py-1 text-sm text-surface-600 placeholder-surface-500 dark:border-surface-600 dark:text-surface-300 dark:placeholder-surface-300"
 		/>
 	</div>
 </div>

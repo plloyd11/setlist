@@ -23,7 +23,7 @@
 			class="rounded-lg border border-surface-200 bg-surface-50 p-4 text-center dark:border-surface-700 dark:bg-surface-800"
 		>
 			<p class="font-display text-2xl text-accent-500">{data.memberCount}</p>
-			<p class="mt-1 text-sm text-surface-500 dark:text-surface-400">
+			<p class="mt-1 text-sm text-surface-500 dark:text-surface-300">
 				{data.memberCount === 1 ? 'Member' : 'Members'}
 			</p>
 		</div>
@@ -31,7 +31,7 @@
 			class="rounded-lg border border-surface-200 bg-surface-50 p-4 text-center dark:border-surface-700 dark:bg-surface-800"
 		>
 			<p class="font-display text-2xl text-accent-500">{data.songCount}</p>
-			<p class="mt-1 text-sm text-surface-500 dark:text-surface-400">
+			<p class="mt-1 text-sm text-surface-500 dark:text-surface-300">
 				{data.songCount === 1 ? 'Song' : 'Songs'}
 			</p>
 		</div>
@@ -39,7 +39,7 @@
 			class="rounded-lg border border-surface-200 bg-surface-50 p-4 text-center dark:border-surface-700 dark:bg-surface-800"
 		>
 			<p class="font-display text-2xl text-accent-500">{data.setlistCount}</p>
-			<p class="mt-1 text-sm text-surface-500 dark:text-surface-400">
+			<p class="mt-1 text-sm text-surface-500 dark:text-surface-300">
 				{data.setlistCount === 1 ? 'Setlist' : 'Setlists'}
 			</p>
 		</div>
@@ -121,7 +121,7 @@
 						class="flex items-center justify-between rounded-lg border border-surface-200 bg-surface-50 px-4 py-3 transition-colors hover:bg-surface-100 dark:border-surface-700 dark:bg-surface-800 dark:hover:bg-surface-700"
 					>
 						<span class="font-medium text-surface-900 dark:text-surface-100">{setlist.name}</span>
-						<span class="text-sm text-surface-500 dark:text-surface-400">
+						<span class="text-sm text-surface-500 dark:text-surface-300">
 							{#if setlist.venue}{setlist.venue}{/if}
 							{#if setlist.venue && setlist.gig_date}
 								&mdash;
@@ -132,7 +132,7 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="mt-3 text-sm text-surface-500 dark:text-surface-400">
+			<p class="mt-3 text-sm text-surface-500 dark:text-surface-300">
 				No setlists yet. Create one to get started.
 			</p>
 		{/if}

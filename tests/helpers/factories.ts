@@ -1,6 +1,11 @@
 import { faker } from '@faker-js/faker';
 import type { Page } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
 import { adminClient } from './supabase-admin';
+
+const TRACK_FIXTURE = path.resolve('tests/fixtures/sample.wav');
 
 /**
  * Create a song via admin API and navigate the browser to /songs.
@@ -70,5 +75,96 @@ export async function createBand(page: Page, userId: string, overrides?: Record<
 		throw new Error(`Factory createBand member insert failed: ${memberError.message}`);
 
 	await page.goto(`/bands/${data.id}`);
+	return data;
+}
+
+/**
+ * Create a track with one version via admin API: uploads the audio fixture to
+ * the 'tracks' storage bucket and inserts the tracks + track_versions rows.
+ * Does not navigate. Storage objects don't cascade with DB rows — call
+ * cleanupTrackAudio(bandId) in teardown.
+ */
+export async function createTrackData(
+	bandId: string,
+	userId: string,
+	overrides?: Record<string, unknown>
+) {
+	const storagePath = `bands/${bandId}/tracks/${crypto.randomUUID()}.wav`;
+	const fileBuffer = fs.readFileSync(TRACK_FIXTURE);
+
+	const { error: uploadError } = await adminClient.storage
+		.from('tracks')
+		.upload(storagePath, fileBuffer, { contentType: 'audio/wav' });
+	if (uploadError) throw new Error(`Factory createTrackData upload failed: ${uploadError.message}`);
+
+	const track = {
+		band_id: bandId,
+		title: `${faker.word.adjective()} ${faker.word.noun()} demo`,
+		created_by: userId,
+		...overrides
+	};
+
+	const { data, error } = await adminClient.from('tracks').insert(track).select().single();
+	if (error) throw new Error(`Factory createTrackData failed: ${error.message}`);
+
+	const { data: version, error: versionError } = await adminClient
+		.from('track_versions')
+		.insert({
+			track_id: data.id,
+			version_number: 1,
+			storage_path: storagePath,
+			file_name: 'sample.wav',
+			mime_type: 'audio/wav',
+			file_size_bytes: fileBuffer.length,
+			duration_seconds: 1,
+			waveform_peaks: Array.from({ length: 100 }, (_, i) => Math.abs(Math.sin(i / 5))),
+			uploaded_by: userId
+		})
+		.select()
+		.single();
+	if (versionError)
+		throw new Error(`Factory createTrackData version failed: ${versionError.message}`);
+
+	return { ...data, version };
+}
+
+/**
+ * Create a track via admin API and navigate the browser to its detail page.
+ */
+export async function createTrack(
+	page: Page,
+	bandId: string,
+	userId: string,
+	overrides?: Record<string, unknown>
+) {
+	const track = await createTrackData(bandId, userId, overrides);
+	await page.goto(`/bands/${bandId}/tracks/${track.id}`);
+	return track;
+}
+
+/**
+ * Create a track comment via admin API. Timestamped at 0.5s by default;
+ * pass timestamp_seconds: null for a general comment.
+ */
+export async function createTrackComment(
+	versionId: string,
+	authorId: string,
+	overrides?: Record<string, unknown>
+) {
+	const comment = {
+		version_id: versionId,
+		author_id: authorId,
+		body: faker.lorem.sentence(),
+		timestamp_seconds: 0.5,
+		...overrides
+	};
+
+	const { data, error } = await adminClient
+		.from('track_comments')
+		.insert(comment)
+		.select()
+		.single();
+	if (error) throw new Error(`Factory createTrackComment failed: ${error.message}`);
+
 	return data;
 }

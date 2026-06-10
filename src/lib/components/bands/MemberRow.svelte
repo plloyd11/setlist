@@ -76,16 +76,16 @@
 					</span>
 				{:else}
 					<span
-						class="rounded-full bg-surface-100 px-2 py-0.5 text-xs font-medium text-surface-600 dark:bg-surface-700 dark:text-surface-400"
+						class="rounded-full bg-surface-100 px-2 py-0.5 text-xs font-medium text-surface-600 dark:bg-surface-700 dark:text-surface-300"
 					>
 						Member
 					</span>
 				{/if}
 				{#if isCurrentUser}
-					<span class="text-xs text-surface-400 dark:text-surface-500">(you)</span>
+					<span class="text-xs text-surface-500 dark:text-surface-300">(you)</span>
 				{/if}
 			</div>
-			<p class="text-xs text-surface-500 dark:text-surface-400">
+			<p class="text-xs text-surface-500 dark:text-surface-300">
 				Joined {formatDate(member.joined_at)}
 			</p>
 		</div>
@@ -155,7 +155,7 @@
 				<button
 					type="button"
 					onclick={() => (confirmingTransfer = true)}
-					class="rounded-md border border-surface-300 px-2.5 py-1 text-xs font-medium text-surface-600 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-400 dark:hover:bg-surface-700"
+					class="rounded-md border border-surface-300 px-2.5 py-1 text-xs font-medium text-surface-600 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-700"
 				>
 					Transfer Ownership
 				</button>
@@ -174,7 +174,7 @@
 			<form method="POST" action="/bands/{bandId}/members?/leaveBand" use:enhance>
 				<button
 					type="submit"
-					class="rounded-md border border-surface-300 px-2.5 py-1 text-xs font-medium text-surface-600 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-400 dark:hover:bg-surface-700"
+					class="rounded-md border border-surface-300 px-2.5 py-1 text-xs font-medium text-surface-600 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-700"
 				>
 					Leave Band
 				</button>

@@ -1,0 +1,266 @@
+{
+	"schemaVersion": 2,
+	"generatedAt": "2026-06-10T20:00:00Z",
+	"title": "Design System: Setlist",
+	"extensions": {
+		"colorMeta": {
+			"backstage-navy": {
+				"role": "neutral",
+				"displayName": "Backstage Navy",
+				"canonical": "#131b28",
+				"tonalRamp": [
+					"#080c13",
+					"#0f1720",
+					"#162030",
+					"#1e2a3d",
+					"#2a3a52",
+					"#3d5170",
+					"#5a7190",
+					"#8099b3",
+					"#a8bdd1",
+					"#d0dce8",
+					"#e8eff5"
+				]
+			},
+			"tube-glow": {
+				"role": "primary",
+				"displayName": "Tube Glow",
+				"canonical": "#a78265",
+				"tonalRamp": [
+					"#1f1610",
+					"#392a1f",
+					"#533e2e",
+					"#6e533d",
+					"#8a6a4f",
+					"#a78265",
+					"#c4a080",
+					"#dbc1ab",
+					"#ede0d5",
+					"#f8f2ed"
+				]
+			},
+			"limelight": {
+				"role": "secondary",
+				"displayName": "Limelight",
+				"canonical": "#d1e14a",
+				"tonalRamp": [
+					"#21240f",
+					"#3f451d",
+					"#4c5218",
+					"#676f22",
+					"#96a228",
+					"#bbc92a",
+					"#d1e14a",
+					"#e2e6b5",
+					"#eef0d5",
+					"#f7f8ec"
+				]
+			},
+			"tube-hot": {
+				"role": "primary",
+				"displayName": "Tube Hot",
+				"canonical": "#d78951",
+				"tonalRamp": [
+					"#1f1610",
+					"#392a1f",
+					"#533e2e",
+					"#6e533d",
+					"#8a6a4f",
+					"#a78265",
+					"#d78951",
+					"#dbc1ab",
+					"#ede0d5",
+					"#f8f2ed"
+				]
+			},
+			"overtime-red": {
+				"role": "tertiary",
+				"displayName": "Overtime Red",
+				"canonical": "#a63e2b",
+				"tonalRamp": [
+					"#1d0a07",
+					"#3a150e",
+					"#5e2117",
+					"#832f20",
+					"#a63e2b",
+					"#c95640",
+					"#e07a66",
+					"#f0a999",
+					"#f9d5cc",
+					"#fdf0ed"
+				]
+			},
+			"on-time-olive": {
+				"role": "tertiary",
+				"displayName": "On-Time Olive",
+				"canonical": "#769a38",
+				"tonalRamp": [
+					"#111807",
+					"#212f0e",
+					"#334716",
+					"#46611e",
+					"#5c7c28",
+					"#769a38",
+					"#94b355",
+					"#b8cc8a",
+					"#dbe5c5",
+					"#f0f4e8"
+				]
+			}
+		},
+		"typographyMeta": {
+			"display": {
+				"displayName": "Display (Cartridge)",
+				"purpose": "Page titles, hero, wordmark, big timing numbers. All headings default to Cartridge."
+			},
+			"title": {
+				"displayName": "Title (Cartridge)",
+				"purpose": "Card titles, dialog headings, section heads."
+			},
+			"body": {
+				"displayName": "Body (Klima)",
+				"purpose": "Default UI text; anything read at length."
+			},
+			"label": {
+				"displayName": "Micro-label (Klima)",
+				"purpose": "Uppercase tracked instrument-panel labels (TOTAL / TARGET / GAP) over readings."
+			}
+		},
+		"shadows": [
+			{
+				"name": "ambient-sm",
+				"value": "0 1px 3px rgba(0,0,0,0.2)",
+				"purpose": "Buttons and inputs at rest."
+			},
+			{
+				"name": "ambient-md",
+				"value": "0 2px 8px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.15)",
+				"purpose": "Cards and raised panels."
+			},
+			{
+				"name": "ambient-lg",
+				"value": "0 4px 16px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2)",
+				"purpose": "Dialogs, dropdowns, topmost layer."
+			},
+			{
+				"name": "glow-copper",
+				"value": "0 0 12px rgba(215,137,81,0.45), 0 0 28px rgba(215,137,81,0.18)",
+				"purpose": "Hero CTA, share-live lamp, charged copper moments only."
+			},
+			{
+				"name": "glow-neon",
+				"value": "0 0 12px rgba(187,201,42,0.45), 0 0 28px rgba(187,201,42,0.18)",
+				"purpose": "Live Limelight states: active drop target, drag in flight."
+			}
+		],
+		"motion": [
+			{
+				"name": "transition-colors",
+				"value": "color 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out",
+				"purpose": "Default state-change easing on interactive controls."
+			}
+		],
+		"breakpoints": [
+			{ "name": "md", "value": "768px" },
+			{ "name": "lg", "value": "1024px" }
+		]
+	},
+	"components": [
+		{
+			"name": "Primary Button",
+			"kind": "button",
+			"refersTo": "button-primary",
+			"description": "Default copper action button; darkens on hover, Limelight focus ring.",
+			"html": "<button class=\"ds-btn-primary\">Add song</button>",
+			"css": ".ds-btn-primary { background: #8a6a4f; color: #ffffff; font-family: 'Klima', sans-serif; font-size: 0.875rem; font-weight: 600; padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer; transition: background-color 150ms ease-out; } .ds-btn-primary:hover { background: #6e533d; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #0f1720, 0 0 0 4px #bbc92a; }"
+		},
+		{
+			"name": "Hero CTA",
+			"kind": "button",
+			"refersTo": "button-cta",
+			"description": "The one always-energized button: bright copper, Cartridge display text, powered-on glow.",
+			"html": "<a class=\"ds-btn-cta\" href=\"#\">Start your setlist</a>",
+			"css": ".ds-btn-cta { display: inline-block; background: #d78951; color: #080c13; font-family: 'Cartridge', sans-serif; font-size: 1.125rem; font-weight: 700; padding: 1rem 2rem; border-radius: 0.5rem; text-decoration: none; box-shadow: 0 0 12px rgba(215,137,81,0.45), 0 0 28px rgba(215,137,81,0.18); transition: background-color 150ms ease-out, box-shadow 150ms ease-out; } .ds-btn-cta:hover { filter: brightness(1.1); box-shadow: 0 0 12px rgba(215,137,81,0.45), 0 0 28px rgba(215,137,81,0.18); } .ds-btn-cta:focus-visible { outline: none; box-shadow: 0 0 0 2px #0f1720, 0 0 0 4px #bbc92a; }"
+		},
+		{
+			"name": "Text Input",
+			"kind": "input",
+			"refersTo": "input",
+			"description": "Bordered field; border and ring go Limelight on focus — the field is live.",
+			"html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Search songs...\" />",
+			"css": ".ds-input { background: #162030; color: #d0dce8; font-family: 'Klima', sans-serif; font-size: 0.875rem; padding: 0.5rem 0.75rem; border: 1px solid #2a3a52; border-radius: 0.5rem; transition: border-color 150ms ease-out, box-shadow 150ms ease-out; } .ds-input::placeholder { color: #8099b3; } .ds-input:focus { outline: none; border-color: #bbc92a; box-shadow: 0 0 0 1px #bbc92a; }"
+		},
+		{
+			"name": "Chip",
+			"kind": "chip",
+			"refersTo": "chip",
+			"description": "Tonal copper pill for counts, tags, and filters.",
+			"html": "<span class=\"ds-chip\">12 songs</span>",
+			"css": ".ds-chip { display: inline-block; background: rgba(57,42,31,0.45); color: #c4a080; font-family: 'Klima', sans-serif; font-size: 0.75rem; font-weight: 500; padding: 0.125rem 0.5rem; border-radius: 9999px; }"
+		},
+		{
+			"name": "Sidebar Nav Item",
+			"kind": "nav",
+			"description": "Klima medium row, tonal background when active; navigation is never Limelight.",
+			"html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-item--active\" href=\"#\">Setlists</a><a class=\"ds-nav-item\" href=\"#\">Songs</a><a class=\"ds-nav-item\" href=\"#\">Bands</a></nav>",
+			"css": ".ds-nav { display: flex; flex-direction: column; gap: 0.25rem; background: #0f1720; padding: 0.5rem; border-radius: 0.75rem; min-width: 11rem; } .ds-nav-item { display: flex; align-items: center; gap: 0.75rem; color: #a8bdd1; font-family: 'Klima', sans-serif; font-size: 0.875rem; font-weight: 500; padding: 0.5rem 0.75rem; border-radius: 0.5rem; text-decoration: none; transition: background-color 150ms ease-out, color 150ms ease-out; } .ds-nav-item:hover { background: #162030; color: #d0dce8; } .ds-nav-item--active { background: #1e2a3d; color: #e8eff5; } .ds-nav-item:focus-visible { outline: none; box-shadow: 0 0 0 2px #bbc92a; }"
+		},
+		{
+			"name": "TimingBar",
+			"kind": "custom",
+			"description": "Signature instrument panel: sticky readings of total vs target with micro-labels, diff color, progress bar.",
+			"html": "<div class=\"ds-timingbar\"><div class=\"ds-tb-reading\"><span class=\"ds-tb-label\">Total</span><span class=\"ds-tb-value\">42:30</span></div><div class=\"ds-tb-reading\"><span class=\"ds-tb-label\">Target</span><span class=\"ds-tb-target\">45:00</span></div><div class=\"ds-tb-reading\"><span class=\"ds-tb-label\">Diff</span><span class=\"ds-tb-diff\">-2:30</span></div><div class=\"ds-tb-progress\"><div class=\"ds-tb-progress-fill\"></div></div></div>",
+			"css": ".ds-timingbar { display: flex; align-items: center; gap: 1.5rem; background: #0f1720; border-top: 1px solid #1e2a3d; padding: 0.75rem 1rem; box-shadow: 0 -2px 8px rgba(0,0,0,0.3); min-width: 22rem; } .ds-tb-reading { display: flex; flex-direction: column; align-items: center; gap: 0.125rem; } .ds-tb-label { font-family: 'Klima', sans-serif; font-size: 0.625rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: #5a7190; } .ds-tb-value { font-family: 'Cartridge', sans-serif; font-size: 1.25rem; font-weight: 700; color: #d78951; } .ds-tb-target { font-family: 'Klima', sans-serif; font-size: 0.875rem; color: #a8bdd1; } .ds-tb-diff { font-family: 'Klima', sans-serif; font-size: 0.875rem; font-weight: 700; color: #94b355; } .ds-tb-progress { flex: 1; height: 0.375rem; background: #1e2a3d; border-radius: 9999px; overflow: hidden; } .ds-tb-progress-fill { width: 94%; height: 100%; background: #769a38; border-radius: 9999px; }"
+		}
+	],
+	"narrative": {
+		"northStar": "The Backline",
+		"overview": "Setlist looks like the band's own gear stack behind the stage: dark, dependable hardware with powered-on indicator glow. The room is Backstage Navy; the signals are Limelight chartreuse and Tube Glow copper — the colors of a lit pilot lamp and a warm valve amp. Nothing here is office software. The interface should feel like equipment you'd trust on tour: every control obviously operable, every reading glanceable from a few feet away, nothing decorative that doesn't earn its current draw. Dark mode is the spiritual home — the app must read perfectly in a dim venue on a phone — and light mode is the daylight rehearsal counterpart, never the design driver.",
+		"keyCharacteristics": [
+			"Dark-first: navy surfaces with tonal layering, designed for low-light legibility",
+			"Two-voice accent system: copper for actions, chartreuse for live signals (focus, active states)",
+			"Cartridge display type gives headings and big timing numbers a marquee personality",
+			"Tactile, roadworthy controls: generous targets, definite edges, immediate press feedback",
+			"The set total vs. target time is always the loudest reading on a setlist screen"
+		],
+		"rules": [
+			{
+				"name": "The Limelight Rule",
+				"body": "Limelight is a signal, not a paint. It appears only when something is live: a focused input, an active drop target, a charged moment. It is never body text, never a large static fill, and never small text on navy (contrast fails below bold 18px).",
+				"section": "colors"
+			},
+			{
+				"name": "The Two Lamps Rule",
+				"body": "Copper acts, chartreuse signals. A control that performs an action is copper; a state that reports liveness is chartreuse. Never swap the lamps.",
+				"section": "colors"
+			},
+			{
+				"name": "The Marquee Rule",
+				"body": "Cartridge owns headings and big timing numbers. Klima owns everything read at length. If a string is a sentence, it's Klima.",
+				"section": "typography"
+			},
+			{
+				"name": "The Powered-On Rule",
+				"body": "Glow means live. A glow shadow appears only when something is energized — a primary CTA, an active drop target, a drag in flight. Glow on idle elements is a burnt-out bulb: prohibited.",
+				"section": "elevation"
+			}
+		],
+		"dos": [
+			"Do design dark-mode-first; verify every screen in dark mode on a phone-sized viewport before light mode.",
+			"Do keep the set total vs. target glanceable on every setlist surface — it is the hero reading.",
+			"Do use Limelight Focus (#bcc56e) rings for all focus states, in both themes, with ring-offset.",
+			"Do keep touch targets ≥44px on mobile surfaces; musicians use this on phones in dark rooms.",
+			"Do hold body text to ≥4.5:1 contrast in both themes (surface-900 on Day Haze; surface-100 on Night Stage).",
+			"Do give every animation a prefers-reduced-motion alternative and keep drag feedback under glow, not bounce."
+		],
+		"donts": [
+			"Don't build the \"generic SaaS dashboard\": no stat-card heroes, no gradient accents, no identical icon-heading-text card grids.",
+			"Don't imitate the \"Spotify/streaming clone\": no album-art grids, no media-player chrome as default scaffolding.",
+			"Don't drift \"corporate/enterprise\": no sterile grays, no beige, no compliance-flavored UI.",
+			"Don't use Limelight for small static text or large fills — it's a signal lamp (The Limelight Rule).",
+			"Don't apply glow shadows to idle elements (The Powered-On Rule).",
+			"Don't use colored side-stripe borders, gradient text, or glassmorphism anywhere.",
+			"Don't introduce a third font family, warm/cream backgrounds, or pure-black (#000) surfaces — the dark floor is Pit Black (#080c13)."
+		]
+	}
+}

@@ -31,9 +31,18 @@ export const test = base.extend<{}, WorkerFixtures>({
 			fs.mkdirSync(authDir, { recursive: true });
 			const fileName = path.resolve(authDir, `worker-${workerInfo.workerIndex}.json`);
 
-			// Open page with no existing auth
-			const page = await browser.newPage({ storageState: undefined });
+			// Open page with no existing auth. Contexts created directly on the
+			// raw `browser` fixture don't inherit config `use` options as of
+			// Playwright 1.60, so baseURL must be passed explicitly.
+			const page = await browser.newPage({
+				storageState: undefined,
+				baseURL: 'http://localhost:5173'
+			});
 			await page.goto('/auth');
+			// Wait for hydration: the sign-in form relies on a client-side onsubmit
+			// handler — clicking before Vite finishes serving modules (cold dev
+			// server + parallel workers) falls back to a native GET submit.
+			await page.waitForLoadState('networkidle');
 			await page.getByLabel('Email').fill(testUser.email);
 			await page.getByLabel('Password').fill(testUser.password);
 			await page.getByRole('button', { name: /sign in with email/i }).click();
@@ -52,5 +61,19 @@ export const test = base.extend<{}, WorkerFixtures>({
 	],
 
 	// Override built-in storageState so all tests in the worker use the authenticated state
-	storageState: ({ workerStorageState }, use) => use(workerStorageState)
+	storageState: ({ workerStorageState }, use) => use(workerStorageState),
+
+	// Make page.goto wait for hydration. Nearly every page relies on JS click/
+	// submit handlers; interacting before Vite finishes serving a route's
+	// modules (cold dev server compiles on first visit) silently no-ops clicks
+	// or falls back to native form submits.
+	page: async ({ page }, use) => {
+		const originalGoto = page.goto.bind(page);
+		page.goto = async (url, options) => {
+			const response = await originalGoto(url, options);
+			await page.waitForLoadState('networkidle');
+			return response;
+		};
+		await use(page);
+	}
 });

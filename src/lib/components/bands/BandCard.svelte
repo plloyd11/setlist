@@ -55,7 +55,7 @@
 	</div>
 
 	<!-- Stats -->
-	<div class="mt-3 flex items-center gap-3 text-sm text-surface-500 dark:text-surface-400">
+	<div class="mt-3 flex items-center gap-3 text-sm text-surface-500 dark:text-surface-300">
 		<span class="flex items-center gap-1">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"

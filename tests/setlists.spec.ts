@@ -55,6 +55,13 @@ test.describe('Setlist - Management (SETL-07)', () => {
 		await expect(page.getByText('Original Set (Copy)')).toBeVisible();
 
 		await safeDelete('setlists', setlist.id);
+		// Also remove the copy — leftovers give later tests two "Setlist
+		// options" buttons and trip strict mode
+		await adminClient
+			.from('setlists')
+			.delete()
+			.eq('user_id', testUser.id)
+			.eq('name', 'Original Set (Copy)');
 	});
 
 	test('should rename a setlist via click-to-edit on card', async ({ page, testUser }) => {
@@ -80,34 +87,42 @@ test.describe('Setlist - Management (SETL-07)', () => {
 		const setlist = await createSetlist(page, testUser.id, { name: 'Delete Me Set' });
 
 		await page.goto('/setlists');
-		const card = page.getByText('Delete Me Set').first();
+		// Scope the options button to this card — other cards have one too
+		const card = page.getByRole('link', { name: /Delete Me Set/ });
 		await card.hover();
-		await page.getByLabel('Setlist options').click();
-		await page.getByText('Delete').click();
+		await card.getByLabel('Setlist options').click();
+		// exact + visible: 'Delete' substring-matches card titles, and the
+		// ConfirmDialog's hidden 'Delete' button still resolves in strict mode
+		await page.getByText('Delete', { exact: true }).filter({ visible: true }).click();
 
 		// Confirm dialog
 		await expect(page.locator('dialog')).toBeVisible();
 		await page.locator('dialog').getByRole('button', { name: 'Delete' }).click();
 
-		// Verify deleted
-		await expect(page.getByText('Delete Me Set')).not.toBeVisible();
+		// Verify deleted (scope to the card link — the dialog message still
+		// embeds the name)
+		await expect(page.getByRole('link', { name: /Delete Me Set/ })).not.toBeVisible();
 	});
 
 	test('should cancel delete and preserve setlist', async ({ page, testUser }) => {
 		const setlist = await createSetlist(page, testUser.id, { name: 'Keep Me Set' });
 
 		await page.goto('/setlists');
-		const card = page.getByText('Keep Me Set').first();
+		// Scope the options button to this card — other cards have one too
+		const card = page.getByRole('link', { name: /Keep Me Set/ });
 		await card.hover();
-		await page.getByLabel('Setlist options').click();
-		await page.getByText('Delete').click();
+		await card.getByLabel('Setlist options').click();
+		// exact + visible: 'Delete' substring-matches card titles, and the
+		// ConfirmDialog's hidden 'Delete' button still resolves in strict mode
+		await page.getByText('Delete', { exact: true }).filter({ visible: true }).click();
 
 		// Cancel in confirm dialog
 		await expect(page.locator('dialog')).toBeVisible();
 		await page.locator('dialog').getByRole('button', { name: 'Cancel' }).click();
 
-		// Setlist still visible
-		await expect(page.getByText('Keep Me Set')).toBeVisible();
+		// Setlist still visible (scope to the card title button — the dialog
+		// message still embeds the name)
+		await expect(page.getByRole('button', { name: 'Keep Me Set' })).toBeVisible();
 
 		await safeDelete('setlists', setlist.id);
 	});
@@ -182,10 +197,25 @@ test.describe('Setlist DnD - Reorder Songs (SETL-03)', () => {
 		await expect(page.getByLabel('Remove Song Alpha from setlist')).toBeVisible();
 		await expect(page.getByLabel('Remove Song Beta from setlist')).toBeVisible();
 
-		// Drag Song Beta above Song Alpha in the setlist zone
-		const betaRow = page.getByText('Song Beta').first();
-		const alphaRow = page.getByText('Song Alpha').first();
-		await dragAndDrop(page, betaRow, alphaRow, { steps: 15 });
+		// Drag Song Beta above Song Alpha in the setlist zone. Scope to the rows
+		// that contain remove buttons — .first() on the bare title matches the
+		// library panel copy, which is a copy-on-drag source, not the setlist.
+		const betaRow = page
+			.locator('div')
+			.filter({ has: page.getByLabel('Remove Song Beta from setlist') })
+			.last();
+		const alphaRow = page
+			.locator('div')
+			.filter({ has: page.getByLabel('Remove Song Alpha from setlist') })
+			.last();
+		// Drop above Alpha's center — its center is the swap boundary
+		// The app persists the order via a background ?/saveOrder POST; wait for
+		// that round-trip before reloading or the reload races the save
+		const persisted = page.waitForResponse(
+			(r) => r.request().method() === 'POST' && r.url().includes('saveOrder')
+		);
+		await dragAndDrop(page, betaRow, alphaRow, { steps: 15, offsetY: -20 });
+		await persisted;
 
 		// Verify new order persists after reload
 		await page.reload();
@@ -233,7 +263,9 @@ test.describe('Setlist - Timing Updates (SETL-04)', () => {
 		await page.goto(`/setlists/${setlist.id}`);
 
 		// Total = 180 + 120 = 300s = 5:00
-		await expect(page.getByText('5:00')).toBeVisible();
+		// TimingBar renders desktop + mobile layouts; the CSS-hidden duplicate
+		// still resolves in strict mode, so filter to the visible one
+		await expect(page.getByText('5:00').filter({ visible: true })).toBeVisible();
 
 		// Cleanup
 		await safeDelete('setlists', setlist.id);
@@ -262,13 +294,18 @@ test.describe('Setlist - Timing Updates (SETL-04)', () => {
 		]);
 
 		await page.goto(`/setlists/${setlist.id}`);
-		await expect(page.getByText('5:00')).toBeVisible();
+		// TimingBar renders desktop + mobile layouts; the CSS-hidden duplicate
+		// still resolves in strict mode, so filter to the visible one
+		await expect(page.getByText('5:00').filter({ visible: true })).toBeVisible();
 
 		// Remove first song
 		await page.getByLabel('Remove Remove Me Song from setlist').click();
 
 		// Total should update to 2:00
-		await expect(page.getByText('2:00')).toBeVisible();
+		// Scope to the TimingBar total <p> — song rows also show "2:00" in spans
+		await expect(
+			page.getByRole('paragraph').filter({ hasText: '2:00' }).filter({ visible: true })
+		).toBeVisible();
 
 		await safeDelete('setlists', setlist.id);
 		await safeDelete('songs', song1.id);
@@ -306,7 +343,7 @@ test.describe('Setlist - Target Time (SETL-05)', () => {
 		await targetInput.press('Tab'); // Blur to trigger update
 
 		// Should show +1:00 over indicator
-		await expect(page.getByText('+1:00')).toBeVisible();
+		await expect(page.getByText('+1:00').filter({ visible: true })).toBeVisible();
 
 		await safeDelete('setlists', setlist.id);
 		await safeDelete('songs', song1.id);
@@ -336,7 +373,7 @@ test.describe('Setlist - Target Time (SETL-05)', () => {
 		await targetInput.press('Tab');
 
 		// Should show -2:00 under indicator
-		await expect(page.getByText('-2:00')).toBeVisible();
+		await expect(page.getByText('-2:00').filter({ visible: true })).toBeVisible();
 
 		await safeDelete('setlists', setlist.id);
 		await safeDelete('songs', song.id);
@@ -366,16 +403,16 @@ test.describe('Setlist - Transition Gap (SETL-06)', () => {
 		]);
 
 		await page.goto(`/setlists/${setlist.id}`);
-		await expect(page.getByText('6:00')).toBeVisible();
+		await expect(page.getByText('6:00').filter({ visible: true })).toBeVisible();
 
 		// Increase gap by 5s (one click on +)
-		await page.getByLabel('Increase transition time').click();
+		await page.getByLabel('Increase transition time').filter({ visible: true }).click();
 
 		// Gap display shows "5s"
-		await expect(page.getByText('5s')).toBeVisible();
+		await expect(page.getByText('5s').filter({ visible: true })).toBeVisible();
 
 		// Total = 6:00 + 5s (1 gap) = 6:05
-		await expect(page.getByText('6:05')).toBeVisible();
+		await expect(page.getByText('6:05').filter({ visible: true })).toBeVisible();
 
 		await safeDelete('setlists', setlist.id);
 		await safeDelete('songs', song1.id);
@@ -402,8 +439,9 @@ test.describe('Setlist - Share (SETL-08)', () => {
 
 		await page.goto(`/setlists/${setlist.id}`);
 
-		// Enable sharing
-		await page.getByRole('button', { name: /share/i }).click();
+		// Enable sharing (exact: the title "Shared Gig Set" and the remove-song
+		// button also contain "Share")
+		await page.getByRole('button', { name: 'Share', exact: true }).click();
 		// Wait for "Sharing On" state (button text changes)
 		await expect(page.getByText('Sharing On')).toBeVisible();
 

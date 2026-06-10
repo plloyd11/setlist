@@ -171,7 +171,7 @@
 			{#if hasSongs}
 				<button
 					onclick={() => (searchExpanded = !searchExpanded)}
-					class="rounded-lg p-2 text-surface-500 hover:bg-surface-200 dark:text-surface-400 dark:hover:bg-surface-700"
+					class="rounded-lg p-2 text-surface-500 hover:bg-surface-200 dark:text-surface-300 dark:hover:bg-surface-700"
 					aria-label="Toggle search"
 				>
 					<svg
@@ -198,7 +198,7 @@
 				class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors
 					{showSharePicker
 					? 'bg-accent-100 text-accent-700 dark:bg-accent-900/30 dark:text-accent-400'
-					: 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-700'}"
+					: 'text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-700'}"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -280,7 +280,7 @@
 					type="text"
 					bind:value={shareSearchQuery}
 					placeholder="Filter your songs..."
-					class="mb-3 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
+					class="focus-live mb-3 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 				/>
 
 				{#if availablePersonalSongs.length > 0}
@@ -292,10 +292,12 @@
 								use:enhance={() => {
 									return async ({ result, update }) => {
 										if (result.type === 'success') {
-											toast.show('Song shared to band');
+											toast.show('Song shared to band', { variant: 'success' });
 											await update();
 										} else if (result.type === 'failure') {
-											toast.show(String((result as any).data?.error ?? 'Failed to share'));
+											toast.show(String((result as any).data?.error ?? 'Failed to share'), {
+												variant: 'error'
+											});
 										}
 									};
 								}}
@@ -308,7 +310,7 @@
 										<span class="text-sm font-medium text-surface-900 dark:text-surface-100"
 											>{song.title}</span
 										>
-										<span class="text-xs text-surface-500 dark:text-surface-400"
+										<span class="text-xs text-surface-500 dark:text-surface-300"
 											>{formatDuration(song.duration_seconds)}</span
 										>
 									</div>
@@ -323,14 +325,14 @@
 						{/each}
 					</div>
 				{:else}
-					<p class="py-4 text-center text-sm text-surface-500 dark:text-surface-400">
+					<p class="py-4 text-center text-sm text-surface-500 dark:text-surface-300">
 						{shareSearchQuery
 							? 'No matching songs found.'
 							: 'All your songs are already shared to this band.'}
 					</p>
 				{/if}
 			{:else}
-				<p class="py-4 text-center text-sm text-surface-500 dark:text-surface-400">
+				<p class="py-4 text-center text-sm text-surface-500 dark:text-surface-300">
 					Your personal library is empty. Add songs first in your <a
 						href="/songs"
 						class="text-accent-600 underline hover:text-accent-700 dark:text-accent-400"
@@ -376,7 +378,7 @@
 				use:enhance={() => {
 					return async ({ result, update }) => {
 						if (result.type === 'success') {
-							toast.show('Song added to band');
+							toast.show('Song added to band', { variant: 'success' });
 							resetAddForm();
 							showAddForm = false;
 							await update();
@@ -393,7 +395,7 @@
 						bind:value={newTitle}
 						placeholder="Song title"
 						required
-						class="flex-1 rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
+						class="focus-live flex-1 rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 					/>
 					<input
 						type="text"
@@ -403,7 +405,7 @@
 						required
 						inputmode="numeric"
 						pattern={String.raw`\d{1,3}:[0-5]\d`}
-						class="w-20 rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-center text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
+						class="focus-live w-20 rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-center text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 					/>
 				</div>
 				<input
@@ -411,7 +413,7 @@
 					name="notes"
 					bind:value={newNotes}
 					placeholder="Notes (optional)"
-					class="w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500"
+					class="focus-live w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 				/>
 				<button
 					type="submit"
@@ -431,12 +433,12 @@
 	{#if hasSongs}
 		<!-- Sort controls -->
 		<div class="mt-4 flex items-center gap-1">
-			<span class="mr-1 text-xs text-surface-400 dark:text-surface-500">Sort:</span>
+			<span class="mr-1 text-xs text-surface-500 dark:text-surface-300">Sort:</span>
 			{#each sortOptions as opt}
 				<button
 					class="rounded px-2 py-0.5 text-xs font-medium transition-colors {sortBy === opt.value
 						? 'bg-surface-800 text-surface-100 dark:bg-surface-200 dark:text-surface-800'
-						: 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300'}"
+						: 'text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100'}"
 					onclick={() => toggleSort(opt.value)}
 				>
 					{opt.label}
@@ -468,7 +470,7 @@
 										saving = false;
 										if (result.type === 'success') {
 											editingSongId = null;
-											toast.show('Song updated');
+											toast.show('Song updated', { variant: 'success' });
 											await update();
 										} else {
 											editError = 'Failed to save changes';
@@ -483,7 +485,7 @@
 										name="title"
 										bind:value={editTitle}
 										placeholder="Song title"
-										class="flex-1 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-base font-medium text-surface-900 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
+										class="focus-live flex-1 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-base font-medium text-surface-900 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
 									/>
 									<input
 										type="text"
@@ -491,7 +493,7 @@
 										bind:value={editDuration}
 										placeholder="3:45"
 										inputmode="numeric"
-										class="w-16 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-center text-sm text-surface-900 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
+										class="focus-live w-16 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-center text-sm text-surface-900 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
 									/>
 								</div>
 								<div class="mt-2 flex items-center gap-2">
@@ -500,7 +502,7 @@
 										name="notes"
 										bind:value={editNotes}
 										placeholder="Notes (optional)"
-										class="flex-1 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-sm text-surface-500 focus:border-neon-400 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-400"
+										class="focus-live flex-1 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-sm text-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
 									/>
 									<button
 										type="submit"
@@ -559,12 +561,12 @@
 									<span class="text-base font-medium text-surface-900 dark:text-surface-100"
 										>{song.title}</span
 									>
-									<span class="ml-4 shrink-0 text-sm text-surface-500 dark:text-surface-400"
+									<span class="ml-4 shrink-0 text-sm text-surface-500 dark:text-surface-300"
 										>{formatDuration(song.durationSeconds)}</span
 									>
 								</div>
 								{#if song.notes}
-									<p class="mt-0.5 text-sm text-surface-400 dark:text-surface-500">{song.notes}</p>
+									<p class="mt-0.5 text-sm text-surface-500 dark:text-surface-300">{song.notes}</p>
 								{/if}
 							</button>
 							<button
@@ -597,7 +599,7 @@
 				class="mt-8 rounded-xl border border-dashed border-surface-300 bg-surface-50/50 p-8 text-center dark:border-surface-700 dark:bg-surface-900/50"
 			>
 				<p class="font-display text-lg text-surface-700 dark:text-surface-300">No songs match</p>
-				<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">
+				<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
 					Try a different search or clear your filters.
 				</p>
 				<button
@@ -632,7 +634,7 @@
 			<p class="mt-4 font-display text-lg text-surface-700 dark:text-surface-300">
 				No songs in this band's library yet
 			</p>
-			<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">
+			<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
 				Share songs from your personal library or add new ones.
 			</p>
 			<div class="mt-6 flex justify-center gap-3">
@@ -671,7 +673,7 @@
 	use:enhance={() => {
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
-				toast.show('Song removed from band');
+				toast.show('Song removed from band', { variant: 'success' });
 				await update();
 			}
 		};

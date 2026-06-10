@@ -141,14 +141,14 @@
 		<div class="flex items-baseline gap-3">
 			<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Songs</h1>
 			{#if hasSongs}
-				<span class="text-sm text-surface-500 dark:text-surface-400">{songCountLabel}</span>
+				<span class="text-sm text-surface-500 dark:text-surface-300">{songCountLabel}</span>
 			{/if}
 		</div>
 		<div class="flex items-center gap-2">
 			{#if hasSongs}
 				<button
 					onclick={() => (searchExpanded = !searchExpanded)}
-					class="rounded-lg p-2 text-surface-500 hover:bg-surface-200 dark:text-surface-400 dark:hover:bg-surface-700"
+					class="rounded-lg p-2 text-surface-500 hover:bg-surface-200 dark:text-surface-300 dark:hover:bg-surface-700"
 					aria-label="Toggle search"
 				>
 					<svg
@@ -197,12 +197,12 @@
 	{#if hasSongs}
 		<!-- Sort controls -->
 		<div class="mt-4 flex items-center gap-1">
-			<span class="mr-1 text-xs text-surface-400 dark:text-surface-500">Sort:</span>
+			<span class="mr-1 text-xs text-surface-500 dark:text-surface-300">Sort:</span>
 			{#each sortOptions as opt}
 				<button
 					class="rounded px-2 py-0.5 text-xs font-medium transition-colors {sortBy === opt.value
 						? 'bg-surface-800 text-surface-100 dark:bg-surface-200 dark:text-surface-800'
-						: 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-300'}"
+						: 'text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100'}"
 					onclick={() => toggleSort(opt.value)}
 				>
 					{opt.label}
@@ -237,7 +237,7 @@
 				class="mt-8 rounded-xl border border-dashed border-surface-300 bg-surface-50/50 p-8 text-center dark:border-surface-700 dark:bg-surface-900/50"
 			>
 				<p class="font-display text-lg text-surface-700 dark:text-surface-300">No songs match</p>
-				<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">
+				<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
 					Try a different search or clear your filters.
 				</p>
 				<button
@@ -272,7 +272,7 @@
 			<p class="mt-4 font-display text-lg text-surface-700 dark:text-surface-300">
 				Your song library is empty
 			</p>
-			<p class="mt-2 text-sm text-surface-500 dark:text-surface-400">
+			<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
 				Add your first song to get started.
 			</p>
 			<a
@@ -300,7 +300,7 @@
 	use:enhance={() => {
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
-				toast.show('Song deleted');
+				toast.show('Song deleted', { variant: 'success' });
 				await update();
 			}
 		};

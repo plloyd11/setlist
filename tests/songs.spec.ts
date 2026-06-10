@@ -90,7 +90,9 @@ test.describe('Song Library - Delete Song (SONG-03)', () => {
 
 		// Right-click to open context menu
 		await page.getByText('Song To Keep').click({ button: 'right' });
-		await page.getByText('Delete').click();
+		// exact + visible: 'Delete' substring-matches song titles, and the
+		// ConfirmDialog's hidden 'Delete' button still resolves in strict mode
+		await page.getByText('Delete', { exact: true }).filter({ visible: true }).click();
 
 		// Confirm dialog appears
 		await expect(page.locator('dialog')).toBeVisible();
@@ -98,8 +100,9 @@ test.describe('Song Library - Delete Song (SONG-03)', () => {
 		// Cancel deletion
 		await page.locator('dialog').getByRole('button', { name: 'Cancel' }).click();
 
-		// Song is still visible
-		await expect(page.getByText('Song To Keep')).toBeVisible();
+		// Song is still visible. Scope to the row button: the ConfirmDialog
+		// message embeds the title and still resolves in strict mode when closed
+		await expect(page.getByRole('button', { name: 'Song To Keep' })).toBeVisible();
 
 		await safeDelete('songs', song.id);
 	});
@@ -109,7 +112,9 @@ test.describe('Song Library - Delete Song (SONG-03)', () => {
 
 		// Right-click to open context menu
 		await page.getByText('Song To Delete').click({ button: 'right' });
-		await page.getByText('Delete').click();
+		// exact + visible: 'Delete' substring-matches song titles, and the
+		// ConfirmDialog's hidden 'Delete' button still resolves in strict mode
+		await page.getByText('Delete', { exact: true }).filter({ visible: true }).click();
 
 		// Confirm dialog appears
 		await expect(page.locator('dialog')).toBeVisible();
@@ -117,8 +122,9 @@ test.describe('Song Library - Delete Song (SONG-03)', () => {
 		// Confirm deletion
 		await page.locator('dialog').getByRole('button', { name: 'Delete' }).click();
 
-		// Song is gone
-		await expect(page.getByText('Song To Delete')).not.toBeVisible();
+		// Song row is gone (the dialog message still embeds the title, so scope
+		// to the row button)
+		await expect(page.getByRole('button', { name: 'Song To Delete' })).not.toBeVisible();
 	});
 
 	test('should persist deletion after page reload', async ({ page, testUser }) => {
@@ -126,13 +132,15 @@ test.describe('Song Library - Delete Song (SONG-03)', () => {
 
 		// Delete via full flow
 		await page.getByText('Song Persists Gone').click({ button: 'right' });
-		await page.getByText('Delete').click();
+		// exact + visible: 'Delete' substring-matches song titles, and the
+		// ConfirmDialog's hidden 'Delete' button still resolves in strict mode
+		await page.getByText('Delete', { exact: true }).filter({ visible: true }).click();
 		await page.locator('dialog').getByRole('button', { name: 'Delete' }).click();
-		await expect(page.getByText('Song Persists Gone')).not.toBeVisible();
+		await expect(page.getByRole('button', { name: 'Song Persists Gone' })).not.toBeVisible();
 
 		// Reload and verify still gone
 		await page.reload();
-		await expect(page.getByText('Song Persists Gone')).not.toBeVisible();
+		await expect(page.getByRole('button', { name: 'Song Persists Gone' })).not.toBeVisible();
 	});
 });
 
@@ -168,6 +176,10 @@ test.describe('Song Library - Batch Entry (SONG-05)', () => {
 		await page.getByLabel('Duration').fill('2:30');
 		await page.getByRole('button', { name: 'Add Song' }).click();
 		await expect(page.getByLabel('Title')).toHaveValue('');
+		// Let the post-submit invalidation re-render settle: the inputs are
+		// value-bound to the form prop, so a fill landing mid-invalidation gets
+		// wiped one render tick later (no network involved — can't wait on it)
+		await page.waitForTimeout(300);
 
 		// Add second song
 		await page.getByLabel('Title').fill('Batch Two');

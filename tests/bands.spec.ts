@@ -12,13 +12,14 @@ test.describe('Band creation (BAND-01)', () => {
 		await page.goto('/bands');
 		await page.getByLabel('Create band').click();
 		await page.getByPlaceholder('Band name...').fill(bandName);
-		await page.getByRole('button', { name: 'Create' }).click();
+		// exact: the "Create band" header button also matches the substring
+		await page.getByRole('button', { name: 'Create', exact: true }).click();
 
 		// Redirects to /bands/[id]
 		await expect(page).toHaveURL(/\/bands\/.+/);
 
-		// Band dashboard shows member stats
-		await expect(page.getByText('Members')).toBeVisible();
+		// Band workspace nav rendered (exact: "Invite Members" also matches)
+		await expect(page.getByRole('link', { name: 'Members', exact: true })).toBeVisible();
 
 		// Cleanup: extract band ID from URL
 		const bandId = page.url().split('/bands/')[1].split('/')[0].split('?')[0];

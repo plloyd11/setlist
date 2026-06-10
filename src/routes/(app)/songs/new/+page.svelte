@@ -10,7 +10,7 @@
 	<div class="mb-8 flex items-center gap-4">
 		<a
 			href="/songs"
-			class="flex items-center text-sm text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200"
+			class="flex items-center text-sm text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-200"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -38,7 +38,7 @@
 		use:enhance={() => {
 			return async ({ result, update }) => {
 				if (result.type === 'success') {
-					toast.show('Song added');
+					toast.show('Song added', { variant: 'success' });
 					await update({ reset: true });
 				} else {
 					await update();
@@ -56,7 +56,7 @@
 				type="text"
 				required
 				value={form?.title ?? ''}
-				class="mt-1 block w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-2 focus:ring-neon-400/50 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500 dark:focus:border-neon-400"
+				class="focus-live mt-1 block w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 			/>
 		</div>
 
@@ -76,19 +76,19 @@
 				inputmode="numeric"
 				pattern={'\\d{1,3}:[0-5]\\d'}
 				value={form?.durationRaw ?? ''}
-				class="mt-1 block w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-2 focus:ring-neon-400/50 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500 dark:focus:border-neon-400"
+				class="focus-live mt-1 block w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 			/>
 		</div>
 
 		<div>
 			<label for="notes" class="block text-sm font-medium text-surface-700 dark:text-surface-300">
-				Notes <span class="text-surface-400 dark:text-surface-500">(optional)</span>
+				Notes <span class="text-surface-400 dark:text-surface-300">(optional)</span>
 			</label>
 			<textarea
 				id="notes"
 				name="notes"
 				rows="3"
-				class="mt-1 block w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-400 focus:border-neon-400 focus:ring-2 focus:ring-neon-400/50 focus:outline-none dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500 dark:focus:border-neon-400"
+				class="focus-live mt-1 block w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 				>{form?.notes ?? ''}</textarea
 			>
 		</div>
@@ -99,7 +99,7 @@
 
 		<button
 			type="submit"
-			class="w-full rounded-lg bg-accent-500 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-accent-600 focus:ring-2 focus:ring-neon-400/50 focus:ring-offset-2 focus:outline-none dark:focus:ring-offset-surface-900"
+			class="focus-live w-full rounded-lg bg-accent-500 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-accent-600"
 		>
 			Add Song
 		</button>

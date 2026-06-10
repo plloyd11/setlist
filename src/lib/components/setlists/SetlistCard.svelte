@@ -112,12 +112,12 @@
 					onkeydown={handleKeydown}
 					autofocus
 					aria-label="Setlist name"
-					class="min-w-0 flex-1 rounded border border-neon-400 bg-surface-50 px-2 py-0.5 font-display text-lg font-semibold text-surface-900 focus:ring-1 focus:ring-neon-400 focus:outline-none dark:border-neon-600 dark:bg-surface-800 dark:text-surface-100"
+					class="focus-live min-w-0 flex-1 rounded border border-neon-600 bg-surface-50 px-2 py-0.5 font-display text-lg font-semibold text-surface-900 dark:border-neon-400 dark:bg-surface-800 dark:text-surface-100"
 					onclick={(e) => e.preventDefault()}
 				/>
 			{:else}
 				<button
-					class="min-w-0 flex-1 truncate text-left font-display text-lg font-semibold text-surface-900 hover:text-neon-500 dark:text-surface-100 dark:hover:text-neon-400"
+					class="min-w-0 flex-1 truncate text-left font-display text-lg font-semibold text-surface-900 hover:text-accent-600 dark:text-surface-100 dark:hover:text-accent-300"
 					onclick={startEdit}
 					title="Click to rename"
 				>
@@ -201,7 +201,7 @@
 
 		<!-- Meta: date + venue -->
 		{#if setlist.gig_date || setlist.venue}
-			<p class="mt-1.5 truncate text-sm text-surface-500 dark:text-surface-400">
+			<p class="mt-1.5 truncate text-sm text-surface-500 dark:text-surface-300">
 				{#if setlist.venue}{setlist.venue}{/if}
 				{#if setlist.venue && setlist.gig_date}
 					&mdash;
@@ -211,7 +211,7 @@
 		{/if}
 
 		<!-- Stats: song count + total time -->
-		<div class="mt-3 flex items-center gap-3 text-sm text-surface-500 dark:text-surface-400">
+		<div class="mt-3 flex items-center gap-3 text-sm text-surface-500 dark:text-surface-300">
 			<span class="flex items-center gap-1">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"

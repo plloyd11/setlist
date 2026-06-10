@@ -40,10 +40,10 @@
 	class="fixed top-0 right-0 left-0 z-50 border-b border-surface-800/50 bg-surface-950/80 backdrop-blur-md"
 >
 	<div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-		<a href="/" class="font-display text-2xl font-bold text-accent-400">Setlist</a>
+		<a href="/" class="font-display text-2xl font-bold text-accent-hot">Setlist</a>
 		<a
 			href="/auth"
-			class="text-sm font-medium text-surface-400 transition-colors hover:text-surface-200"
+			class="text-sm font-medium text-surface-300 transition-colors hover:text-surface-100"
 		>
 			Log In
 		</a>
@@ -74,7 +74,7 @@
 		</p>
 		<a
 			href="/auth?redirect=/dashboard"
-			class="mt-10 inline-block rounded-lg bg-accent-400 px-8 py-4 font-display text-lg font-bold text-surface-950 shadow-glow-accent transition-all hover:bg-accent-300 hover:shadow-lg md:mt-12"
+			class="mt-10 inline-block rounded-lg bg-accent-hot px-8 py-4 font-display text-lg font-bold text-surface-950 shadow-glow-accent transition-all hover:brightness-110 motion-reduce:transition-none md:mt-12"
 		>
 			Build Your First Setlist
 		</a>
@@ -82,9 +82,7 @@
 </section>
 
 <!-- Divider -->
-<div
-	class="mx-auto h-px w-full max-w-4xl bg-gradient-to-r from-transparent via-surface-700 to-transparent"
-></div>
+<div class="mx-auto h-px w-full max-w-4xl bg-surface-800"></div>
 
 <!-- Feature 1: Setlist Timing (image left, text right) -->
 <section class="bg-surface-950 px-6">
@@ -102,7 +100,7 @@
 			<h2 class="font-display text-2xl font-bold text-surface-100 md:text-4xl">
 				Every second, accounted for
 			</h2>
-			<p class="mt-4 text-lg text-surface-400">
+			<p class="mt-4 text-lg text-surface-300">
 				Build your setlist and watch the running total update in real time. Set a target duration,
 				see exactly how far over or under you are, and walk on stage knowing your set fits the slot.
 			</p>
@@ -111,9 +109,7 @@
 </section>
 
 <!-- Divider -->
-<div
-	class="mx-auto h-px w-full max-w-4xl bg-gradient-to-r from-transparent via-surface-700 to-transparent"
-></div>
+<div class="mx-auto h-px w-full max-w-4xl bg-surface-800"></div>
 
 <!-- Feature 2: Song Library (image right, text left) -->
 <section class="bg-surface-950 px-6">
@@ -131,7 +127,7 @@
 			<h2 class="font-display text-2xl font-bold text-surface-100 md:text-4xl">
 				Your songs, always ready
 			</h2>
-			<p class="mt-4 text-lg text-surface-400">
+			<p class="mt-4 text-lg text-surface-300">
 				Keep your full catalog in one place. Add songs with durations, search instantly, and drag
 				them into any setlist. No more spreadsheets, no more guessing how long that encore tune
 				actually is.
@@ -141,9 +137,7 @@
 </section>
 
 <!-- Divider -->
-<div
-	class="mx-auto h-px w-full max-w-4xl bg-gradient-to-r from-transparent via-surface-700 to-transparent"
-></div>
+<div class="mx-auto h-px w-full max-w-4xl bg-surface-800"></div>
 
 <!-- Feature 3: Band Collaboration (image left, text right) -->
 <section class="bg-surface-950 px-6">
@@ -161,7 +155,7 @@
 			<h2 class="font-display text-2xl font-bold text-surface-100 md:text-4xl">
 				Your whole band, one page
 			</h2>
-			<p class="mt-4 text-lg text-surface-400">
+			<p class="mt-4 text-lg text-surface-300">
 				Create a shared workspace for your band. Everyone sees the same setlists, the same songs,
 				the same plan. No more group chat chaos before a gig.
 			</p>
@@ -170,9 +164,7 @@
 </section>
 
 <!-- Divider -->
-<div
-	class="mx-auto h-px w-full max-w-4xl bg-gradient-to-r from-transparent via-surface-700 to-transparent"
-></div>
+<div class="mx-auto h-px w-full max-w-4xl bg-surface-800"></div>
 
 <!-- Social Proof Section -->
 <section class="bg-surface-950 px-6 py-20 md:py-32">
@@ -188,7 +180,7 @@
 		</p>
 		<a
 			href="/auth?redirect=/dashboard"
-			class="mt-8 inline-block rounded-lg bg-accent-400 px-8 py-4 font-display text-lg font-bold text-surface-950 shadow-glow-accent transition-all hover:bg-accent-300 hover:shadow-lg md:mt-12"
+			class="mt-8 inline-block rounded-lg bg-accent-hot px-8 py-4 font-display text-lg font-bold text-surface-950 shadow-glow-accent transition-all hover:brightness-110 motion-reduce:transition-none md:mt-12"
 		>
 			Build Your First Setlist
 		</a>
@@ -198,15 +190,15 @@
 <!-- Footer -->
 <footer class="border-t border-surface-800 bg-surface-950 px-6 py-10">
 	<div class="mx-auto flex max-w-6xl flex-col items-center gap-6 md:flex-row md:justify-between">
-		<a href="/" class="font-display text-xl font-bold text-accent-400">Setlist</a>
+		<a href="/" class="font-display text-xl font-bold text-accent-hot">Setlist</a>
 		<div class="flex items-center gap-6">
-			<a href="/auth" class="text-sm text-surface-400 transition-colors hover:text-surface-200">
+			<a href="/auth" class="text-sm text-surface-300 transition-colors hover:text-surface-100">
 				Sign Up
 			</a>
-			<a href="/auth" class="text-sm text-surface-400 transition-colors hover:text-surface-200">
+			<a href="/auth" class="text-sm text-surface-300 transition-colors hover:text-surface-100">
 				Log In
 			</a>
 		</div>
-		<p class="text-sm text-surface-600">&copy; 2026 Setlist</p>
+		<p class="text-sm text-surface-300">&copy; 2026 Setlist</p>
 	</div>
 </footer>
