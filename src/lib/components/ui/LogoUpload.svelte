@@ -7,12 +7,20 @@
 		currentLogoUrl = null,
 		userId,
 		table = 'profiles',
-		storagePath
+		storagePath,
+		column = 'logo_url',
+		label = 'Profile Photo / Band Logo',
+		previewOnLight = false
 	}: {
 		currentLogoUrl: string | null;
 		userId: string;
 		table?: 'profiles' | 'bands';
 		storagePath?: string;
+		// bands only: which column the URL is saved to (logo_url | logo_dark_url)
+		column?: 'logo_url' | 'logo_dark_url';
+		label?: string;
+		// Preview dark logos on a white chip so they're visible in the dark UI
+		previewOnLight?: boolean;
 	} = $props();
 
 	let uploading = $state(false);
@@ -79,7 +87,7 @@
 						})
 					: await supabase
 							.from('bands')
-							.update({ logo_url: publicUrl, updated_at: new Date().toISOString() })
+							.update({ [column]: publicUrl, updated_at: new Date().toISOString() })
 							.eq('id', userId);
 
 			if (saveError) {
@@ -131,7 +139,7 @@
 		try {
 			const supabase = getSupabase();
 
-			// Clear logo_url in database
+			// Clear the logo column in database
 			const { error: saveError } =
 				table === 'profiles'
 					? await supabase.from('profiles').upsert({
@@ -141,7 +149,7 @@
 						})
 					: await supabase
 							.from('bands')
-							.update({ logo_url: null, updated_at: new Date().toISOString() })
+							.update({ [column]: null, updated_at: new Date().toISOString() })
 							.eq('id', userId);
 
 			if (saveError) {
@@ -161,7 +169,7 @@
 
 <div class="space-y-3">
 	<p class="text-sm font-medium text-surface-700 dark:text-surface-300">
-		Profile Photo / Band Logo
+		{label}
 	</p>
 
 	<!-- Hidden file input shared by all interactions -->
@@ -195,7 +203,11 @@
 	>
 		{#if previewUrl}
 			<div class="flex flex-col items-center gap-3 p-4">
-				<img src={previewUrl} alt="Logo preview" class="max-h-24 w-auto rounded" />
+				<img
+					src={previewUrl}
+					alt="Logo preview"
+					class="max-h-24 w-auto rounded {previewOnLight ? 'bg-white p-2' : ''}"
+				/>
 				<div class="flex gap-2">
 					<span
 						class="rounded px-3 py-1 text-xs font-medium text-accent-600 hover:bg-accent-50 dark:text-accent-400 dark:hover:bg-accent-900/20"

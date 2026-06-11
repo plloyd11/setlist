@@ -19,6 +19,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		name: band.name,
 		owner_id: band.owner_id,
 		logo_url: band.logo_url,
+		logo_dark_url: band.logo_dark_url,
 		created_at: band.created_at,
 		updated_at: band.updated_at,
 		member_count: band.band_members?.[0]?.count ?? 0,

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import BandLogo from './BandLogo.svelte';
 
 	interface Props {
-		band: { id: string; name: string; logo_url: string | null };
+		band: { id: string; name: string; logo_url: string | null; logo_dark_url: string | null };
 	}
 
 	let { band }: Props = $props();
@@ -29,8 +30,8 @@
 	<div
 		class="flex h-16 shrink-0 items-center gap-3 border-b border-surface-200 px-4 dark:border-surface-800"
 	>
-		{#if band.logo_url}
-			<img src={band.logo_url} alt="{band.name} logo" class="h-8 w-8 rounded-full object-cover" />
+		{#if band.logo_url || band.logo_dark_url}
+			<BandLogo logoUrl={band.logo_url} logoDarkUrl={band.logo_dark_url} name={band.name} />
 		{/if}
 		<h1 class="truncate font-display text-lg text-surface-900 dark:text-surface-100">
 			{band.name}
@@ -57,8 +58,8 @@
 	<div
 		class="flex items-center gap-3 border-b border-surface-200 px-6 py-4 dark:border-surface-700"
 	>
-		{#if band.logo_url}
-			<img src={band.logo_url} alt="{band.name} logo" class="h-8 w-8 rounded-full object-cover" />
+		{#if band.logo_url || band.logo_dark_url}
+			<BandLogo logoUrl={band.logo_url} logoDarkUrl={band.logo_dark_url} name={band.name} />
 		{/if}
 		<h1 class="font-display text-2xl text-surface-900 dark:text-surface-100">
 			{band.name}

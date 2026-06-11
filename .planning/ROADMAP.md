@@ -3,8 +3,9 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** -- Phases 1-4 (shipped 2026-02-22) -- [archive](milestones/v1.0-ROADMAP.md)
-- 🚧 **v1.1 Marketing Landing Page** -- Phases 5-6 (in progress)
+- ✅ **v1.1 Marketing Landing Page** -- Phase 5 shipped (Phase 6 Three.js animations dropped, not built)
 - ✅ **v1.2 Playwright E2E Test Suite** -- Phases 7-10 (shipped 2026-03-13) -- [archive](milestones/v1.2-ROADMAP.md)
+- ✅ **v1.3 Tracks & Gaps** -- shipped ~2026-06-11 (band audio workspace + setlist gaps + password auth; shipped outside formal GSD phase planning)
 
 ## Phases
 
@@ -19,10 +20,22 @@
 </details>
 
 <details>
-<summary>v1.1 Marketing Landing Page (Phases 5-6) -- IN PROGRESS</summary>
+<summary>v1.1 Marketing Landing Page (Phase 5) -- SHIPPED</summary>
 
-- [ ] **Phase 5: Landing Page Structure** - Routing, content sections, responsive design, and design system integration
-- [ ] **Phase 6: Three.js Hero & Scroll Animations** - Particle background, GSAP ScrollTrigger effects, and motion accessibility
+- [x] **Phase 5: Landing Page Structure** - Routing, content sections, responsive design, and design system integration
+- [ ] ~~**Phase 6: Three.js Hero & Scroll Animations**~~ - Dropped; landing page shipped without the animated particle hero / scroll effects.
+
+</details>
+
+<details>
+<summary>v1.3 Tracks & Gaps -- SHIPPED ~2026-06-11</summary>
+
+Shipped directly (no formal GSD phase/plan files). Scope:
+- [x] Band track workspace: versioned audio uploads to private Storage bucket (client-side direct upload), waveform player, timestamped threaded comments
+- [x] Nestable track folders with security-definer RPCs (depth≤5, no cycles, reparent-on-delete)
+- [x] Setlist gaps: labeled timed breaks (song-or-gap union row), shown on the shared sheet alongside song notes
+- [x] Email/password auth: email confirmation + password reset/update routes
+- [ ] E2E specs for the above -- not yet written
 
 </details>
 
@@ -82,9 +95,10 @@ Plans:
 | 2. Song Library | v1.0 | 2/2 | Complete | 2026-02-18 |
 | 3. Setlist Builder | v1.0 | 6/6 | Complete | 2026-02-20 |
 | 4. Band Workspaces | v1.0 | 5/5 | Complete | 2026-02-22 |
-| 5. Landing Page Structure | v1.1 | 2/3 | In progress | - |
-| 6. Three.js Hero & Scroll Animations | v1.1 | 0/? | Not started | - |
+| 5. Landing Page Structure | v1.1 | -- | Shipped | ~2026-06 |
+| 6. Three.js Hero & Scroll Animations | v1.1 | -- | Dropped | - |
 | 7. Test Infrastructure | v1.2 | 3/3 | Complete | 2026-03-03 |
 | 8. Auth & Song Library Tests | v1.2 | 2/2 | Complete | 2026-03-05 |
 | 9. Setlist Builder Tests | v1.2 | 3/3 | Complete | 2026-03-12 |
 | 10. Band & Multi-User Tests | v1.2 | 2/2 | Complete | 2026-03-13 |
+| Tracks & Gaps (no formal phases) | v1.3 | -- | Shipped | ~2026-06-11 |
