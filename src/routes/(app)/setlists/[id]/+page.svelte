@@ -4,6 +4,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { deserialize } from '$app/forms';
 	import SetlistSongRow from '$lib/components/setlists/SetlistSongRow.svelte';
+	import SetlistGapRow from '$lib/components/setlists/SetlistGapRow.svelte';
 	import LibrarySongRow from '$lib/components/setlists/LibrarySongRow.svelte';
 	import SetlistHeader from '$lib/components/setlists/SetlistHeader.svelte';
 	import TimingBar from '$lib/components/setlists/TimingBar.svelte';
@@ -30,13 +31,30 @@
 	type LibraryItem = Song & { id: string };
 	type SetlistItem = {
 		id: string;
-		song_id: string;
+		song_id: string | null; // null = gap row
 		title: string;
-		duration_seconds: number;
+		duration_seconds: number; // for gaps this mirrors gap_seconds so totals just work
+		gap_seconds: number | null;
+		gap_label: string | null;
+		notes: string | null;
 		position: number;
 		isNew?: boolean;
 		[SHADOW_ITEM_MARKER_PROPERTY_NAME]?: boolean;
 	};
+
+	// Map a server setlist_songs row (song or gap) to a SetlistItem
+	function toSetlistItem(ss: any): SetlistItem {
+		return {
+			id: ss.id,
+			song_id: ss.song_id,
+			title: ss.songs?.title ?? '',
+			duration_seconds: ss.song_id ? (ss.songs?.duration_seconds ?? 0) : (ss.gap_seconds ?? 0),
+			gap_seconds: ss.gap_seconds ?? null,
+			gap_label: ss.gap_label ?? null,
+			notes: ss.songs?.notes ?? null,
+			position: ss.position
+		};
+	}
 
 	// Mutation epoch guard: prevents the $effect sync (and stale async responses)
 	// from overwriting newer optimistic state. Each mutation start bumps the epoch;
@@ -61,13 +79,7 @@
 	let libraryItems = $state<LibraryItem[]>(data.songs.map((s: Song) => ({ ...s, id: s.id })));
 	let setlistItems = $state<SetlistItem[]>(
 		// svelte-ignore state_referenced_locally
-		data.setlistSongs.map((ss: any) => ({
-			id: ss.id,
-			song_id: ss.song_id,
-			title: (ss.songs as any).title,
-			duration_seconds: (ss.songs as any).duration_seconds,
-			position: ss.position
-		}))
+		data.setlistSongs.map(toSetlistItem)
 	);
 
 	// Filtered library items (search)
@@ -90,13 +102,7 @@
 		const serverItems = data.setlistSongs;
 		// Don't overwrite during optimistic mutations (untracked so guard changes won't re-trigger)
 		if (untrack(() => inFlightEpoch !== 0)) return;
-		setlistItems = serverItems.map((ss: any) => ({
-			id: ss.id,
-			song_id: ss.song_id,
-			title: (ss.songs as any).title,
-			duration_seconds: (ss.songs as any).duration_seconds,
-			position: ss.position
-		}));
+		setlistItems = serverItems.map(toSetlistItem);
 	});
 
 	// Library zone handlers (copy-on-drag: songs stay in library)
@@ -121,10 +127,12 @@
 		dragActive = false;
 		const items = e.detail.items;
 
-		// Detect new items from library: library items have no song_id field (they ARE the song)
-		// Setlist items always have song_id set
+		// Detect new items from library: library items have no song_id field (they ARE
+		// the song). Setlist items always have song_id set — except gaps, which carry
+		// gap_seconds instead.
 		const processed = items.map((item, index) => {
-			const isNewFromLibrary = !item.song_id && !item[SHADOW_ITEM_MARKER_PROPERTY_NAME];
+			const isNewFromLibrary =
+				!item.song_id && item.gap_seconds == null && !item[SHADOW_ITEM_MARKER_PROPERTY_NAME];
 			if (isNewFromLibrary) {
 				// This is a new song from the library - assign new setlist_songs id
 				const songData = data.songs.find((s: Song) => s.id === item.id);
@@ -133,6 +141,9 @@
 					song_id: item.id,
 					title: songData?.title ?? item.title ?? 'Unknown',
 					duration_seconds: songData?.duration_seconds ?? item.duration_seconds ?? 0,
+					gap_seconds: null,
+					gap_label: null,
+					notes: songData?.notes ?? null,
 					position: index,
 					isNew: true
 				};
@@ -154,6 +165,8 @@
 				items.map((item, index) => ({
 					id: item.isNew ? undefined : item.id,
 					song_id: item.song_id,
+					gap_seconds: item.gap_seconds,
+					gap_label: item.gap_label,
 					position: index
 				}))
 			)
@@ -183,12 +196,17 @@
 							const bySongId = new Map(data.songs.map((s: Song) => [s.id, s]));
 							setlistItems = savedItems.map((ss: any) => {
 								const existing = byRowId.get(ss.id);
-								const song = bySongId.get(ss.song_id);
+								const song = ss.song_id ? bySongId.get(ss.song_id) : undefined;
 								return {
 									id: ss.id,
 									song_id: ss.song_id,
-									title: existing?.title ?? song?.title ?? 'Unknown',
-									duration_seconds: existing?.duration_seconds ?? song?.duration_seconds ?? 0,
+									title: ss.song_id ? (existing?.title ?? song?.title ?? 'Unknown') : '',
+									duration_seconds: ss.song_id
+										? (existing?.duration_seconds ?? song?.duration_seconds ?? 0)
+										: (ss.gap_seconds ?? 0),
+									gap_seconds: ss.gap_seconds ?? null,
+									gap_label: ss.gap_label ?? null,
+									notes: ss.song_id ? (existing?.notes ?? song?.notes ?? null) : null,
 									position: ss.position
 								};
 							});
@@ -236,6 +254,9 @@
 								song_id: ss.song_id ?? song.id,
 								title: ss.songs?.title ?? song.title,
 								duration_seconds: ss.songs?.duration_seconds ?? song.duration_seconds,
+								gap_seconds: null,
+								gap_label: null,
+								notes: ss.songs?.notes ?? song.notes ?? null,
 								position: ss.position ?? setlistItems.length
 							}
 						];
@@ -281,6 +302,104 @@
 			// Server confirmed the removal — optimistic state is already correct
 		} catch {
 			toast?.show('Failed to remove song', { variant: 'error' });
+			endMutation(epoch);
+			await invalidateAll();
+			return;
+		}
+		endMutation(epoch);
+	}
+
+	// Add a 30s gap block at the end of the setlist
+	async function handleAddGap() {
+		const epoch = beginMutation();
+		const formData = new FormData();
+		formData.set('gap_seconds', '30');
+
+		try {
+			const response = await fetch('?/addGap', {
+				method: 'POST',
+				body: formData
+			});
+			if (!response.ok) {
+				toast?.show('Failed to add gap', { variant: 'error' });
+				return;
+			}
+			const text = await response.text();
+			let appended = false;
+			try {
+				const result = deserialize(text);
+				if (result.type === 'success' && result.data) {
+					const ss = (result.data as any).setlistSong;
+					if (ss && epoch === mutationEpoch) {
+						setlistItems = [
+							...setlistItems,
+							{
+								id: ss.id,
+								song_id: null,
+								title: '',
+								duration_seconds: ss.gap_seconds ?? 30,
+								gap_seconds: ss.gap_seconds ?? 30,
+								gap_label: ss.gap_label ?? null,
+								notes: null,
+								position: ss.position ?? setlistItems.length
+							}
+						];
+						appended = true;
+					}
+				}
+			} catch {
+				// Response parsing failed — fall back to a server resync below
+			}
+			if (!appended && epoch === mutationEpoch) {
+				endMutation(epoch);
+				await invalidateAll();
+			}
+		} catch {
+			toast?.show('Failed to add gap', { variant: 'error' });
+		} finally {
+			endMutation(epoch);
+		}
+	}
+
+	// Change a gap's duration (optimistic, synced via updateGap action)
+	async function handleGapDurationChange(id: string, seconds: number) {
+		const epoch = beginMutation();
+		setlistItems = setlistItems.map((item) =>
+			item.id === id ? { ...item, gap_seconds: seconds, duration_seconds: seconds } : item
+		);
+
+		const formData = new FormData();
+		formData.set('setlist_song_id', id);
+		formData.set('gap_seconds', String(seconds));
+		await syncGapUpdate(formData, epoch);
+	}
+
+	// Rename a gap (optimistic; empty label clears the name)
+	async function handleGapLabelChange(id: string, label: string) {
+		const epoch = beginMutation();
+		setlistItems = setlistItems.map((item) =>
+			item.id === id ? { ...item, gap_label: label || null } : item
+		);
+
+		const formData = new FormData();
+		formData.set('setlist_song_id', id);
+		formData.set('gap_label', label);
+		await syncGapUpdate(formData, epoch);
+	}
+
+	async function syncGapUpdate(formData: FormData, epoch: number) {
+		try {
+			const response = await fetch('?/updateGap', {
+				method: 'POST',
+				body: formData
+			});
+			if (!response.ok) {
+				endMutation(epoch);
+				await invalidateAll();
+				return;
+			}
+		} catch {
+			toast?.show('Failed to update gap', { variant: 'error' });
 			endMutation(epoch);
 			await invalidateAll();
 			return;
@@ -395,8 +514,10 @@
 		</button>
 	</div>
 
-	<!-- Two-panel layout -->
-	<div class="flex min-h-0 flex-1 md:grid md:grid-cols-[320px_1fr]">
+	<!-- Two-panel layout. grid-rows-[minmax(0,1fr)] caps the row at the container
+	     height so each panel scrolls internally — without it the row auto-sizes to
+	     the song list and pushes the timing bar off-screen. -->
+	<div class="flex min-h-0 flex-1 md:grid md:grid-cols-[320px_1fr] md:grid-rows-[minmax(0,1fr)]">
 		<!-- Library panel -->
 		<div
 			class="flex flex-col border-r border-surface-200 bg-surface-50 md:flex dark:border-surface-700 dark:bg-surface-900/50 {activeTab ===
@@ -537,7 +658,16 @@
 					>
 						{#each setlistItems as song (song.id)}
 							<div class="mb-1.5">
-								<SetlistSongRow {song} onRemove={handleRemoveSong} />
+								{#if song.song_id === null && song.gap_seconds != null}
+									<SetlistGapRow
+										gap={song}
+										onDurationChange={handleGapDurationChange}
+										onLabelChange={handleGapLabelChange}
+										onRemove={handleRemoveSong}
+									/>
+								{:else}
+									<SetlistSongRow {song} onRemove={handleRemoveSong} />
+								{/if}
 							</div>
 						{/each}
 					</div>
@@ -553,6 +683,29 @@
 							</p>
 						</div>
 					{/if}
+				</div>
+
+				<!-- Add gap: timed break block (e.g. 30s breather between tunes) -->
+				<div class="mt-3 flex justify-center">
+					<button
+						onclick={handleAddGap}
+						class="focus-live flex items-center gap-1.5 rounded-lg border border-dashed border-surface-300 px-3 py-1.5 text-sm font-medium text-surface-500 transition-colors hover:border-surface-400 hover:text-surface-700 dark:border-surface-600 dark:text-surface-300 dark:hover:border-surface-500 dark:hover:text-surface-100"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M12 5v14M5 12h14" />
+						</svg>
+						Add gap
+					</button>
 				</div>
 			</div>
 		</div>

@@ -32,7 +32,9 @@ export interface Setlist {
 export interface SetlistSong {
 	id: string;
 	setlist_id: string;
-	song_id: string;
+	song_id: string | null;
+	gap_seconds: number | null;
+	gap_label: string | null;
 	position: number;
 	created_at: string;
 }

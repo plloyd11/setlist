@@ -103,7 +103,7 @@
 				class="mt-3 flex items-center justify-between rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-800 dark:bg-surface-900"
 			>
 				<span class="text-sm font-medium text-surface-700 dark:text-surface-300">Dark mode</span>
-				<ThemeToggle />
+				<ThemeToggle variant="switch" />
 			</div>
 		</section>
 

@@ -95,7 +95,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		ids.length > 0
 			? supabase
 					.from('setlist_songs')
-					.select('setlist_id, songs(duration_seconds)')
+					.select('setlist_id, gap_seconds, songs(duration_seconds)')
 					.in('setlist_id', ids)
 			: Promise.resolve({ data: [] }),
 		uploaderIds.length > 0
@@ -108,8 +108,14 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		const rows = setlistSongsRes.data;
 		for (const row of rows ?? []) {
 			const t = totals.get(row.setlist_id) ?? { count: 0, seconds: 0 };
-			t.count += 1;
-			t.seconds += (row.songs as unknown as { duration_seconds: number })?.duration_seconds ?? 0;
+			const song = row.songs as unknown as { duration_seconds: number } | null;
+			if (song) {
+				// Gap rows have no song: they add time but don't count as songs
+				t.count += 1;
+				t.seconds += song.duration_seconds;
+			} else if (row.gap_seconds) {
+				t.seconds += row.gap_seconds;
+			}
 			totals.set(row.setlist_id, t);
 		}
 	}

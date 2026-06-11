@@ -8,11 +8,10 @@
 		<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#080c13" />
 		<script>
 			(function () {
+				// Dark is the product default ("The Backline"): only an explicit
+				// user choice of light mode opts out.
 				const theme = localStorage.getItem('theme');
-				if (
-					theme === 'dark' ||
-					(!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
-				) {
+				if (theme !== 'light') {
 					document.documentElement.classList.add('dark');
 				}
 			})();

@@ -18,7 +18,9 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 			.single(),
 		supabase
 			.from('setlist_songs')
-			.select('id, position, song_id, songs(id, title, duration_seconds)')
+			.select(
+				'id, position, song_id, gap_seconds, gap_label, songs(id, title, duration_seconds, notes)'
+			)
 			.eq('setlist_id', params.setlistId)
 			.order('position'),
 		// Band songs (library panel) -- KEY DIFFERENCE from personal builder
@@ -83,7 +85,13 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const itemsJson = formData.get('items') as string;
 
-		let items: Array<{ id?: string; song_id: string; position: number }>;
+		let items: Array<{
+			id?: string;
+			song_id: string | null;
+			gap_seconds?: number | null;
+			gap_label?: string | null;
+			position: number;
+		}>;
 		try {
 			items = JSON.parse(itemsJson);
 		} catch {
@@ -95,7 +103,12 @@ export const actions: Actions = {
 		// setlist on partial failure) and keeps existing row IDs stable.
 		const { data: savedRows, error: saveError } = await supabase.rpc('save_setlist_order', {
 			p_setlist_id: params.setlistId,
-			p_items: items.map((item) => ({ id: item.id ?? null, song_id: item.song_id }))
+			p_items: items.map((item) => ({
+				id: item.id ?? null,
+				song_id: item.song_id ?? null,
+				gap_seconds: item.gap_seconds ?? null,
+				gap_label: item.gap_label ?? null
+			}))
 		});
 
 		if (saveError) return fail(500, { error: 'Failed to save order' });
@@ -131,7 +144,7 @@ export const actions: Actions = {
 					song_id,
 					position: nextPosition
 				})
-				.select('id, position, song_id, songs(id, title, duration_seconds)')
+				.select('id, position, song_id, gap_seconds, songs(id, title, duration_seconds, notes)')
 				.single();
 
 			if (!insertError) return { added: true, setlistSong: newRow };
@@ -139,6 +152,78 @@ export const actions: Actions = {
 		}
 
 		return fail(500, { error: 'Failed to add song' });
+	},
+
+	addGap: async ({ params, request, locals: { supabase, safeGetSession } }) => {
+		const { session } = await safeGetSession();
+		if (!session) return fail(401, { error: 'Not authenticated' });
+
+		const formData = await request.formData();
+		const gap_seconds = parseInt(formData.get('gap_seconds') as string, 10) || 30;
+
+		// Same read-max-then-insert retry as addSong (unique setlist_id, position)
+		for (let attempt = 0; attempt < 3; attempt++) {
+			const { data: existing } = await supabase
+				.from('setlist_songs')
+				.select('position')
+				.eq('setlist_id', params.setlistId)
+				.order('position', { ascending: false })
+				.limit(1);
+
+			const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+			const { data: newRow, error: insertError } = await supabase
+				.from('setlist_songs')
+				.insert({
+					setlist_id: params.setlistId,
+					song_id: null,
+					gap_seconds,
+					position: nextPosition
+				})
+				.select('id, position, song_id, gap_seconds, gap_label')
+				.single();
+
+			if (!insertError) return { added: true, setlistSong: newRow };
+			if (insertError.code !== '23505') break;
+		}
+
+		return fail(500, { error: 'Failed to add gap' });
+	},
+
+	updateGap: async ({ request, locals: { supabase, safeGetSession } }) => {
+		const { session } = await safeGetSession();
+		if (!session) return fail(401, { error: 'Not authenticated' });
+
+		const formData = await request.formData();
+		const setlist_song_id = formData.get('setlist_song_id') as string;
+		if (!setlist_song_id) return fail(400, { error: 'Invalid gap data' });
+
+		const updates: Record<string, unknown> = {};
+		if (formData.has('gap_seconds')) {
+			const gap_seconds = parseInt(formData.get('gap_seconds') as string, 10);
+			if (!gap_seconds || gap_seconds <= 0) return fail(400, { error: 'Invalid gap data' });
+			updates.gap_seconds = gap_seconds;
+		}
+		if (formData.has('gap_label')) {
+			const gap_label = ((formData.get('gap_label') as string) ?? '').trim().slice(0, 60);
+			updates.gap_label = gap_label || null;
+		}
+		if (Object.keys(updates).length === 0) return fail(400, { error: 'Invalid gap data' });
+
+		// .is('song_id', null) restricts to gap rows; .select() so an
+		// RLS-filtered no-op is reported instead of faking success.
+		const { data: updatedRows, error: updateError } = await supabase
+			.from('setlist_songs')
+			.update(updates)
+			.eq('id', setlist_song_id)
+			.is('song_id', null)
+			.select('id');
+
+		if (updateError || !updatedRows?.length) {
+			return fail(404, { error: 'Gap not found' });
+		}
+
+		return { updated: true };
 	},
 
 	toggleShare: async ({ params, request, locals: { supabase, safeGetSession } }) => {

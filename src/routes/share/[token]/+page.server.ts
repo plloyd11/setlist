@@ -5,7 +5,13 @@ type SharedSetlist = {
 	name: string;
 	gig_date: string | null;
 	venue: string | null;
-	songs: Array<{ title: string }>;
+	// Song entries carry title + notes; gap entries carry gap_seconds + gap_label
+	songs: Array<{
+		title?: string;
+		notes?: string | null;
+		gap_seconds?: number;
+		gap_label?: string | null;
+	}>;
 	profile: { display_name: string | null; logo_url: string | null } | null;
 };
 

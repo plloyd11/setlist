@@ -1,5 +1,16 @@
 <script lang="ts">
+	import { formatDuration } from '$lib/utils/duration';
+
 	let { data } = $props();
+
+	// Number the songs; gap rows are unnumbered breaks
+	let entries = $derived.by(() => {
+		let n = 0;
+		return data.songs.map((s) => ({
+			...s,
+			number: s.gap_seconds == null ? ++n : null
+		}));
+	});
 
 	function formatDate(dateStr: string | null): string {
 		if (!dateStr) return '';
@@ -60,15 +71,29 @@
 	<!-- Song list -->
 	{#if data.songs.length > 0}
 		<ol class="space-y-0">
-			{#each data.songs as song, i}
-				<li class="flex items-baseline gap-3 border-b border-gray-300 py-2">
-					<span class="w-8 text-right text-lg font-medium text-gray-400">
-						{i + 1}
-					</span>
-					<span class="text-lg text-black">
-						{song.title}
-					</span>
-				</li>
+			{#each entries as entry}
+				{#if entry.gap_seconds != null}
+					<li class="flex items-baseline gap-3 border-b border-gray-300 py-2">
+						<span class="w-8"></span>
+						<span class="text-sm font-medium tracking-wider text-gray-400 uppercase">
+							{entry.gap_label || 'Gap'} — {formatDuration(entry.gap_seconds)}
+						</span>
+					</li>
+				{:else}
+					<li class="flex items-baseline gap-3 border-b border-gray-300 py-2">
+						<span class="w-8 text-right text-lg font-medium text-gray-400">
+							{entry.number}
+						</span>
+						<span class="text-lg text-black">
+							{entry.title}
+						</span>
+						{#if entry.notes}
+							<span class="min-w-0 truncate text-base text-gray-500">
+								{entry.notes}
+							</span>
+						{/if}
+					</li>
+				{/if}
 			{/each}
 		</ol>
 	{:else}

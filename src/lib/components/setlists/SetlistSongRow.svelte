@@ -6,7 +6,13 @@
 		position = null,
 		onRemove
 	}: {
-		song: { id: string; song_id: string; title: string; duration_seconds: number };
+		song: {
+			id: string;
+			song_id: string | null;
+			title: string;
+			duration_seconds: number;
+			notes?: string | null;
+		};
 		position?: number | null;
 		onRemove: (id: string) => void;
 	} = $props();
@@ -43,9 +49,11 @@
 		</span>
 	{/if}
 
-	<!-- Song title -->
+	<!-- Song title (+ inline notes, e.g. count-ins) -->
 	<span class="min-w-0 flex-1 truncate font-medium text-surface-900 dark:text-surface-100">
-		{song.title}
+		{song.title}{#if song.notes}<span
+				class="ml-2 text-sm font-normal text-surface-500 dark:text-surface-400">{song.notes}</span
+			>{/if}
 	</span>
 
 	<!-- Duration: fixed slot so times stack into a scannable column -->

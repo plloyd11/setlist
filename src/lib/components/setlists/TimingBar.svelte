@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatDuration, parseDuration } from '$lib/utils/duration';
+	import { formatDuration, parseDurationLenient } from '$lib/utils/duration';
 	import ProgressBar from '$lib/components/ui/ProgressBar.svelte';
 
 	let {
@@ -9,7 +9,7 @@
 		onTargetChange,
 		onTransitionChange
 	}: {
-		setlistItems: Array<{ duration_seconds: number }>;
+		setlistItems: Array<{ duration_seconds: number; gap_seconds?: number | null }>;
 		targetSeconds: number | null;
 		transitionSeconds: number;
 		onTargetChange: (seconds: number | null) => void;
@@ -18,6 +18,10 @@
 
 	// Target input value (mm:ss string, synced from prop via $effect below)
 	let targetInput = $state('');
+
+	// Invalid-input flash: brief danger ring so a rejected value doesn't just vanish
+	let targetInvalid = $state(false);
+	let invalidTimer: ReturnType<typeof setTimeout> | undefined;
 
 	// Sync target input when prop changes
 	$effect(() => {
@@ -28,9 +32,15 @@
 	let totalSongSeconds = $derived(
 		setlistItems.reduce((sum, song) => sum + (song.duration_seconds || 0), 0)
 	);
-	let totalTransitionSeconds = $derived(
-		setlistItems.length > 1 ? (setlistItems.length - 1) * transitionSeconds : 0
-	);
+	// Transitions apply between consecutive songs; an explicit gap IS the break,
+	// so pairs touching a gap don't get extra transition time
+	let totalTransitionSeconds = $derived.by(() => {
+		let pairs = 0;
+		for (let i = 0; i < setlistItems.length - 1; i++) {
+			if (setlistItems[i].gap_seconds == null && setlistItems[i + 1].gap_seconds == null) pairs++;
+		}
+		return pairs * transitionSeconds;
+	});
 	let totalSeconds = $derived(totalSongSeconds + totalTransitionSeconds);
 	let overUnderSeconds = $derived(targetSeconds ? totalSeconds - targetSeconds : 0);
 	let progressPercent = $derived(
@@ -43,12 +53,16 @@
 			onTargetChange(null);
 			return;
 		}
-		const parsed = parseDuration(targetInput);
+		const parsed = parseDurationLenient(targetInput);
 		if (parsed !== null) {
+			targetInput = formatDuration(parsed);
 			onTargetChange(parsed);
 		} else {
-			// Reset to current value
+			// Reset to current value and flash so the rejection is visible
 			targetInput = targetSeconds ? formatDuration(targetSeconds) : '';
+			targetInvalid = true;
+			clearTimeout(invalidTimer);
+			invalidTimer = setTimeout(() => (targetInvalid = false), 1500);
 		}
 	}
 
@@ -110,9 +124,12 @@
 				bind:value={targetInput}
 				onblur={handleTargetBlur}
 				onkeydown={handleTargetKeydown}
-				placeholder="Set target"
-				aria-label="Target set duration"
-				class="focus-live w-20 rounded border border-surface-300 bg-transparent px-1.5 py-0.5 text-center text-sm text-surface-700 placeholder-surface-500 dark:border-surface-600 dark:text-surface-300 dark:placeholder-surface-300"
+				placeholder="45:00"
+				title="Set length in minutes (45) or mm:ss (45:00)"
+				aria-label="Target set duration, minutes or mm:ss"
+				class="focus-live w-20 rounded border bg-transparent px-1.5 py-0.5 text-center text-sm text-surface-700 placeholder-surface-500 dark:text-surface-300 dark:placeholder-surface-300 {targetInvalid
+					? 'border-danger-500 ring-1 ring-danger-500'
+					: 'border-surface-300 dark:border-surface-600'}"
 			/>
 		</div>
 
@@ -206,9 +223,12 @@
 					bind:value={targetInput}
 					onblur={handleTargetBlur}
 					onkeydown={handleTargetKeydown}
-					placeholder="--:--"
-					aria-label="Target set duration"
-					class="focus-live w-14 rounded border border-surface-300 bg-transparent px-1 py-0.5 text-center text-xs text-surface-700 placeholder-surface-500 dark:border-surface-600 dark:text-surface-300 dark:placeholder-surface-300"
+					placeholder="45:00"
+					title="Set length in minutes (45) or mm:ss (45:00)"
+					aria-label="Target set duration, minutes or mm:ss"
+					class="focus-live w-14 rounded border bg-transparent px-1 py-0.5 text-center text-xs text-surface-700 placeholder-surface-500 dark:text-surface-300 dark:placeholder-surface-300 {targetInvalid
+						? 'border-danger-500 ring-1 ring-danger-500'
+						: 'border-surface-300 dark:border-surface-600'}"
 				/>
 			</div>
 

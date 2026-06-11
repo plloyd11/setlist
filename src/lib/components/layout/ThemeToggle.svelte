@@ -2,15 +2,22 @@
 	import { onMount } from 'svelte';
 	import { theme, initTheme, toggleTheme } from '$lib/stores/theme.svelte';
 
+	let {
+		variant = 'icon',
+		showLabel = false
+	}: {
+		variant?: 'icon' | 'switch';
+		showLabel?: boolean;
+	} = $props();
+
 	// Shared runes state — multiple instances (Sidebar + settings) stay in sync
 	onMount(initTheme);
+
+	// Label names the mode you switch TO, matching the icon (moon = go dark)
+	let actionLabel = $derived(theme.dark ? 'Light mode' : 'Dark mode');
 </script>
 
-<button
-	onclick={toggleTheme}
-	aria-label="Toggle dark mode"
-	class="focus-live rounded-lg p-2 text-surface-500 transition-colors hover:text-accent-600 dark:text-surface-300 dark:hover:text-accent-300"
->
+{#snippet modeIcon()}
 	{#if theme.dark}
 		<!-- Sun icon (click to go light) -->
 		<svg
@@ -50,4 +57,44 @@
 			<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
 		</svg>
 	{/if}
-</button>
+{/snippet}
+
+{#if variant === 'switch'}
+	<!-- On/off switch: state is readable at a glance, no iconography to decode -->
+	<button
+		onclick={toggleTheme}
+		role="switch"
+		aria-checked={theme.dark}
+		aria-label="Dark mode"
+		class="focus-live relative h-6 w-11 shrink-0 rounded-full transition-colors {theme.dark
+			? 'bg-accent-500'
+			: 'bg-surface-300'}"
+	>
+		<span
+			class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform motion-reduce:transition-none {theme.dark
+				? 'translate-x-5'
+				: ''}"
+		></span>
+	</button>
+{:else if showLabel}
+	<!-- Sidebar row: icon + text label so the action is explicit -->
+	<button
+		onclick={toggleTheme}
+		title={actionLabel}
+		class="focus-live flex h-10 w-full items-center rounded-lg text-sm font-medium text-surface-600 transition-colors hover:bg-surface-100 hover:text-accent-600 dark:text-surface-300 dark:hover:bg-surface-800 dark:hover:text-accent-300"
+	>
+		<span class="flex h-10 w-10 shrink-0 items-center justify-center">
+			{@render modeIcon()}
+		</span>
+		<span class="nav-label whitespace-nowrap">{actionLabel}</span>
+	</button>
+{:else}
+	<button
+		onclick={toggleTheme}
+		title={actionLabel}
+		aria-label={actionLabel}
+		class="focus-live rounded-lg p-2 text-surface-500 transition-colors hover:text-accent-600 dark:text-surface-300 dark:hover:text-accent-300"
+	>
+		{@render modeIcon()}
+	</button>
+{/if}

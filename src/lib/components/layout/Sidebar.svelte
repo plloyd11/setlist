@@ -243,11 +243,7 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 					</span>
 				</div>
 			{/if}
-			<div class="flex h-10 items-center">
-				<span class="flex h-10 w-10 shrink-0 items-center justify-center">
-					<ThemeToggle />
-				</span>
-			</div>
+			<ThemeToggle showLabel />
 			<button
 				bind:this={triggerEl}
 				onclick={() => (menuOpen = !menuOpen)}

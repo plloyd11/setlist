@@ -22,10 +22,10 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 	if (setlistList.length > 0) {
 		const setlistIds = setlistList.map((s) => s.id);
 
-		// Fetch setlist_songs with their song durations
+		// Fetch setlist_songs with their song durations (gap rows have no song)
 		const { data: setlistSongs } = await supabase
 			.from('setlist_songs')
-			.select('setlist_id, songs(duration_seconds)')
+			.select('setlist_id, gap_seconds, songs(duration_seconds)')
 			.in('setlist_id', setlistIds);
 
 		if (setlistSongs) {
@@ -34,10 +34,12 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 				if (!stats[sid]) {
 					stats[sid] = { songCount: 0, totalSeconds: 0 };
 				}
-				stats[sid].songCount += 1;
 				const song = row.songs as unknown as { duration_seconds: number } | null;
 				if (song) {
+					stats[sid].songCount += 1;
 					stats[sid].totalSeconds += song.duration_seconds;
+				} else if (row.gap_seconds) {
+					stats[sid].totalSeconds += row.gap_seconds;
 				}
 			}
 		}
@@ -151,10 +153,10 @@ export const actions: Actions = {
 			return fail(500, { error: 'Failed to duplicate setlist' });
 		}
 
-		// Copy songs
+		// Copy songs (and gap rows)
 		const { data: originalSongs } = await supabase
 			.from('setlist_songs')
-			.select('song_id, position')
+			.select('song_id, gap_seconds, position')
 			.eq('setlist_id', id)
 			.order('position');
 
@@ -163,6 +165,7 @@ export const actions: Actions = {
 				originalSongs.map((s) => ({
 					setlist_id: newSetlist.id,
 					song_id: s.song_id,
+					gap_seconds: s.gap_seconds,
 					position: s.position
 				}))
 			);

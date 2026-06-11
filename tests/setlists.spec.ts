@@ -338,7 +338,7 @@ test.describe('Setlist - Target Time (SETL-05)', () => {
 		await page.goto(`/setlists/${setlist.id}`);
 
 		// Set target to 5:00 (total is 6:00, so 1:00 over)
-		const targetInput = page.getByPlaceholder('Set target');
+		const targetInput = page.getByPlaceholder('45:00').first();
 		await targetInput.fill('5:00');
 		await targetInput.press('Tab'); // Blur to trigger update
 
@@ -368,7 +368,7 @@ test.describe('Setlist - Target Time (SETL-05)', () => {
 		await page.goto(`/setlists/${setlist.id}`);
 
 		// Set target to 5:00 (total is 3:00, so 2:00 under)
-		const targetInput = page.getByPlaceholder('Set target');
+		const targetInput = page.getByPlaceholder('45:00').first();
 		await targetInput.fill('5:00');
 		await targetInput.press('Tab');
 
