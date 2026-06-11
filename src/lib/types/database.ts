@@ -76,8 +76,19 @@ export interface BandInvite {
 export interface Track {
 	id: string;
 	band_id: string;
+	folder_id: string | null;
 	title: string;
 	description: string | null;
+	created_by: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface TrackFolder {
+	id: string;
+	band_id: string;
+	parent_id: string | null;
+	name: string;
 	created_by: string | null;
 	created_at: string;
 	updated_at: string;

@@ -28,7 +28,7 @@
 
 <dialog
 	bind:this={dialogEl}
-	class="rounded-xl border border-surface-200 bg-surface-50 p-0 shadow-xl backdrop:bg-black/50 backdrop:backdrop-blur-sm dark:border-surface-700 dark:bg-surface-800"
+	class="m-auto rounded-xl border border-surface-200 bg-surface-50 p-0 shadow-xl backdrop:bg-black/50 backdrop:backdrop-blur-sm dark:border-surface-700 dark:bg-surface-800"
 	onclose={handleCancel}
 >
 	<div class="p-6">

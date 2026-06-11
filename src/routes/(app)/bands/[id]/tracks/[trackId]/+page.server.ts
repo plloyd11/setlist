@@ -117,11 +117,13 @@ export const actions: Actions = {
 			.delete()
 			.eq('id', params.trackId)
 			.eq('band_id', params.id)
-			.select('id');
+			.select('id, folder_id');
 
 		if (deleteError || !deletedRows?.length) {
 			return fail(deleteError ? 500 : 403, { error: 'Failed to delete track' });
 		}
+
+		const folderId = deletedRows[0].folder_id;
 
 		// Best-effort audio cleanup — DB rows are already gone, so a failure
 		// here only leaves orphaned storage objects (accepted tradeoff)
@@ -133,7 +135,8 @@ export const actions: Actions = {
 			}
 		}
 
-		throw redirect(303, `/bands/${params.id}/tracks`);
+		// Land back in the folder the track lived in, not at the root
+		throw redirect(303, `/bands/${params.id}/tracks${folderId ? `?folder=${folderId}` : ''}`);
 	},
 
 	addComment: async ({ params, request, locals: { supabase, safeGetSession } }) => {

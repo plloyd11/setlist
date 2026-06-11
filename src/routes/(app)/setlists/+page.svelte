@@ -3,11 +3,12 @@
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import Toast from '$lib/components/ui/Toast.svelte';
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 
 	let { data } = $props();
 
-	// Create form state
-	let showCreateForm = $state(false);
+	// Create form state; ?new opens the form directly (dashboard activation CTA lands here)
+	let showCreateForm = $state(page.url.searchParams.has('new'));
 	let newName = $state('');
 
 	// Component refs

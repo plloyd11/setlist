@@ -45,6 +45,35 @@
 	let heroDiff = $derived(hero?.target_seconds ? hero.totalSeconds - hero.target_seconds : null);
 </script>
 
+<!-- One step in the first-run signal chain: a lamp reports its state -->
+{#snippet chainStep(state: 'done' | 'live' | 'next', label: string, sub: string)}
+	<li class="flex items-start gap-2.5">
+		{#if state === 'done'}
+			<span class="mt-[3px] h-2 w-2 shrink-0 rounded-full bg-accent-500 dark:bg-accent-400"></span>
+		{:else if state === 'live'}
+			<span class="lamp-live mt-[3px] h-2 w-2 shrink-0 rounded-full bg-neon-600 dark:bg-neon-400"
+			></span>
+		{:else}
+			<span
+				class="mt-[3px] h-2 w-2 shrink-0 rounded-full border border-surface-300 dark:border-surface-600"
+			></span>
+		{/if}
+		<div class="min-w-0">
+			<p
+				class="text-[10px] font-medium tracking-wider uppercase {state === 'next'
+					? 'text-surface-500 dark:text-surface-300'
+					: 'text-surface-900 dark:text-surface-100'}"
+			>
+				<span class="sr-only">
+					{state === 'done' ? 'Done: ' : state === 'live' ? 'Current step: ' : 'Coming up: '}
+				</span>
+				{label}
+			</p>
+			<p class="mt-0.5 text-xs text-surface-500 dark:text-surface-300">{sub}</p>
+		</div>
+	</li>
+{/snippet}
+
 <div class="p-6 md:p-8">
 	{#if hero}
 		<!-- The Next Gig Board: the page's one chromatic peak -->
@@ -66,10 +95,15 @@
 						{hero.name}
 					</h1>
 					<p class="mt-1 text-sm text-surface-500 dark:text-surface-300">
-						{#if hero.venue}{hero.venue}{/if}
-						{#if hero.venue && hero.gig_date}&nbsp;&middot;&nbsp;{/if}
-						{#if hero.gig_date}{gigDateLabel(hero.gig_date)}{/if}
-						{#if !hero.venue && !hero.gig_date}No gig booked — open to set a date{/if}
+						{#if hero.venue || hero.gig_date}
+							{#if hero.venue}{hero.venue}{/if}
+							{#if hero.venue && hero.gig_date}&nbsp;&middot;&nbsp;{/if}
+							{#if hero.gig_date}{gigDateLabel(hero.gig_date)}{/if}
+						{:else if hero.songCount === 0}
+							Empty set. Open it and drag songs in.
+						{:else}
+							No gig booked yet. Open the set to pick a date.
+						{/if}
 					</p>
 					{#if hero.share_token}
 						<span
@@ -156,27 +190,95 @@
 			</div>
 		</a>
 	{:else}
-		<!-- First run: the board is the activation moment -->
+		<!-- First run: the activation moment. Same silhouette as the gig board, not yet powered on -->
+		{@const hasSongs = data.songCount > 0}
 		<div
-			class="board-enter rounded-xl border border-surface-200 bg-surface-50 p-8 text-center md:p-12 dark:border-surface-800 dark:bg-surface-900"
+			class="board-enter rounded-xl border border-surface-200 bg-surface-50 p-6 md:p-8 dark:border-surface-800 dark:bg-surface-900"
 		>
-			<p
-				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+			<div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+				<div class="min-w-0">
+					<p
+						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+					>
+						Nothing on the board yet
+					</p>
+					<h1 class="mt-1 font-display text-3xl text-surface-900 md:text-4xl dark:text-surface-50">
+						Build your first set
+					</h1>
+					<p class="mt-1 max-w-md text-sm text-surface-500 dark:text-surface-300">
+						{hasSongs
+							? 'Your songs are in. Drag them into a set and watch the total close on your gig time.'
+							: 'Your next gig will live up here: the set, its running total, the countdown. It starts with songs.'}
+					</p>
+				</div>
+
+				<!-- Unpowered readings: what the board shows once a set exists -->
+				<div class="flex shrink-0 items-center gap-6 md:gap-8" aria-hidden="true">
+					<div class="text-center">
+						<p
+							class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+						>
+							Total
+						</p>
+						<p
+							class="font-display text-2xl font-bold text-surface-300 md:text-3xl dark:text-surface-600"
+						>
+							--:--
+						</p>
+					</div>
+					<div class="text-center">
+						<p
+							class="text-[10px] font-medium tracking-wider text-surface-400 uppercase dark:text-surface-500"
+						>
+							Target
+						</p>
+						<p
+							class="font-display text-2xl font-bold text-surface-300 md:text-3xl dark:text-surface-600"
+						>
+							--:--
+						</p>
+					</div>
+					<div class="text-center">
+						<p
+							class="text-[10px] font-medium tracking-wider uppercase {hasSongs
+								? 'text-surface-500 dark:text-surface-300'
+								: 'text-surface-400 dark:text-surface-500'}"
+						>
+							Songs
+						</p>
+						<p
+							class="font-display text-2xl font-bold md:text-3xl {hasSongs
+								? 'text-surface-900 dark:text-surface-100'
+								: 'text-surface-300 dark:text-surface-600'}"
+						>
+							{data.songCount}
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- The signal chain: three moves between here and showtime -->
+			<div
+				class="mt-6 flex flex-col gap-5 border-t border-surface-200 pt-5 lg:flex-row lg:items-center lg:justify-between dark:border-surface-800"
 			>
-				No sets yet
-			</p>
-			<h1 class="mt-2 font-display text-3xl text-surface-900 md:text-4xl dark:text-surface-50">
-				Build your first set
-			</h1>
-			<p class="mx-auto mt-2 max-w-md text-sm text-surface-500 dark:text-surface-300">
-				Add songs, drag them into a set, and share it with the band.
-			</p>
-			<a
-				href={data.songCount > 0 ? '/setlists' : '/songs/new'}
-				class="focus-live mt-6 inline-flex items-center gap-2 rounded-lg bg-accent-500 px-5 py-2.5 text-sm font-semibold text-white shadow-glow-accent transition-colors hover:bg-accent-600"
-			>
-				{data.songCount > 0 ? 'New setlist' : 'Add your first song'}
-			</a>
+				<ol class="grid gap-4 sm:grid-cols-3 lg:flex lg:gap-8">
+					{@render chainStep(
+						hasSongs ? 'done' : 'live',
+						'Songs',
+						hasSongs
+							? `${data.songCount} ${data.songCount === 1 ? 'song' : 'songs'} · ${formatLibrary(data.librarySeconds)} ready`
+							: 'A name and a length is all each one needs'
+					)}
+					{@render chainStep(hasSongs ? 'live' : 'next', 'The set', 'Drag songs in, fit the time')}
+					{@render chainStep('next', 'Share', 'One link the whole band can open')}
+				</ol>
+				<a
+					href={hasSongs ? '/setlists?new' : '/songs/new'}
+					class="focus-live inline-flex shrink-0 items-center justify-center self-start rounded-lg bg-accent-500 px-5 py-3 text-sm font-semibold text-white shadow-glow-accent transition-colors hover:bg-accent-600 lg:self-auto"
+				>
+					{hasSongs ? 'Start the set' : 'Add your first song'}
+				</a>
+			</div>
 		</div>
 	{/if}
 
@@ -253,43 +355,47 @@
 		</section>
 	{/if}
 
-	<!-- Library pulse + quick actions -->
-	<section class="mt-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-		<p class="text-sm text-surface-500 dark:text-surface-300">
-			<span class="font-display font-semibold text-surface-900 dark:text-surface-100">
-				{data.songCount}
-				{data.songCount === 1 ? 'song' : 'songs'}
-			</span>
-			{#if data.songCount > 0}
-				&middot; {formatLibrary(data.librarySeconds)} in your library
-			{:else}
-				in your library
+	<!-- Library pulse + quick actions. During first run the activation board owns the actions -->
+	{#if hero || data.bands.length > 0}
+		<section class="mt-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+			<p class="text-sm text-surface-500 dark:text-surface-300">
+				<span class="font-display font-semibold text-surface-900 dark:text-surface-100">
+					{data.songCount}
+					{data.songCount === 1 ? 'song' : 'songs'}
+				</span>
+				{#if data.songCount > 0}
+					&middot; {formatLibrary(data.librarySeconds)} in your library
+				{:else}
+					in your library
+				{/if}
+				{#each data.bands as band (band.id)}
+					&middot;
+					<a
+						href="/bands/{band.id}"
+						class="focus-live rounded font-medium text-accent-600 hover:underline dark:text-accent-300"
+					>
+						{band.name}
+					</a>
+				{/each}
+			</p>
+			{#if hero}
+				<div class="flex gap-3">
+					<a
+						href="/setlists"
+						class="focus-live rounded-lg bg-accent-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-600"
+					>
+						New setlist
+					</a>
+					<a
+						href="/songs/new"
+						class="focus-live rounded-lg px-4 py-2 text-sm font-medium text-surface-600 transition-colors hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800"
+					>
+						Add song
+					</a>
+				</div>
 			{/if}
-			{#each data.bands as band (band.id)}
-				&middot;
-				<a
-					href="/bands/{band.id}"
-					class="focus-live rounded font-medium text-accent-600 hover:underline dark:text-accent-300"
-				>
-					{band.name}
-				</a>
-			{/each}
-		</p>
-		<div class="flex gap-3">
-			<a
-				href="/setlists"
-				class="focus-live rounded-lg bg-accent-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-600"
-			>
-				New setlist
-			</a>
-			<a
-				href="/songs/new"
-				class="focus-live rounded-lg px-4 py-2 text-sm font-medium text-surface-600 transition-colors hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800"
-			>
-				Add song
-			</a>
-		</div>
-	</section>
+		</section>
+	{/if}
 </div>
 
 <style>
@@ -304,6 +410,26 @@
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.board-enter {
+			animation: none;
+		}
+	}
+
+	/* Powered-On Rule: the current step is live, so its lamp glows */
+	.lamp-live {
+		box-shadow:
+			0 0 6px rgba(187, 201, 42, 0.5),
+			0 0 14px rgba(187, 201, 42, 0.2);
+		animation: lamp-pulse 2.4s ease-in-out infinite;
+	}
+	@keyframes lamp-pulse {
+		50% {
+			box-shadow:
+				0 0 3px rgba(187, 201, 42, 0.3),
+				0 0 8px rgba(187, 201, 42, 0.1);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.lamp-live {
 			animation: none;
 		}
 	}

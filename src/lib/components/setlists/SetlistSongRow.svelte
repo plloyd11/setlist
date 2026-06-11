@@ -3,9 +3,11 @@
 
 	let {
 		song,
+		position = null,
 		onRemove
 	}: {
 		song: { id: string; song_id: string; title: string; duration_seconds: number };
+		position?: number | null;
 		onRemove: (id: string) => void;
 	} = $props();
 </script>
@@ -31,13 +33,25 @@
 		</svg>
 	</span>
 
+	<!-- Set position: renumbers live while a drag is in flight -->
+	{#if position != null}
+		<span
+			class="w-5 shrink-0 text-right text-xs font-medium text-surface-400 tabular-nums dark:text-surface-400"
+			aria-hidden="true"
+		>
+			{position}
+		</span>
+	{/if}
+
 	<!-- Song title -->
 	<span class="min-w-0 flex-1 truncate font-medium text-surface-900 dark:text-surface-100">
 		{song.title}
 	</span>
 
-	<!-- Duration -->
-	<span class="shrink-0 text-surface-500 dark:text-surface-300">
+	<!-- Duration: fixed slot so times stack into a scannable column -->
+	<span
+		class="w-12 shrink-0 text-right text-sm text-surface-500 tabular-nums dark:text-surface-300"
+	>
 		{formatDuration(song.duration_seconds)}
 	</span>
 

@@ -20,7 +20,7 @@
 	</span>
 
 	<!-- Duration -->
-	<span class="shrink-0 text-xs text-surface-500 dark:text-surface-300">
+	<span class="shrink-0 text-xs text-surface-500 tabular-nums dark:text-surface-300">
 		{formatDuration(song.duration_seconds)}
 	</span>
 

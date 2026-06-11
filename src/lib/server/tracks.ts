@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // mirrors the bucket file_size_limit
 const MAX_PEAKS = 4000;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Shared handler for the track upload form actions. The audio file is already
@@ -29,9 +30,15 @@ export async function processTrackUpload(
 	const fileSize = Number(formData.get('file_size_bytes'));
 	const durationRaw = formData.get('duration_seconds') as string | null;
 	const peaksRaw = formData.get('waveform_peaks') as string | null;
+	const folderIdRaw = ((formData.get('folder_id') as string) ?? '').trim();
 
 	if (!trackId && !title) {
 		return fail(400, { error: 'Title is required' });
+	}
+	// Only new-track uploads carry a folder; the RPC ignores it for versions.
+	const folderId = !trackId && folderIdRaw ? folderIdRaw : null;
+	if (folderId && !UUID_RE.test(folderId)) {
+		return fail(400, { error: 'Invalid folder' });
 	}
 	if (!storagePath.startsWith(`bands/${bandId}/tracks/`)) {
 		return fail(400, { error: 'Invalid storage path' });
@@ -78,7 +85,8 @@ export async function processTrackUpload(
 		p_mime_type: mimeType,
 		p_file_size_bytes: fileSize,
 		p_duration_seconds: duration,
-		p_waveform_peaks: peaks
+		p_waveform_peaks: peaks,
+		p_folder_id: folderId
 	});
 
 	const row = Array.isArray(data) ? data[0] : data;

@@ -8,6 +8,7 @@
 	let {
 		bandId,
 		trackId = null,
+		folderId = null,
 		supabase,
 		action = '?/upload',
 		onsuccess,
@@ -15,6 +16,7 @@
 	}: {
 		bandId: string;
 		trackId?: string | null;
+		folderId?: string | null;
 		supabase: SupabaseClient;
 		action?: string;
 		onsuccess?: (result: { trackId: string; versionNumber: number }) => void;
@@ -236,6 +238,9 @@
 		}}
 		ondrop={handleDrop}
 		ondragover={(e) => {
+			// Only claim OS file drags — track/folder card drags (see FolderRow)
+			// must not light up or get swallowed by the upload dropzone
+			if (!e.dataTransfer?.types.includes('Files')) return;
 			e.preventDefault();
 			dragging = true;
 		}}
@@ -361,6 +366,8 @@
 >
 	{#if trackId}
 		<input type="hidden" name="track_id" value={trackId} />
+	{:else if folderId}
+		<input type="hidden" name="folder_id" value={folderId} />
 	{/if}
 	<input type="hidden" name="title" value={title} />
 	<input type="hidden" name="storage_path" value={storagePath} />

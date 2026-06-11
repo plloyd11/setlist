@@ -79,10 +79,33 @@ export async function createBand(page: Page, userId: string, overrides?: Record<
 }
 
 /**
+ * Create a track folder via admin API (bypasses RLS and the RPC depth cap —
+ * fixtures only). Does not navigate. Nest with overrides: { parent_id }.
+ */
+export async function createTrackFolder(
+	bandId: string,
+	userId: string,
+	overrides?: Record<string, unknown>
+) {
+	const folder = {
+		band_id: bandId,
+		name: `${faker.word.adjective()} ${faker.word.noun()} ${faker.string.alphanumeric(4)}`,
+		created_by: userId,
+		...overrides
+	};
+
+	const { data, error } = await adminClient.from('track_folders').insert(folder).select().single();
+	if (error) throw new Error(`Factory createTrackFolder failed: ${error.message}`);
+
+	return data;
+}
+
+/**
  * Create a track with one version via admin API: uploads the audio fixture to
  * the 'tracks' storage bucket and inserts the tracks + track_versions rows.
  * Does not navigate. Storage objects don't cascade with DB rows — call
- * cleanupTrackAudio(bandId) in teardown.
+ * cleanupTrackAudio(bandId) in teardown. Place inside a folder with
+ * overrides: { folder_id }.
  */
 export async function createTrackData(
 	bandId: string,

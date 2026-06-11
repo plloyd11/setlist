@@ -85,9 +85,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 	// Profiles can't be embedded (FKs point at auth.users) — two-step fetch
 	const uploaderIds = [
 		...new Set(
-			trackRows
-				.map((t) => t.latestVersion?.uploaded_by)
-				.filter((id): id is string => !!id)
+			trackRows.map((t) => t.latestVersion?.uploaded_by).filter((id): id is string => !!id)
 		)
 	];
 

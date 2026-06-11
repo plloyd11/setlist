@@ -3,7 +3,12 @@
 	import { page } from '$app/stores';
 	import gsap from 'gsap';
 	import ThemeToggle from './ThemeToggle.svelte';
-	import { sidebar, initSidebar, setSidebarMode, type SidebarMode } from '$lib/stores/sidebar.svelte';
+	import {
+		sidebar,
+		initSidebar,
+		setSidebarMode,
+		type SidebarMode
+	} from '$lib/stores/sidebar.svelte';
 
 	interface Props {
 		user: { email?: string; user_metadata?: { full_name?: string; avatar_url?: string } } | null;

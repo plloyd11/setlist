@@ -197,7 +197,7 @@
 					<span
 						class="block h-2.5 w-2.5 rounded-full ring-2 ring-surface-50 transition-transform group-hover:scale-125 motion-reduce:transition-none dark:ring-surface-900
 							{marker.active && !marker.resolved
-							? 'shadow-glow-neon scale-125 bg-neon-600 dark:bg-neon-400'
+							? 'scale-125 bg-neon-600 shadow-glow-neon dark:bg-neon-400'
 							: 'bg-accent-500 dark:bg-accent-400'}"
 					></span>
 				</button>
