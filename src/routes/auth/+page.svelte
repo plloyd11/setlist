@@ -1,14 +1,17 @@
 <script lang="ts">
 	import { page } from '$app/state';
 
-	let error = $state(
-		page.url.searchParams.get('error') === 'auth_exchange_failed'
-			? 'Sign in failed. Please try again.'
-			: ''
-	);
+	const errorMessages: Record<string, string> = {
+		auth_exchange_failed: 'Sign in failed. Please try again.',
+		confirm_failed: 'Email confirmation failed. The link may have expired — try signing up again.'
+	};
+	let error = $state(errorMessages[page.url.searchParams.get('error') ?? ''] ?? '');
 
 	let email = $state('');
 	let password = $state('');
+	let mode = $state<'signin' | 'signup' | 'reset'>('signin');
+	let confirmationSentTo = $state('');
+	let submitting = $state(false);
 
 	// Only allow same-origin relative paths — an attacker-supplied
 	// ?redirect=https://evil.com must not be followed after sign-in.
@@ -21,18 +24,63 @@
 		return '/dashboard';
 	};
 
-	const signInWithEmail = async (e: Event) => {
+	const submitEmailForm = async (e: Event) => {
 		e.preventDefault();
 		error = '';
-		const { error: authError } = await page.data.supabase.auth.signInWithPassword({
-			email,
-			password
-		});
-		if (authError) {
-			error = authError.message;
-			return;
+		submitting = true;
+		try {
+			const next = safeRedirect(page.url.searchParams.get('redirect'));
+
+			if (mode === 'reset') {
+				const { error: authError } = await page.data.supabase.auth.resetPasswordForEmail(email, {
+					redirectTo: `${window.location.origin}/auth/update-password`
+				});
+				if (authError) {
+					error = authError.message;
+					return;
+				}
+				confirmationSentTo = email;
+				return;
+			}
+
+			if (mode === 'signup') {
+				const { data, error: authError } = await page.data.supabase.auth.signUp({
+					email,
+					password,
+					options: {
+						emailRedirectTo: `${window.location.origin}${next}`
+					}
+				});
+				if (authError) {
+					error = authError.message;
+					return;
+				}
+				if (data.session) {
+					// Email confirmation is disabled on the project — signed in immediately
+					window.location.href = next;
+					return;
+				}
+				confirmationSentTo = email;
+				return;
+			}
+
+			const { error: authError } = await page.data.supabase.auth.signInWithPassword({
+				email,
+				password
+			});
+			if (authError) {
+				error = authError.message;
+				return;
+			}
+			window.location.href = next;
+		} finally {
+			submitting = false;
 		}
-		window.location.href = safeRedirect(page.url.searchParams.get('redirect'));
+	};
+
+	const setMode = (next: typeof mode) => {
+		mode = next;
+		error = '';
 	};
 
 	const signInWithGoogle = async () => {
@@ -100,28 +148,87 @@
 			</div>
 
 			<!-- Email/Password form -->
-			<form onsubmit={signInWithEmail} class="mt-6 space-y-3">
-				<input
-					type="email"
-					bind:value={email}
-					placeholder="Email"
-					aria-label="Email"
-					class="focus-live w-full rounded-lg border border-surface-300 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
-				/>
-				<input
-					type="password"
-					bind:value={password}
-					placeholder="Password"
-					aria-label="Password"
-					class="focus-live w-full rounded-lg border border-surface-300 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
-				/>
-				<button
-					type="submit"
-					class="focus-live w-full cursor-pointer rounded-lg bg-surface-200 px-6 py-2.5 text-sm font-semibold text-surface-700 transition-colors hover:bg-surface-300 dark:bg-surface-700 dark:text-surface-200 dark:hover:bg-surface-600"
-				>
-					Sign in with email
-				</button>
-			</form>
+			{#if confirmationSentTo}
+				<div class="mt-6 text-center">
+					<p class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+						Check your email
+					</p>
+					<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
+						{#if mode === 'reset'}
+							If an account exists for <span class="font-medium">{confirmationSentTo}</span>, we
+							sent it a password reset link.
+						{:else}
+							We sent a confirmation link to <span class="font-medium">{confirmationSentTo}</span>.
+							Click it to finish creating your account.
+						{/if}
+					</p>
+				</div>
+			{:else}
+				<form onsubmit={submitEmailForm} class="mt-6 space-y-3">
+					<input
+						type="email"
+						bind:value={email}
+						required
+						autocomplete="email"
+						placeholder="Email"
+						aria-label="Email"
+						class="focus-live w-full rounded-lg border border-surface-300 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
+					/>
+					{#if mode !== 'reset'}
+						<input
+							type="password"
+							bind:value={password}
+							required
+							minlength={mode === 'signup' ? 6 : undefined}
+							autocomplete={mode === 'signup' ? 'new-password' : 'current-password'}
+							placeholder="Password"
+							aria-label="Password"
+							class="focus-live w-full rounded-lg border border-surface-300 bg-surface-50 px-4 py-2.5 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
+						/>
+					{/if}
+					<button
+						type="submit"
+						disabled={submitting}
+						class="focus-live w-full cursor-pointer rounded-lg bg-surface-200 px-6 py-2.5 text-sm font-semibold text-surface-700 transition-colors hover:bg-surface-300 disabled:cursor-default disabled:opacity-60 dark:bg-surface-700 dark:text-surface-200 dark:hover:bg-surface-600"
+					>
+						{mode === 'signup'
+							? 'Create account'
+							: mode === 'reset'
+								? 'Send reset link'
+								: 'Sign in with email'}
+					</button>
+				</form>
+
+				{#if mode === 'signin'}
+					<p class="mt-3 text-center">
+						<button
+							type="button"
+							onclick={() => setMode('reset')}
+							class="focus-live cursor-pointer text-xs text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100"
+						>
+							Forgot password?
+						</button>
+					</p>
+				{/if}
+
+				<!-- Mode toggle -->
+				<p class="mt-4 text-center text-sm text-surface-500 dark:text-surface-300">
+					{#if mode === 'signin'}
+						Don't have an account?
+					{:else if mode === 'signup'}
+						Already have an account?
+					{:else}
+						Remember your password?
+					{/if}
+					<button
+						type="button"
+						onclick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+						class="focus-live cursor-pointer font-semibold text-accent-500 hover:text-accent-600"
+					>
+						{mode === 'signin' ? 'Sign up' : 'Sign in'}
+					</button>
+				</p>
+			{/if}
 
 			<!-- Error Display -->
 			{#if error}
