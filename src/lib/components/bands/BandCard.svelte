@@ -1,8 +1,11 @@
 <script lang="ts">
+	import BandLogo from './BandLogo.svelte';
+
 	interface BandData {
 		id: string;
 		name: string;
 		logo_url: string | null;
+		logo_dark_url: string | null;
 		member_count: number;
 		song_count: number;
 		setlist_count: number;
@@ -19,10 +22,11 @@
 	class="block rounded-lg border border-surface-200 bg-surface-50 p-4 shadow-sm transition-shadow hover:shadow-md dark:border-surface-700 dark:bg-surface-800"
 >
 	<div class="flex items-center gap-3">
-		{#if band.logo_url}
-			<img
-				src={band.logo_url}
-				alt="{band.name} logo"
+		{#if band.logo_url || band.logo_dark_url}
+			<BandLogo
+				logoUrl={band.logo_url}
+				logoDarkUrl={band.logo_dark_url}
+				name={band.name}
 				loading="lazy"
 				class="h-10 w-10 rounded-full object-cover"
 			/>

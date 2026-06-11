@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import type { PrintSettings } from '$lib/types/database';
 
 type SharedSetlist = {
 	name: string;
@@ -13,6 +14,7 @@ type SharedSetlist = {
 		gap_label?: string | null;
 	}>;
 	profile: { display_name: string | null; logo_url: string | null } | null;
+	print_settings: PrintSettings | null;
 };
 
 export const load: PageServerLoad = async ({ params, setHeaders, locals: { supabase } }) => {
@@ -43,6 +45,7 @@ export const load: PageServerLoad = async ({ params, setHeaders, locals: { supab
 			venue: shared.venue
 		},
 		songs: shared.songs ?? [],
-		profile: shared.profile
+		profile: shared.profile,
+		printSettings: shared.print_settings ?? null
 	};
 };

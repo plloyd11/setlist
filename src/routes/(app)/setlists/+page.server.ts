@@ -124,7 +124,7 @@ export const actions: Actions = {
 		// Load original setlist
 		const { data: original } = await supabase
 			.from('setlists')
-			.select('name, gig_date, venue, target_seconds, transition_seconds')
+			.select('name, gig_date, venue, target_seconds, transition_seconds, print_settings')
 			.eq('id', id)
 			.eq('user_id', session.user.id)
 			.single();
@@ -142,7 +142,8 @@ export const actions: Actions = {
 				gig_date: original.gig_date,
 				venue: original.venue,
 				target_seconds: original.target_seconds,
-				transition_seconds: original.transition_seconds
+				transition_seconds: original.transition_seconds,
+				print_settings: original.print_settings
 			})
 			.select('id')
 			.single();
@@ -154,7 +155,7 @@ export const actions: Actions = {
 		// Copy songs (and gap rows)
 		const { data: originalSongs } = await supabase
 			.from('setlist_songs')
-			.select('song_id, gap_seconds, position')
+			.select('song_id, gap_seconds, gap_label, position')
 			.eq('setlist_id', id)
 			.order('position');
 
@@ -164,6 +165,7 @@ export const actions: Actions = {
 					setlist_id: newSetlist.id,
 					song_id: s.song_id,
 					gap_seconds: s.gap_seconds,
+					gap_label: s.gap_label,
 					position: s.position
 				}))
 			);

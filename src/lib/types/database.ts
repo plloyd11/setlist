@@ -15,6 +15,26 @@ export interface Profile {
 	updated_at: string;
 }
 
+/**
+ * Styling for the printable sheet, stored as JSONB on setlists.
+ * Keys are snake_case because the value round-trips through the
+ * get_shared_setlist RPC untransformed. Null column = app defaults
+ * (see DEFAULT_PRINT_SETTINGS in $lib/utils/printSettings).
+ */
+export interface PrintSettings {
+	font_family: 'display' | 'sans' | 'serif' | 'mono';
+	font_size: number;
+	line_spacing: number;
+	text_align: 'left' | 'center';
+	show_title: boolean;
+	show_venue_date: boolean;
+	show_notes: boolean;
+	show_numbers: boolean;
+	show_logo: boolean;
+	show_dividers: boolean;
+	logo_size: 'sm' | 'md' | 'lg';
+}
+
 export interface Setlist {
 	id: string;
 	user_id: string;
@@ -25,6 +45,7 @@ export interface Setlist {
 	transition_seconds: number;
 	share_token: string | null;
 	band_id: string | null;
+	print_settings: PrintSettings | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -44,6 +65,8 @@ export interface Band {
 	name: string;
 	owner_id: string;
 	logo_url: string | null;
+	// Dark variant for light backgrounds (print sheet, share page); null = use logo_url
+	logo_dark_url: string | null;
 	created_at: string;
 	updated_at: string;
 }

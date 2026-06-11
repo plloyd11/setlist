@@ -36,6 +36,14 @@ Musicians can build a setlist from their songs and instantly see how long the se
 - ✓ Setlist builder E2E tests (create, DnD, timing, sharing) — v1.2
 - ✓ Band workspace E2E tests (create, invite, shared library, collab setlists) — v1.2
 - ✓ Multi-user and RLS data isolation test scenarios — v1.2
+- ✓ Marketing landing page (hero, features, social proof, footer, auth-based routing) — v1.1
+- ✓ Email/password sign-in with email confirmation and password reset/update — v1.3
+- ✓ User can add timed gaps (labeled breaks) between songs in a setlist — v1.3
+- ✓ Gaps and song notes appear on the shared/printed setlist sheet — v1.3
+- ✓ Band members can upload work-in-progress audio tracks to a band workspace — v1.3
+- ✓ Each upload is a versioned track; members can switch between versions — v1.3
+- ✓ Members can leave timestamped, threaded comments on a track's waveform — v1.3
+- ✓ Members can organize tracks into nestable folders (create/rename/move/delete) — v1.3
 
 ### Active
 
@@ -49,7 +57,7 @@ Musicians can build a setlist from their songs and instantly see how long the se
 - Spotify/Apple Music integration — not needed for core loop
 - Real-time collaborative editing — share and view is enough
 - Chord charts / lyrics display — entire product domain (OnSong)
-- MIDI / audio integration — requires native app capabilities
+- MIDI / audio *processing* (DAW-style editing, effects, mixing) — requires native app capabilities. **Note:** plain audio *sharing* (upload/playback/comment) was brought into scope in v1.3 as the band track workspace; this exclusion now covers only in-app audio editing.
 - Calendar / scheduling — different product domain
 - Social features / public profiles — setlist.fm owns this space
 - Payment / financial tracking — unrelated domain
@@ -66,11 +74,16 @@ Shipped v1.2 E2E test suite with 1,317 LOC across 15 test files (Playwright + Ty
 Tech stack: SvelteKit 2, Svelte 5, Tailwind CSS v4, Supabase (Postgres + Auth + RLS + Storage).
 Deployed to Netlify via `@sveltejs/adapter-netlify`.
 
-v1.1 (Marketing Landing Page) is in progress — Phase 5 (landing page structure) complete, Phase 6 (Three.js animations) not yet started. FEAT-02 (real screenshots) has a gap closure plan pending.
+v1.1 (Marketing Landing Page) shipped — logged-out `/` is the marketing page; logged-in users redirect to the dashboard.
+
+v1.3 (Tracks & Gaps, shipped ~2026-06-11) added the first feature that stores binary assets:
+- **Band track workspace** — versioned audio uploads to a private Supabase Storage `tracks` bucket (50 MB/file, audio MIME allowlist), client-side direct upload via signed URLs, waveform player with timestamped threaded comments, and nestable folders driven by security-definer RPCs. Migrations `20260610120000` (track tables) and `20260611000000` (folders).
+- **Setlist gaps** — `setlist_songs` rows are now song-or-gap; labeled timed breaks count toward the total and render on the shared sheet. Migrations `20260611132743` / `20260611134910`.
+- **Auth** — email confirmation + password reset/update routes (`/auth/confirm`, `/auth/update-password`).
 
 All 30 v1.2 requirements satisfied. Audit passed with 3 minor tech debt items (no blockers).
 Test infrastructure: worker-scoped fixtures, Supabase admin client, data factories, automatic cleanup.
-6 spec files covering auth, songs, setlists, bands, RLS isolation with multi-user browser contexts.
+6 spec files covering auth, songs, setlists, bands, RLS isolation with multi-user browser contexts. (Track/gap features are not yet covered by E2E specs.)
 
 ## Constraints
 
@@ -101,6 +114,11 @@ Test infrastructure: worker-scoped fixtures, Supabase admin client, data factori
 | Custom DnD pointer helper (v1.2) | locator.dragTo() fails with svelte-dnd-action — need raw page.mouse API | ✓ Good — reliable DnD test automation |
 | Worker-scoped test fixtures (v1.2) | One user per worker, auth via real UI login, CASCADE cleanup | ✓ Good — parallel test isolation |
 | Warn-not-throw cleanup (v1.2) | Stale test data should not fail test runs | ✓ Good — resilient test infrastructure |
+| Client-side direct upload to Storage (v1.3) | Netlify function body limit ~6MB can't proxy 50MB audio; signed upload URL + metadata RPC after | ✓ Works — accepted orphan risk if RPC fails post-upload |
+| Private `tracks` bucket + signed playback URLs (v1.3) | Audio is band-private; RLS via user-scoped client gates access before a URL is minted (6h TTL) | ✓ Good — no public exposure |
+| Immutable versioned uploads (v1.3) | Each upload is a new `track_versions` row at a fresh uuid path; no upsert | ✓ Good — comment timestamps stay anchored to a version |
+| Folder mutations via security-definer RPCs (v1.3) | "Any member can organize" can't be expressed in creator-or-owner column-grant RLS; RPCs enforce depth≤5 + no cycles | ✓ Good — clean separation of authorship vs. organization |
+| Song-or-gap union row (v1.3) | A `setlist_songs` row is a song xor a timed gap, enforced by a check constraint; backward compatible | ✓ Good — no separate table, existing rows unaffected |
 
 ---
-*Last updated: 2026-03-13 after v1.2 milestone*
+*Last updated: 2026-06-11 after v1.3 (Tracks & Gaps) milestone*

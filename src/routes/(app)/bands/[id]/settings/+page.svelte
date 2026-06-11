@@ -88,7 +88,7 @@
 				Logo
 			</h2>
 			<div
-				class="mt-3 rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-800 dark:bg-surface-900"
+				class="mt-3 space-y-6 rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-800 dark:bg-surface-900"
 			>
 				{#if data.isOwner}
 					<LogoUpload
@@ -96,10 +96,29 @@
 						userId={data.band?.id ?? ''}
 						table="bands"
 						storagePath={`bands/${data.band?.id}/logo.{ext}`}
+						label="Band logo — shown in the app"
 					/>
-				{:else if data.band?.logo_url}
-					<div class="flex items-center justify-center p-4">
-						<img src={data.band.logo_url} alt="Band logo" class="max-h-24 w-auto rounded" />
+					<LogoUpload
+						currentLogoUrl={data.band?.logo_dark_url ?? null}
+						userId={data.band?.id ?? ''}
+						table="bands"
+						storagePath={`bands/${data.band?.id}/logo-dark.{ext}`}
+						column="logo_dark_url"
+						label="Dark logo — used on printed sheets and share pages (white background). Falls back to the main logo if empty."
+						previewOnLight
+					/>
+				{:else if data.band?.logo_url || data.band?.logo_dark_url}
+					<div class="flex items-center justify-center gap-6 p-4">
+						{#if data.band?.logo_url}
+							<img src={data.band.logo_url} alt="Band logo" class="max-h-24 w-auto rounded" />
+						{/if}
+						{#if data.band?.logo_dark_url}
+							<img
+								src={data.band.logo_dark_url}
+								alt="Band logo (dark variant)"
+								class="max-h-24 w-auto rounded bg-white p-2"
+							/>
+						{/if}
 					</div>
 				{:else}
 					<p class="text-sm text-surface-500 dark:text-surface-300">No logo uploaded.</p>

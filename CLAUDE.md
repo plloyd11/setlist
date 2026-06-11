@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Setlist — a web app where bands and musicians manage song libraries and build timed setlists. Users add songs (name + duration), drag them into setlists to see running totals against a target time, and share setlists via public links or band workspaces.
+Setlist — a web app where bands and musicians manage song libraries and build timed setlists. Users add songs (name + duration), drag them into setlists to see running totals against a target time, and share setlists via public links or band workspaces. Setlists can also include timed **gaps** (labeled breaks between songs) that count toward the total. Bands additionally get a **track-sharing workspace**: members upload versioned work-in-progress audio, organize it into nestable folders, and leave timestamped comments on a waveform player.
 
 ## Commands
 
@@ -46,6 +46,9 @@ Tests run against a **real Supabase instance** (no mocks) and mutate live data. 
 - Band shared songs use a **junction table referencing the original song row** — edits sync automatically, no duplication.
 - TypeScript row types are hand-maintained in `src/lib/types/database.ts` (not generated) — keep in sync with migrations.
 - Durations are stored as integer seconds; parse/format via `src/lib/utils/duration.ts` ("mm:ss" strings).
+- **Setlist gaps:** a `setlist_songs` row is either a song reference (`song_id` set, `gap_seconds`/`gap_label` null) or a timed break (`song_id` null, `gap_seconds` > 0, optional `gap_label`) — enforced by the `setlist_songs_song_or_gap` check constraint. Reordering goes through the `save_setlist_order(setlist_id, items)` security-definer RPC, which serializes concurrent saves and re-validates song visibility.
+- **Track sharing** (band audio workspace): audio uploads go **client-side direct to the private `tracks` Storage bucket** via a signed upload URL (Netlify's ~6 MB function body limit rules out proxying), then the atomic `create_track_version()` RPC records the metadata row. Each upload is an immutable `track_versions` row (path `bands/{band_id}/tracks/{uuid}.{ext}`); comments attach to a specific version. Playback uses a server-minted **signed URL** (6h TTL) through the user-scoped client, so RLS gates access before a URL exists. Bucket: 50 MB/file limit, audio MIME allowlist. Server-side metadata validation in `src/lib/server/tracks.ts`.
+- **Track folders:** nestable band-shared organization (max depth 5, no cycles). Because "any member can organize" can't be expressed in the creator-or-owner column-grant RLS, structural mutations (create/rename/move/delete, reparent-on-delete) go through security-definer RPCs in `20260611000000_create_track_folders.sql`.
 
 ### UI patterns
 

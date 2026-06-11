@@ -5,7 +5,8 @@
 	let { data, children } = $props();
 </script>
 
-<div class="flex h-dvh bg-surface-50 dark:bg-surface-950">
+<!-- app-shell is a print-CSS hook (see the print editor page) -->
+<div class="app-shell flex h-dvh bg-surface-50 dark:bg-surface-950">
 	<Sidebar user={data.user} />
 	<main class="flex-1 overflow-y-auto pb-16 md:pb-0">
 		{@render children()}
