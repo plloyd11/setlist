@@ -28,22 +28,24 @@ test.describe('Track upload (TRACK-01)', () => {
 		const title = `Demo ${faker.string.alphanumeric(6)}`;
 
 		try {
-			await page.goto(`/bands/${band.id}/tracks`);
+			await page.goto(`/bands/${band.id}/demos`);
 			// Wait for hydration — buttons below need their JS click handlers,
 			// and a cold Vite dev server compiles this route on first visit
 			await page.waitForLoadState('networkidle');
 
 			// Empty state is shown before any upload
-			await expect(page.getByText('No tracks yet')).toBeVisible();
+			await expect(page.getByText('No demos yet')).toBeVisible();
 
-			await page.getByLabel('New track').click();
-			await page.getByPlaceholder('Track title...').fill(title);
+			await page.getByLabel('New demo').click();
+			await page.getByPlaceholder('Demo title...').fill(title);
 			await page.locator('input[type="file"]').setInputFiles(FIXTURE);
-			await page.getByRole('button', { name: 'Upload track' }).click();
+			// WAV is lossless, so the zone flags the client-side MP3 transcode
+			await expect(page.getByText(/compresses to MP3 on upload/)).toBeVisible();
+			await page.getByRole('button', { name: 'Upload demo' }).click();
 
 			// Client decodes audio, uploads to storage, then the action redirects
 			// to the new track's detail page
-			await expect(page).toHaveURL(new RegExp(`/bands/${band.id}/tracks/.+`), {
+			await expect(page).toHaveURL(new RegExp(`/bands/${band.id}/demos/.+`), {
 				timeout: 15_000
 			});
 			await expect(page.getByRole('heading', { name: title })).toBeVisible();
@@ -53,9 +55,13 @@ test.describe('Track upload (TRACK-01)', () => {
 			await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 10_000 });
 
 			// Track appears in the list with its version badge
-			await page.goto(`/bands/${band.id}/tracks`);
+			await page.goto(`/bands/${band.id}/demos`);
 			await expect(page.getByText(title)).toBeVisible();
 			await expect(page.getByText('v1')).toBeVisible();
+
+			// Old /tracks bookmarks redirect to /demos
+			await page.goto(`/bands/${band.id}/tracks`);
+			await expect(page).toHaveURL(`/bands/${band.id}/demos`);
 		} finally {
 			await cleanupTrackAudio(band.id);
 			await safeDelete('bands', band.id);
@@ -83,7 +89,7 @@ test.describe('Track versions (TRACK-02)', () => {
 			await createTrackComment(track.version.id, testUser.id, { body: v1CommentBody });
 
 			// User B (not the track creator) uploads version 2
-			await userB.page.goto(`/bands/${band.id}/tracks/${track.id}`);
+			await userB.page.goto(`/bands/${band.id}/demos/${track.id}`);
 			await userB.page.waitForLoadState('networkidle');
 			await userB.page.getByRole('button', { name: '+ Version' }).click();
 			await userB.page.locator('input[type="file"]').setInputFiles(FIXTURE);
@@ -97,15 +103,15 @@ test.describe('Track versions (TRACK-02)', () => {
 			await expect(userB.page.getByText(v1CommentBody)).not.toBeVisible();
 
 			// Switch back to v1 via the version switcher — its comment is there
-			await userB.page.getByLabel('Track version').selectOption({ index: 1 });
+			await userB.page.getByLabel('Demo version').selectOption({ index: 1 });
 			await expect(userB.page).toHaveURL(/version=1/);
 			await expect(userB.page.getByText(/uploaded by/)).toContainText('v1');
 			await expect(userB.page.getByText(v1CommentBody)).toBeVisible();
 			await expect(userB.page.getByText(/listening to an older version/)).toBeVisible();
 
 			// Track creator sees both versions too
-			await page.goto(`/bands/${band.id}/tracks/${track.id}`);
-			await expect(page.getByLabel('Track version')).toBeVisible();
+			await page.goto(`/bands/${band.id}/demos/${track.id}`);
+			await expect(page.getByLabel('Demo version')).toBeVisible();
 			await expect(page.getByText(/uploaded by/)).toContainText('v2');
 		} finally {
 			await userB.cleanup();
@@ -133,7 +139,7 @@ test.describe('Track comments (TRACK-03)', () => {
 			// User B pins a comment at the current playhead (0:00 — nothing played yet).
 			// Comments are unpinned by default; the pin is an explicit capture.
 			const commentBody = `Feedback ${faker.string.alphanumeric(6)}`;
-			await userB.page.goto(`/bands/${band.id}/tracks/${track.id}`);
+			await userB.page.goto(`/bands/${band.id}/demos/${track.id}`);
 			await userB.page.waitForLoadState('networkidle');
 			await userB.page.getByPlaceholder('Leave feedback...').fill(commentBody);
 			await userB.page.getByRole('button', { name: /^Pin at 0:00/ }).click();
@@ -142,7 +148,7 @@ test.describe('Track comments (TRACK-03)', () => {
 			await expect(userB.page.getByText(commentBody)).toBeVisible();
 
 			// Track creator sees the comment and its waveform marker
-			await page.goto(`/bands/${band.id}/tracks/${track.id}`);
+			await page.goto(`/bands/${band.id}/demos/${track.id}`);
 			await page.waitForLoadState('networkidle');
 			await expect(page.getByText(commentBody)).toBeVisible();
 			await expect(page.getByRole('button', { name: /^Comment at 0:00/ })).toBeVisible();

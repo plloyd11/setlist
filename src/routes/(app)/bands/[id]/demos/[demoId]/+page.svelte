@@ -111,7 +111,7 @@
 
 	async function handleDeleteTrack() {
 		const confirmed = await confirmDialog.confirm(
-			'Delete Track',
+			'Delete Demo',
 			`Are you sure you want to delete "${data.track.title}"? All versions and comments will be deleted. This cannot be undone.`
 		);
 		if (confirmed) {
@@ -145,10 +145,10 @@
 	<div class="flex flex-wrap items-start justify-between gap-3">
 		<div class="min-w-0">
 			<a
-				href="/bands/{bandId}/tracks"
+				href="/bands/{bandId}/demos"
 				class="text-sm text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-200"
 			>
-				&larr; Tracks
+				&larr; Demos
 			</a>
 			<h1 class="mt-1 font-display text-3xl text-surface-900 dark:text-surface-100">
 				{data.track.title}
@@ -177,7 +177,7 @@
 			{#if canDeleteTrack}
 				<button
 					onclick={handleDeleteTrack}
-					aria-label="Delete track"
+					aria-label="Delete demo"
 					class="rounded-lg border border-surface-300 px-3 py-1.5 text-sm font-medium text-danger-600 hover:bg-danger-50 dark:border-surface-600 dark:text-danger-400 dark:hover:bg-danger-900/20"
 				>
 					Delete
@@ -336,7 +336,7 @@
 			if (result.type === 'redirect') {
 				await update();
 			} else if (result.type === 'failure') {
-				toast.show('Failed to delete track', { variant: 'error' });
+				toast.show('Failed to delete demo', { variant: 'error' });
 			}
 		};
 	}}

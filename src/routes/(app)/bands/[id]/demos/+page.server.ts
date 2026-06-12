@@ -56,9 +56,9 @@ export const load: PageServerLoad = async ({
 		.eq('band_id', params.id)
 		.order('updated_at', { ascending: false });
 
-	// A failed query must not masquerade as "No tracks yet"
+	// A failed query must not masquerade as "No demos yet"
 	if (tracksError) {
-		throw error(500, 'Could not load tracks. Please try again.');
+		throw error(500, 'Could not load demos. Please try again.');
 	}
 
 	const childrenOf = new Map<string | null, typeof allFolders>();
@@ -232,7 +232,7 @@ export const actions: Actions = {
 			p_folder_id: folderId || null
 		});
 		if (rpcError) {
-			return fail(400, { error: rpcError.message || 'Could not move track' });
+			return fail(400, { error: rpcError.message || 'Could not move demo' });
 		}
 		return { success: true };
 	},

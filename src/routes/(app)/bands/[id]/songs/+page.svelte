@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { formatDuration, parseDuration } from '$lib/utils/duration';
-	import { invalidateAll } from '$app/navigation';
+	import { formatDuration } from '$lib/utils/duration';
 	import Toast from '$lib/components/ui/Toast.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import SongSearch from '$lib/components/songs/SongSearch.svelte';
-	import type { SupabaseClient } from '@supabase/supabase-js';
+	import SongDetailPanel from '$lib/components/songs/SongDetailPanel.svelte';
+	import AudioCountChip from '$lib/components/songs/AudioCountChip.svelte';
 
 	let { data } = $props();
 
@@ -24,13 +24,9 @@
 	let newDuration = $state('');
 	let newNotes = $state('');
 
-	// Editing state
-	let editingSongId = $state<string | null>(null);
-	let editTitle = $state('');
-	let editDuration = $state('');
-	let editNotes = $state('');
-	let editError = $state('');
-	let saving = $state(false);
+	// Detail panel state — derived from data so the panel stays live across
+	// invalidateAll() after saves/uploads/renames/deletes
+	let selectedSongId = $state<string | null>(null);
 
 	// Component refs
 	let toast: Toast;
@@ -57,9 +53,18 @@
 			title: bs.songs?.title ?? '',
 			durationSeconds: bs.songs?.duration_seconds ?? 0,
 			notes: bs.songs?.notes ?? null,
+			ownerId: bs.songs?.user_id ?? null,
+			audio: [...(bs.songs?.song_audio ?? [])].sort((a: any, b: any) =>
+				a.created_at.localeCompare(b.created_at)
+			),
+			files: [...(bs.songs?.song_files ?? [])].sort((a: any, b: any) =>
+				a.created_at.localeCompare(b.created_at)
+			),
 			addedBy: bs.added_by
 		}))
 	);
+
+	let selectedSong = $derived(bandSongs.find((s: any) => s.songId === selectedSongId) ?? null);
 
 	// Filter and sort band songs
 	let filteredSongs = $derived.by(() => {
@@ -117,25 +122,6 @@
 
 	let hasSongs = $derived(bandSongs.length > 0);
 	let hasResults = $derived(filteredSongs.length > 0);
-
-	function enterEdit(song: any) {
-		editingSongId = song.songId;
-		editTitle = song.title;
-		editDuration = formatDuration(song.durationSeconds);
-		editNotes = song.notes ?? '';
-		editError = '';
-	}
-
-	function cancelEdit() {
-		editingSongId = null;
-		editError = '';
-	}
-
-	function handleEditKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape') {
-			cancelEdit();
-		}
-	}
 
 	function resetAddForm() {
 		newTitle = '';
@@ -454,143 +440,45 @@
 				class="mt-4 overflow-hidden rounded-xl border border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800/50"
 			>
 				{#each filteredSongs as song (song.bandSongId)}
-					{#if editingSongId === song.songId}
-						<!-- Edit mode -->
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="border-b border-surface-200 px-4 py-3 dark:border-surface-700"
-							onkeydown={handleEditKeydown}
+					<div class="flex items-center border-b border-surface-200 dark:border-surface-700">
+						<button
+							class="flex-1 px-4 py-3 text-left transition-colors hover:bg-surface-100 dark:hover:bg-surface-800/50"
+							onclick={() => (selectedSongId = song.songId)}
 						>
-							<form
-								method="POST"
-								action="?/updateSong"
-								use:enhance={() => {
-									saving = true;
-									return async ({ result, update }) => {
-										saving = false;
-										if (result.type === 'success') {
-											editingSongId = null;
-											toast.show('Song updated', { variant: 'success' });
-											await update();
-										} else {
-											editError = 'Failed to save changes';
-										}
-									};
-								}}
-							>
-								<input type="hidden" name="song_id" value={song.songId} />
-								<div class="flex items-center gap-2">
-									<input
-										type="text"
-										name="title"
-										bind:value={editTitle}
-										placeholder="Song title"
-										class="focus-live flex-1 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-base font-medium text-surface-900 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
-									/>
-									<input
-										type="text"
-										name="duration"
-										bind:value={editDuration}
-										placeholder="3:45"
-										inputmode="numeric"
-										class="focus-live w-16 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-center text-sm text-surface-900 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
-									/>
-								</div>
-								<div class="mt-2 flex items-center gap-2">
-									<input
-										type="text"
-										name="notes"
-										bind:value={editNotes}
-										placeholder="Notes (optional)"
-										class="focus-live flex-1 rounded border border-surface-300 bg-surface-50 px-2 py-1 text-sm text-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
-									/>
-									<button
-										type="submit"
-										disabled={saving}
-										class="rounded p-1 text-success-600 hover:bg-success-50 disabled:opacity-50 dark:text-success-400 dark:hover:bg-success-900/20"
-										aria-label="Save"
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											width="20"
-											height="20"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-										>
-											<polyline points="20 6 9 17 4 12" />
-										</svg>
-									</button>
-									<button
-										type="button"
-										onclick={cancelEdit}
-										class="rounded p-1 text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700"
-										aria-label="Cancel"
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											width="20"
-											height="20"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-										>
-											<path d="M18 6 6 18M6 6l12 12" />
-										</svg>
-									</button>
-								</div>
-								{#if editError}
-									<p class="mt-1 text-xs text-danger-500">{editError}</p>
-								{/if}
-							</form>
-						</div>
-					{:else}
-						<!-- Display mode -->
-						<div class="flex items-center border-b border-surface-200 dark:border-surface-700">
-							<button
-								class="flex-1 px-4 py-3 text-left transition-colors hover:bg-surface-100 dark:hover:bg-surface-800/50"
-								onclick={() => enterEdit(song)}
-							>
-								<div class="flex items-center justify-between">
-									<span class="text-base font-medium text-surface-900 dark:text-surface-100"
+							<div class="flex items-center justify-between">
+								<span class="flex min-w-0 items-center gap-2">
+									<span
+										class="truncate text-base font-medium text-surface-900 dark:text-surface-100"
 										>{song.title}</span
 									>
-									<span class="ml-4 shrink-0 text-sm text-surface-500 dark:text-surface-300"
-										>{formatDuration(song.durationSeconds)}</span
-									>
-								</div>
-								{#if song.notes}
-									<p class="mt-0.5 text-sm text-surface-500 dark:text-surface-300">{song.notes}</p>
-								{/if}
-							</button>
-							<button
-								type="button"
-								onclick={() => handleRemoveSong(song)}
-								class="mr-2 rounded p-1.5 text-surface-400 hover:bg-danger-50 hover:text-danger-500 dark:hover:bg-danger-900/20 dark:hover:text-danger-400"
-								aria-label="Remove {song.title} from band"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
+									<AudioCountChip count={song.audio.length} />
+								</span>
+								<span class="ml-4 shrink-0 text-sm text-surface-500 dark:text-surface-300"
+									>{formatDuration(song.durationSeconds)}</span
 								>
-									<path d="M18 6 6 18M6 6l12 12" />
-								</svg>
-							</button>
-						</div>
-					{/if}
+							</div>
+						</button>
+						<button
+							type="button"
+							onclick={() => handleRemoveSong(song)}
+							class="mr-2 rounded p-1.5 text-surface-400 hover:bg-danger-50 hover:text-danger-500 dark:hover:bg-danger-900/20 dark:hover:text-danger-400"
+							aria-label="Remove {song.title} from band"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M18 6 6 18M6 6l12 12" />
+							</svg>
+						</button>
+					</div>
 				{/each}
 			</div>
 		{:else}
@@ -660,6 +548,24 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Song detail flyout -->
+{#if selectedSong}
+	<SongDetailPanel
+		song={{
+			id: selectedSong.songId,
+			title: selectedSong.title,
+			duration_seconds: selectedSong.durationSeconds,
+			notes: selectedSong.notes
+		}}
+		variants={selectedSong.audio}
+		files={selectedSong.files}
+		supabase={data.supabase}
+		canManage={selectedSong.ownerId === data.user?.id}
+		practiceHref="/songs/{selectedSong.songId}/practice?from=/bands/{data.band.id}/songs"
+		onclose={() => (selectedSongId = null)}
+	/>
+{/if}
 
 <!-- Confirm dialog -->
 <ConfirmDialog bind:this={confirmDialog} />

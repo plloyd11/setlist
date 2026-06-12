@@ -98,6 +98,40 @@ export interface BandInvite {
 	expires_at: string;
 }
 
+/**
+ * A rehearsal audio variant attached to a library song — e.g. "Full mix",
+ * "No guitar". Visibility mirrors the song's (owner + band members when the
+ * song is band-linked); only the owner uploads/manages.
+ */
+export interface SongAudio {
+	id: string;
+	song_id: string;
+	label: string | null;
+	storage_path: string;
+	file_name: string;
+	mime_type: string;
+	file_size_bytes: number;
+	duration_seconds: number | null;
+	waveform_peaks: number[] | null;
+	created_at: string;
+}
+
+/**
+ * A chart/tab document attached to a library song — PDF, Word, or Guitar Pro.
+ * Visibility mirrors the song's (owner + band members when the song is
+ * band-linked); only the owner uploads/manages.
+ */
+export interface SongFile {
+	id: string;
+	song_id: string;
+	label: string | null;
+	storage_path: string;
+	file_name: string;
+	mime_type: string;
+	file_size_bytes: number;
+	created_at: string;
+}
+
 export interface Track {
 	id: string;
 	band_id: string;

@@ -17,12 +17,12 @@ export const load: PageServerLoad = async ({
 	const { data: track } = await supabase
 		.from('tracks')
 		.select('*')
-		.eq('id', params.trackId)
+		.eq('id', params.demoId)
 		.eq('band_id', params.id)
 		.single();
 
 	if (!track) {
-		throw error(404, 'Track not found');
+		throw error(404, 'Demo not found');
 	}
 
 	const { data: versionsRaw, error: versionsError } = await supabase
@@ -32,12 +32,12 @@ export const load: PageServerLoad = async ({
 		.order('version_number', { ascending: false });
 
 	if (versionsError) {
-		throw error(500, 'Could not load track versions. Please try again.');
+		throw error(500, 'Could not load demo versions. Please try again.');
 	}
 
 	const versions = versionsRaw ?? [];
 	if (versions.length === 0) {
-		throw error(404, 'Track has no versions');
+		throw error(404, 'Demo has no versions');
 	}
 
 	const requested = Number(url.searchParams.get('version'));
@@ -95,7 +95,7 @@ export const actions: Actions = {
 		if (!session) {
 			return fail(401, { error: 'Not authenticated' });
 		}
-		return processTrackUpload(supabase, request, params.id, params.trackId);
+		return processTrackUpload(supabase, request, params.id, params.demoId);
 	},
 
 	deleteTrack: async ({ params, locals: { supabase, safeGetSession } }) => {
@@ -108,19 +108,19 @@ export const actions: Actions = {
 		const { data: versions } = await supabase
 			.from('track_versions')
 			.select('storage_path')
-			.eq('track_id', params.trackId);
+			.eq('track_id', params.demoId);
 
 		// RLS restricts deletion to the track creator or band owner;
 		// .select() reports an RLS-filtered no-op as a failure
 		const { data: deletedRows, error: deleteError } = await supabase
 			.from('tracks')
 			.delete()
-			.eq('id', params.trackId)
+			.eq('id', params.demoId)
 			.eq('band_id', params.id)
 			.select('id, folder_id');
 
 		if (deleteError || !deletedRows?.length) {
-			return fail(deleteError ? 500 : 403, { error: 'Failed to delete track' });
+			return fail(deleteError ? 500 : 403, { error: 'Failed to delete demo' });
 		}
 
 		const folderId = deletedRows[0].folder_id;
@@ -131,12 +131,12 @@ export const actions: Actions = {
 		if (paths.length) {
 			const { error: storageError } = await supabase.storage.from('tracks').remove(paths);
 			if (storageError) {
-				console.warn(`Failed to remove track audio for ${params.trackId}:`, storageError.message);
+				console.warn(`Failed to remove track audio for ${params.demoId}:`, storageError.message);
 			}
 		}
 
-		// Land back in the folder the track lived in, not at the root
-		throw redirect(303, `/bands/${params.id}/tracks${folderId ? `?folder=${folderId}` : ''}`);
+		// Land back in the folder the demo lived in, not at the root
+		throw redirect(303, `/bands/${params.id}/demos${folderId ? `?folder=${folderId}` : ''}`);
 	},
 
 	addComment: async ({ params, request, locals: { supabase, safeGetSession } }) => {
@@ -163,7 +163,7 @@ export const actions: Actions = {
 			.from('track_versions')
 			.select('id, duration_seconds')
 			.eq('id', versionId)
-			.eq('track_id', params.trackId)
+			.eq('track_id', params.demoId)
 			.single();
 
 		if (!version) {
@@ -177,7 +177,7 @@ export const actions: Actions = {
 				return fail(400, { error: 'Invalid timestamp' });
 			}
 			if (version.duration_seconds != null && parsed > version.duration_seconds) {
-				return fail(400, { error: 'Timestamp is beyond the end of the track' });
+				return fail(400, { error: 'Timestamp is beyond the end of the demo' });
 			}
 			timestamp = parsed;
 		}

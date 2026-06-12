@@ -640,6 +640,18 @@
 							</svg>
 							Print
 						</a>
+
+						<a
+							href="/setlists/{data.setlist.id}/rehearse"
+							class="flex items-center gap-2 rounded-lg bg-surface-100 px-3 py-1.5 text-sm font-medium text-surface-600 transition-colors hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+						>
+							<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+								<path
+									d="M8 5.14v13.72a1 1 0 001.5.86l11-6.86a1 1 0 000-1.72l-11-6.86a1 1 0 00-1.5.86z"
+								/>
+							</svg>
+							Rehearse
+						</a>
 					</div>
 
 					{#if isShared && shareUrl}

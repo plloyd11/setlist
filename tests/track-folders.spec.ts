@@ -33,14 +33,14 @@ test.describe('Track folders (TRACK-05)', () => {
 		const band = await createBand(page, testUser.id);
 
 		try {
-			await page.goto(`/bands/${band.id}/tracks`);
+			await page.goto(`/bands/${band.id}/demos`);
 
 			// Create two root folders through the UI
 			await page.getByLabel('New folder').click();
-			await page.getByPlaceholder('Folder name...').fill('Demos');
+			await page.getByPlaceholder('Folder name...').fill('Voice memos');
 			await page.getByRole('button', { name: 'Create' }).click();
-			await expect(page.getByRole('link', { name: /Demos/ })).toBeVisible();
-			await expect(page.getByText('0 tracks')).toBeVisible();
+			await expect(page.getByRole('link', { name: /Voice memos/ })).toBeVisible();
+			await expect(page.getByText('0 demos')).toBeVisible();
 
 			await page.getByLabel('New folder').click();
 			await page.getByPlaceholder('Folder name...').fill('Live takes');
@@ -48,31 +48,31 @@ test.describe('Track folders (TRACK-05)', () => {
 			await expect(page.getByRole('link', { name: /Live takes/ })).toBeVisible();
 
 			// Navigate in — breadcrumb appears, empty-folder state shows
-			await page.getByRole('link', { name: /Demos/ }).click();
+			await page.getByRole('link', { name: /Voice memos/ }).click();
 			await expect(page).toHaveURL(/\?folder=/);
 			const breadcrumb = page.getByLabel('Breadcrumb');
-			await expect(breadcrumb.getByText('Demos')).toBeVisible();
+			await expect(breadcrumb.getByText('Voice memos')).toBeVisible();
 			await expect(page.getByText('This folder is empty')).toBeVisible();
 
-			// Nested folder inside Demos
+			// Nested folder inside Voice memos
 			await page.getByLabel('New folder').click();
 			await page.getByPlaceholder('Folder name...').fill('Acoustic');
 			await page.getByRole('button', { name: 'Create' }).click();
 			await page.getByRole('link', { name: /Acoustic/ }).click();
 			await expect(breadcrumb.getByText('Acoustic')).toBeVisible();
-			await expect(breadcrumb.getByRole('link', { name: 'Demos' })).toBeVisible();
+			await expect(breadcrumb.getByRole('link', { name: 'Voice memos' })).toBeVisible();
 
 			// Crumb navigates up one level, then back to the root
-			await breadcrumb.getByRole('link', { name: 'Demos' }).click();
+			await breadcrumb.getByRole('link', { name: 'Voice memos' }).click();
 			await expect(page.getByRole('link', { name: /Acoustic/ })).toBeVisible();
-			await breadcrumb.getByRole('link', { name: 'Tracks' }).click();
+			await breadcrumb.getByRole('link', { name: 'Demos' }).click();
 			await expect(page).not.toHaveURL(/folder=/);
 			await expect(page.getByRole('link', { name: /Live takes/ })).toBeVisible();
 
 			// Rename to a sibling's name is rejected inline; a fresh name works
 			await page.getByLabel('Folder options for Live takes').click();
 			await page.getByRole('button', { name: 'Rename' }).click();
-			await page.getByPlaceholder('Folder name...').fill('Demos');
+			await page.getByPlaceholder('Folder name...').fill('Voice memos');
 			await page.getByRole('button', { name: 'Rename' }).click();
 			await expect(page.getByText('A folder with that name already exists here')).toBeVisible();
 			await page.getByPlaceholder('Folder name...').fill('Sketches');
@@ -86,25 +86,25 @@ test.describe('Track folders (TRACK-05)', () => {
 
 	test('uploads land in the folder that is open', async ({ page, testUser }) => {
 		const band = await createBand(page, testUser.id);
-		const folder = await createTrackFolder(band.id, testUser.id, { name: 'Demos' });
+		const folder = await createTrackFolder(band.id, testUser.id, { name: 'Voice memos' });
 		const title = `Folder demo ${faker.string.alphanumeric(6)}`;
 
 		try {
-			await page.goto(`/bands/${band.id}/tracks?folder=${folder.id}`);
-			await page.getByLabel('New track').click();
-			await page.getByPlaceholder('Track title...').fill(title);
+			await page.goto(`/bands/${band.id}/demos?folder=${folder.id}`);
+			await page.getByLabel('New demo').click();
+			await page.getByPlaceholder('Demo title...').fill(title);
 			await page.locator('input[type="file"]').setInputFiles(FIXTURE);
-			await page.getByRole('button', { name: 'Upload track' }).click();
-			await expect(page).toHaveURL(new RegExp(`/bands/${band.id}/tracks/.+`), {
+			await page.getByRole('button', { name: 'Upload demo' }).click();
+			await expect(page).toHaveURL(new RegExp(`/bands/${band.id}/demos/.+`), {
 				timeout: 15_000
 			});
 
 			// Not at the root — inside the folder
-			await page.goto(`/bands/${band.id}/tracks`);
+			await page.goto(`/bands/${band.id}/demos`);
 			await expect(page.getByText(title)).not.toBeVisible();
-			await expect(page.getByText('1 track', { exact: true })).toBeVisible();
+			await expect(page.getByText('1 demo', { exact: true })).toBeVisible();
 
-			await page.goto(`/bands/${band.id}/tracks?folder=${folder.id}`);
+			await page.goto(`/bands/${band.id}/demos?folder=${folder.id}`);
 			await expect(page.getByText(title)).toBeVisible();
 		} finally {
 			await cleanupTrackAudio(band.id);
@@ -114,35 +114,35 @@ test.describe('Track folders (TRACK-05)', () => {
 
 	test('moves a track via the Move-to dialog and via drag-and-drop', async ({ page, testUser }) => {
 		const band = await createBand(page, testUser.id);
-		const folder = await createTrackFolder(band.id, testUser.id, { name: 'Demos' });
+		const folder = await createTrackFolder(band.id, testUser.id, { name: 'Voice memos' });
 		const track = await createTrackData(band.id, testUser.id, {
 			title: `Riff ${faker.string.alphanumeric(6)}`
 		});
 
 		try {
-			// Dialog: root → Demos
-			await page.goto(`/bands/${band.id}/tracks`);
+			// Dialog: root → Voice memos
+			await page.goto(`/bands/${band.id}/demos`);
 			const card = page.getByRole('link', { name: new RegExp(track.title) });
 			await card.click({ button: 'right' });
 			await page.getByRole('button', { name: 'Move to…' }).click();
-			await page.locator('dialog').getByRole('button', { name: 'Demos' }).click();
+			await page.locator('dialog').getByRole('button', { name: 'Voice memos' }).click();
 			await expect(card).not.toBeVisible();
-			await expect(page.getByText('1 track', { exact: true })).toBeVisible();
+			await expect(page.getByText('1 demo', { exact: true })).toBeVisible();
 
-			// Dialog: Demos → top level
-			await page.goto(`/bands/${band.id}/tracks?folder=${folder.id}`);
+			// Dialog: Voice memos → top level
+			await page.goto(`/bands/${band.id}/demos?folder=${folder.id}`);
 			await expect(card).toBeVisible();
 			await card.click({ button: 'right' });
 			await page.getByRole('button', { name: 'Move to…' }).click();
-			await page.locator('dialog').getByRole('button', { name: 'Tracks (top level)' }).click();
+			await page.locator('dialog').getByRole('button', { name: 'Demos (top level)' }).click();
 			await expect(card).not.toBeVisible();
 
 			// Native HTML5 dnd: drag the card onto the folder row at the root
-			await page.goto(`/bands/${band.id}/tracks`);
+			await page.goto(`/bands/${band.id}/demos`);
 			await expect(card).toBeVisible();
-			await card.dragTo(page.getByRole('link', { name: /Demos/ }));
+			await card.dragTo(page.getByRole('link', { name: /Voice memos/ }));
 			await expect(card).not.toBeVisible();
-			await expect(page.getByText('1 track', { exact: true })).toBeVisible();
+			await expect(page.getByText('1 demo', { exact: true })).toBeVisible();
 		} finally {
 			await cleanupTrackAudio(band.id);
 			await safeDelete('bands', band.id);
@@ -163,7 +163,7 @@ test.describe('Track folders (TRACK-05)', () => {
 
 		try {
 			// The Move-to dialog disables the folder's own subtree
-			await page.goto(`/bands/${band.id}/tracks`);
+			await page.goto(`/bands/${band.id}/demos`);
 			await page.getByLabel('Folder options for Outer').click();
 			await page.getByRole('button', { name: 'Move to…' }).click();
 			await expect(page.locator('dialog').getByRole('button', { name: 'Inner' })).toBeDisabled();
@@ -191,9 +191,9 @@ test.describe('Track folders (TRACK-05)', () => {
 			await page.locator('dialog').getByRole('button', { name: 'Delete' }).click();
 			await expect(page.getByRole('link', { name: /Outer/ })).not.toBeVisible();
 			await expect(page.getByRole('link', { name: /Inner/ })).toBeVisible();
-			await expect(page.getByText('1 track', { exact: true })).toBeVisible();
+			await expect(page.getByText('1 demo', { exact: true })).toBeVisible();
 
-			await page.goto(`/bands/${band.id}/tracks?folder=${inner.id}`);
+			await page.goto(`/bands/${band.id}/demos?folder=${inner.id}`);
 			await expect(page.getByText(track.title)).toBeVisible();
 		} finally {
 			await cleanupTrackAudio(band.id);

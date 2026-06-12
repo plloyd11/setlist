@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import { adminClient } from './supabase-admin';
 
 const TRACK_FIXTURE = path.resolve('tests/fixtures/sample.wav');
+const PDF_FIXTURE = path.resolve('tests/fixtures/sample.pdf');
 
 /**
  * Create a song via admin API and navigate the browser to /songs.
@@ -152,6 +153,74 @@ export async function createTrackData(
 }
 
 /**
+ * Create a song audio variant via admin API: uploads the audio fixture to the
+ * private 'song-audio' storage bucket and inserts the song_audio row. Does
+ * not navigate. Storage objects don't cascade with DB rows — call
+ * cleanupSongAudio(songId) in teardown. Label with overrides: { label }.
+ */
+export async function createSongAudio(songId: string, overrides?: Record<string, unknown>) {
+	const storagePath = `songs/${songId}/${crypto.randomUUID()}.wav`;
+	const fileBuffer = fs.readFileSync(TRACK_FIXTURE);
+
+	const { error: uploadError } = await adminClient.storage
+		.from('song-audio')
+		.upload(storagePath, fileBuffer, { contentType: 'audio/wav' });
+	if (uploadError) throw new Error(`Factory createSongAudio upload failed: ${uploadError.message}`);
+
+	const { data, error } = await adminClient
+		.from('song_audio')
+		.insert({
+			song_id: songId,
+			label: null,
+			storage_path: storagePath,
+			file_name: 'sample.wav',
+			mime_type: 'audio/wav',
+			file_size_bytes: fileBuffer.length,
+			duration_seconds: 1,
+			waveform_peaks: Array.from({ length: 100 }, (_, i) => Math.abs(Math.sin(i / 5))),
+			...overrides
+		})
+		.select()
+		.single();
+	if (error) throw new Error(`Factory createSongAudio failed: ${error.message}`);
+
+	return data;
+}
+
+/**
+ * Create a song chart/tab via admin API: uploads the PDF fixture to the
+ * private 'song-files' storage bucket and inserts the song_files row. Does
+ * not navigate. Storage objects don't cascade with DB rows — call
+ * cleanupSongFiles(songId) in teardown. Label with overrides: { label }.
+ */
+export async function createSongFile(songId: string, overrides?: Record<string, unknown>) {
+	const storagePath = `songs/${songId}/${crypto.randomUUID()}.pdf`;
+	const fileBuffer = fs.readFileSync(PDF_FIXTURE);
+
+	const { error: uploadError } = await adminClient.storage
+		.from('song-files')
+		.upload(storagePath, fileBuffer, { contentType: 'application/pdf' });
+	if (uploadError) throw new Error(`Factory createSongFile upload failed: ${uploadError.message}`);
+
+	const { data, error } = await adminClient
+		.from('song_files')
+		.insert({
+			song_id: songId,
+			label: null,
+			storage_path: storagePath,
+			file_name: 'sample.pdf',
+			mime_type: 'application/pdf',
+			file_size_bytes: fileBuffer.length,
+			...overrides
+		})
+		.select()
+		.single();
+	if (error) throw new Error(`Factory createSongFile failed: ${error.message}`);
+
+	return data;
+}
+
+/**
  * Create a track via admin API and navigate the browser to its detail page.
  */
 export async function createTrack(
@@ -161,7 +230,7 @@ export async function createTrack(
 	overrides?: Record<string, unknown>
 ) {
 	const track = await createTrackData(bandId, userId, overrides);
-	await page.goto(`/bands/${bandId}/tracks/${track.id}`);
+	await page.goto(`/bands/${bandId}/demos/${track.id}`);
 	return track;
 }
 
