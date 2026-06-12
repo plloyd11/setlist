@@ -150,5 +150,14 @@
 				</button>
 			</div>
 		</section>
+
+		<p class="text-center text-sm text-surface-500 dark:text-surface-300">
+			New here or need a refresher? Read the
+			<a
+				href="/help"
+				class="focus-live rounded font-medium text-accent-600 hover:underline dark:text-accent-300"
+				>getting started guide</a
+			>.
+		</p>
 	</div>
 </div>

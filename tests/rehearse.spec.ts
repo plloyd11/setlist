@@ -34,7 +34,8 @@ test.describe('Song audio management (REHEARSE-01)', () => {
 				.getByPlaceholder(/e\.g\. "No guitar"/)
 				.first()
 				.fill('No guitar');
-			await page.locator('input[type="file"]').setInputFiles(FIXTURE);
+			// The flyout also has the charts file input — scope to the audio one
+			await page.locator('input[type="file"][accept*="audio"]').setInputFiles(FIXTURE);
 			await page.getByRole('button', { name: 'Upload audio' }).click();
 			await expect(page.getByText('No guitar')).toBeVisible({ timeout: 15_000 });
 			await expect(page.getByText('No audio yet')).not.toBeVisible();

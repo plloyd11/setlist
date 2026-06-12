@@ -65,6 +65,32 @@ test.describe('Band invite flow (BAND-02, BAND-03)', () => {
 });
 
 test.describe('Shared band songs (BAND-04)', () => {
+	// Regression: the band_songs INSERT policy once subqueried songs, whose
+	// SELECT policy subqueries band_songs back — Postgres rejected every
+	// share with 42P17 ("infinite recursion detected in policy"). Must go
+	// through the UI: inserting via adminClient bypasses RLS and hides this.
+	test('should share a song from the personal library via the UI', async ({ page, testUser }) => {
+		const band = await createBand(page, testUser.id);
+		const songTitle = `UI Shared ${faker.string.alphanumeric(6)}`;
+		await createSong(page, testUser.id, { title: songTitle });
+
+		try {
+			await page.goto(`/bands/${band.id}/songs`);
+			await page.getByRole('button', { name: 'Share from Library' }).first().click();
+			await page
+				.locator('form', { hasText: songTitle })
+				.getByRole('button', { name: 'Share', exact: true })
+				.click();
+
+			await expect(page.getByText('Song shared to band')).toBeVisible();
+
+			// Song now renders in the band library list (picker removes it)
+			await expect(page.getByText(songTitle)).toBeVisible();
+		} finally {
+			await safeDelete('bands', band.id);
+		}
+	});
+
 	test('should show shared songs to both band members', async ({ page, browser, testUser }) => {
 		// Create band and add User B as member via admin API
 		const band = await createBand(page, testUser.id);

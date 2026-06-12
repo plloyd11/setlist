@@ -3,7 +3,15 @@
 	import { fade, slide } from 'svelte/transition';
 	import { invalidateAll } from '$app/navigation';
 	import WaveformPlayer from '$lib/components/tracks/WaveformPlayer.svelte';
+	import PracticeControls from '$lib/components/songs/PracticeControls.svelte';
 	import { getRememberedVariant, rememberVariant } from '$lib/utils/variantChoice';
+	import {
+		loadPracticePrefs,
+		savePracticePrefs,
+		MAX_SECTIONS,
+		type LoopRange,
+		type SavedSection
+	} from '$lib/utils/practicePrefs';
 	import { formatDuration } from '$lib/utils/duration';
 
 	let { data } = $props();
@@ -22,19 +30,70 @@
 	// empty library. Must not render as "No rehearsal audio yet".
 	let signingFailed = $derived(data.variants.length > 0 && playable.length === 0);
 
-	// The remembered choice lives in localStorage (shared with rehearse mode),
-	// so it can only be applied after hydration
+	// DAW practice state — durable per song; the player instance is recreated
+	// per variant, so these are re-applied in applySettings on every `ready`
+	let volume = $state(1);
+	let speed = $state(1);
+	let loop = $state<LoopRange | null>(null);
+	let preRoll = $state(false);
+	let sections = $state<SavedSection[]>([]);
+	// Deliberately not persisted: restoring an armed loop trap on load is
+	// surprising — the region comes back muted and `L` re-arms it
+	let loopEnabled = $state(false);
+	let playerReady = $state(false);
+
+	function persist() {
+		savePracticePrefs(data.song.id, {
+			volume,
+			speed,
+			loop,
+			preRoll,
+			sections,
+			updatedAt: Date.now()
+		});
+	}
+
+	// The remembered choices live in localStorage (variant shared with rehearse
+	// mode), so they can only be applied after hydration
 	onMount(() => {
 		const remembered = getRememberedVariant(data.song.id);
 		if (remembered && playable.some((v) => v.id === remembered)) {
 			selectedVariantId = remembered;
 		}
+		const prefs = loadPracticePrefs(data.song.id);
+		volume = prefs.volume;
+		speed = prefs.speed;
+		loop = prefs.loop;
+		preRoll = prefs.preRoll;
+		sections = prefs.sections;
 	});
+
+	// Push everything onto the fresh wavesurfer instance. A loop from another
+	// variant (or a stale store) may overshoot this file — clamp or drop it.
+	function applySettings() {
+		playerReady = true;
+		player?.setVolume(volume);
+		player?.setPlaybackRate(speed);
+		player?.setPreRoll(preRoll);
+		if (loop) {
+			const dur = player?.getDuration() ?? 0;
+			if (dur && loop.start >= dur - MIN_LOOP) {
+				loop = null;
+				loopEnabled = false;
+				persist();
+			} else {
+				if (dur) loop = { start: loop.start, end: Math.min(loop.end, dur) };
+				player?.setLoop(loop);
+			}
+		}
+		player?.setLoopEnabled(loopEnabled);
+	}
 
 	function handleVariantChange(e: Event) {
 		const id = (e.currentTarget as HTMLSelectElement).value;
 		selectedVariantId = id;
 		playing = false;
+		playerReady = false;
 		rememberVariant(data.song.id, id);
 	}
 
@@ -84,14 +143,121 @@
 		retrying = false;
 	}
 
-	// Space toggles playback from anywhere on the page except form fields and
-	// other controls — same idiom as the demo detail and rehearse pages
+	// ---- DAW controls ----
+
+	const MIN_LOOP = 0.5;
+
+	function handleRegionChange(r: LoopRange | null) {
+		loop = r;
+		persist();
+	}
+
+	function toggleLoop() {
+		if (!loop) return;
+		loopEnabled = !loopEnabled;
+		player?.setLoopEnabled(loopEnabled);
+	}
+
+	function clearLoop() {
+		loop = null;
+		loopEnabled = false;
+		player?.setLoop(null);
+		player?.setLoopEnabled(false);
+		persist();
+	}
+
+	function togglePreRoll() {
+		preRoll = !preRoll;
+		player?.setPreRoll(preRoll);
+		persist();
+	}
+
+	function setVolume(v: number) {
+		volume = v;
+		player?.setVolume(v);
+		persist();
+	}
+
+	function setSpeed(v: number) {
+		speed = v;
+		player?.setPlaybackRate(v);
+		persist();
+	}
+
+	function skip(delta: number) {
+		if (!player) return;
+		const dur = player.getDuration();
+		player.seekTo(Math.min(dur, Math.max(0, player.getCurrentTime() + delta)));
+	}
+
+	// `[` pins A at the playhead, `]` pins B — whichever half is missing
+	// stretches to the file edge so one keypress always yields a usable loop
+	function setLoopPoint(side: 'start' | 'end') {
+		if (!player) return;
+		const t = player.getCurrentTime();
+		const dur = player.getDuration();
+		if (!dur) return;
+		const next: LoopRange =
+			side === 'start'
+				? { start: t, end: loop && loop.end >= t + MIN_LOOP ? loop.end : dur }
+				: { start: loop && loop.start <= t - MIN_LOOP ? loop.start : 0, end: t };
+		// Pinning a point too close to the file edge would make a degenerate loop
+		if (next.end - next.start < MIN_LOOP) return;
+		loop = next;
+		player.setLoop(next);
+		persist();
+	}
+
+	function saveSection(label: string) {
+		if (!loop || sections.length >= MAX_SECTIONS) return;
+		sections = [...sections, { id: crypto.randomUUID(), label, start: loop.start, end: loop.end }];
+		persist();
+	}
+
+	function recallSection(s: SavedSection) {
+		loop = { start: s.start, end: s.end };
+		loopEnabled = true;
+		player?.setLoop(loop);
+		player?.setLoopEnabled(true);
+		persist();
+	}
+
+	function deleteSection(id: string) {
+		sections = sections.filter((s) => s.id !== id);
+		persist();
+	}
+
+	// Page-wide shortcuts, skipped when focus is in a form field or control —
+	// same idiom as the demo detail and rehearse pages. The modifier bail keeps
+	// Cmd+[ (browser Back) and friends out of our hands.
 	function handlePageKeydown(e: KeyboardEvent) {
-		if (e.key !== ' ' || e.defaultPrevented) return;
+		if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
 		const target = e.target as HTMLElement | null;
 		if (target?.closest('input, textarea, select, button, a, [role="slider"], dialog')) return;
+		switch (e.key) {
+			case ' ':
+				player?.playPause();
+				break;
+			case 'l':
+			case 'L':
+				toggleLoop();
+				break;
+			case '[':
+				setLoopPoint('start');
+				break;
+			case ']':
+				setLoopPoint('end');
+				break;
+			case 'ArrowLeft':
+				skip(-5);
+				break;
+			case 'ArrowRight':
+				skip(5);
+				break;
+			default:
+				return;
+		}
 		e.preventDefault();
-		player?.playPause();
 	}
 </script>
 
@@ -205,11 +371,31 @@
 					url={currentVariant.signedUrl}
 					peaks={currentVariant.waveform_peaks}
 					duration={currentVariant.duration_seconds}
+					practice={true}
+					onready={applySettings}
+					onregionchange={handleRegionChange}
 					onloaderror={handlePlayerError}
 					onplaystatechange={(p) => (playing = p)}
 					onfinish={() => (playing = false)}
 				/>
 			{/key}
+			<PracticeControls
+				{volume}
+				{speed}
+				{loop}
+				{loopEnabled}
+				{preRoll}
+				{sections}
+				disabled={!playerReady}
+				onvolumechange={setVolume}
+				onspeedchange={setSpeed}
+				onlooptoggle={toggleLoop}
+				onloopclear={clearLoop}
+				onprerolltoggle={togglePreRoll}
+				onsavesection={saveSection}
+				onrecallsection={recallSection}
+				ondeletesection={deleteSection}
+			/>
 		{:else if audioFailed || signingFailed}
 			<div
 				role="alert"

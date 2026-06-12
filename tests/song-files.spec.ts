@@ -38,7 +38,10 @@ test.describe('Song charts upload and manage (FILE-01)', () => {
 
 			// Rename the label (the only mutable field)
 			await panel.getByLabel('Rename sample.pdf').click();
-			await panel.getByPlaceholder('Label — e.g. "Rhythm tab"').fill('Chorus chart');
+			// exact: the upload form's 'Label — e.g. "Rhythm tab" (optional)' also matches
+			await panel
+				.getByPlaceholder('Label — e.g. "Rhythm tab"', { exact: true })
+				.fill('Chorus chart');
 			await panel.getByLabel('Save label').click();
 			await expect(panel.getByText('Chorus chart')).toBeVisible();
 
@@ -85,11 +88,18 @@ test.describe('Song charts band visibility (FILE-02)', () => {
 			await expect(panel.getByLabel('Delete Lead sheet')).not.toBeVisible();
 			await expect(panel.getByRole('button', { name: 'Upload chart' })).not.toBeVisible();
 
-			// Open mints a signed URL through the member's RLS-scoped client
+			// Open mints a signed URL through the member's RLS-scoped client.
+			// Headless Chromium has no PDF viewer, so the popup's navigation turns
+			// into a download and aborts (ERR_ABORTED) — assert the signed-URL
+			// navigation request instead of waiting for the page to load.
+			const signedNav = userB.page
+				.context()
+				.waitForEvent('request', (r) => r.isNavigationRequest() && r.url().includes('/object/sign/'));
 			const popupPromise = userB.page.waitForEvent('popup');
 			await panel.getByLabel('Open Lead sheet').click();
-			const popup = await popupPromise;
-			await popup.waitForURL(/\/storage\/v1\/object\/sign\//);
+			await popupPromise;
+			const req = await signedNav;
+			expect(req.url()).toContain(`/storage/v1/object/sign/song-files/songs/${song.id}/`);
 		} finally {
 			await userB.cleanup();
 			await safeDelete('song_files', file.id);
