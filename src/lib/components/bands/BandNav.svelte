@@ -12,7 +12,7 @@
 		{ href: `/bands/${band.id}`, label: 'Dashboard', exact: true },
 		{ href: `/bands/${band.id}/songs`, label: 'Songs', exact: false },
 		{ href: `/bands/${band.id}/setlists`, label: 'Setlists', exact: false },
-		{ href: `/bands/${band.id}/tracks`, label: 'Tracks', exact: false },
+		{ href: `/bands/${band.id}/demos`, label: 'Demos', exact: false },
 		{ href: `/bands/${band.id}/members`, label: 'Members', exact: false },
 		{ href: `/bands/${band.id}/settings`, label: 'Settings', exact: false }
 	]);

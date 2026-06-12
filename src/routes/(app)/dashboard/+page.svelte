@@ -114,8 +114,9 @@
 					{/if}
 				</div>
 
-				<!-- Instrument readings -->
-				<div class="flex shrink-0 items-center gap-6 md:gap-8">
+				<!-- Instrument readings — wrap as whole cells on narrow screens
+				     instead of pushing the last reading off the viewport -->
+				<div class="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-4 md:gap-x-8">
 					{#if data.heroIsUpcoming && hero.gig_date}
 						<div class="text-center">
 							<p
@@ -124,7 +125,7 @@
 								Countdown
 							</p>
 							<p
-								class="font-display text-2xl font-bold text-accent-600 md:text-3xl dark:text-accent-hot"
+								class="font-display text-2xl font-bold whitespace-nowrap text-accent-600 md:text-3xl dark:text-accent-hot"
 							>
 								{countdownLabel(hero.gig_date)}
 							</p>
@@ -337,17 +338,17 @@
 	{#if data.tracks.length > 0}
 		<section class="mt-10">
 			<div class="flex items-baseline gap-3">
-				<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Tracks</h2>
+				<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Demos</h2>
 				<span class="text-sm text-surface-500 dark:text-surface-300">
 					{data.tracks.length}
-					{data.tracks.length === 1 ? 'track' : 'tracks'}
+					{data.tracks.length === 1 ? 'demo' : 'demos'}
 				</span>
 			</div>
 			<div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{#each data.tracks as track (track.id)}
 					<TrackCard
 						{track}
-						basePath="/bands/{track.band_id}/tracks"
+						basePath="/bands/{track.band_id}/demos"
 						bandName={bandNames.get(track.band_id)}
 					/>
 				{/each}

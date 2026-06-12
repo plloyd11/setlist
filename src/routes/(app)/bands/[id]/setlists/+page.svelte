@@ -3,14 +3,16 @@
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import Toast from '$lib/components/ui/Toast.svelte';
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 
 	let { data } = $props();
 
 	let bandId = $derived(data.band.id);
 	let basePath = $derived(`/bands/${bandId}/setlists`);
 
-	// Create form state
-	let showCreateForm = $state(false);
+	// Create form state; ?new opens the form directly (the band gig board's
+	// activation CTA lands here — same idiom as the personal setlists page)
+	let showCreateForm = $state(page.url.searchParams.has('new'));
 	let newName = $state('');
 
 	// Component refs

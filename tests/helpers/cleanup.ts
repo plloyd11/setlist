@@ -41,3 +41,55 @@ export async function cleanupTrackAudio(bandId: string) {
 		console.warn(`Cleanup warning [tracks storage/${bandId}]:`, e);
 	}
 }
+
+/**
+ * Remove all uploaded charts/tabs for a song from the 'song-files' bucket.
+ * Storage objects do not cascade with DB rows, so song deletion leaves them
+ * behind. Warn-not-throw, like all cleanup helpers.
+ */
+export async function cleanupSongFiles(songId: string) {
+	const prefix = `songs/${songId}`;
+	try {
+		const { data: objects, error } = await adminClient.storage.from('song-files').list(prefix);
+		if (error) {
+			console.warn(`Cleanup warning [song-files storage/${songId}]:`, error.message);
+			return;
+		}
+		if (objects?.length) {
+			const { error: removeError } = await adminClient.storage
+				.from('song-files')
+				.remove(objects.map((o) => `${prefix}/${o.name}`));
+			if (removeError) {
+				console.warn(`Cleanup warning [song-files storage/${songId}]:`, removeError.message);
+			}
+		}
+	} catch (e) {
+		console.warn(`Cleanup warning [song-files storage/${songId}]:`, e);
+	}
+}
+
+/**
+ * Remove all uploaded rehearsal audio for a song from the 'song-audio' bucket.
+ * Storage objects do not cascade with DB rows, so song deletion leaves them
+ * behind. Warn-not-throw, like all cleanup helpers.
+ */
+export async function cleanupSongAudio(songId: string) {
+	const prefix = `songs/${songId}`;
+	try {
+		const { data: objects, error } = await adminClient.storage.from('song-audio').list(prefix);
+		if (error) {
+			console.warn(`Cleanup warning [song-audio storage/${songId}]:`, error.message);
+			return;
+		}
+		if (objects?.length) {
+			const { error: removeError } = await adminClient.storage
+				.from('song-audio')
+				.remove(objects.map((o) => `${prefix}/${o.name}`));
+			if (removeError) {
+				console.warn(`Cleanup warning [song-audio storage/${songId}]:`, removeError.message);
+			}
+		}
+	} catch (e) {
+		console.warn(`Cleanup warning [song-audio storage/${songId}]:`, e);
+	}
+}

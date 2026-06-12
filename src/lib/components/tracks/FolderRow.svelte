@@ -30,7 +30,7 @@
 	let dragDepth = $state(0);
 	let dropActive = $derived(dragDepth > 0 && acceptDrop);
 
-	let countLabel = $derived(`${folder.trackCount} ${folder.trackCount === 1 ? 'track' : 'tracks'}`);
+	let countLabel = $derived(`${folder.trackCount} ${folder.trackCount === 1 ? 'demo' : 'demos'}`);
 
 	function handleDragStart(e: DragEvent) {
 		if (!e.dataTransfer) return;

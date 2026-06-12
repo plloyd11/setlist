@@ -35,7 +35,9 @@ test.describe('Print settings - Editor (PRNT-01)', () => {
 		await expect(sheet.getByText(setlist.venue)).not.toBeVisible();
 
 		await page.getByLabel('Divider lines').uncheck();
-		await expect(sheet.locator('li').first()).toHaveCSS('border-bottom-style', 'none');
+		// Tailwind preflight keeps border-style solid on every element; the
+		// divider class only controls the width, so assert that instead
+		await expect(sheet.locator('li').first()).toHaveCSS('border-bottom-width', '0px');
 
 		await safeDelete('setlists', setlist.id);
 		await safeDelete('songs', song.id);

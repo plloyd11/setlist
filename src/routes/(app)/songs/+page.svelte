@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SongRow from '$lib/components/songs/SongRow.svelte';
+	import SongDetailPanel from '$lib/components/songs/SongDetailPanel.svelte';
 	import SongSearch from '$lib/components/songs/SongSearch.svelte';
 	import ContextMenu from '$lib/components/ui/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
@@ -24,8 +25,10 @@
 	let contextSongId = $state<string | null>(null);
 	let contextSongTitle = $state('');
 
-	// Editing state
-	let editingSongId = $state<string | null>(null);
+	// Detail panel state — derived from data so the panel stays live across
+	// invalidateAll() after saves/uploads/renames/deletes
+	let selectedSongId = $state<string | null>(null);
+	let selectedSong = $derived(data.songs.find((s) => s.id === selectedSongId) ?? null);
 
 	// Component refs
 	let confirmDialog: ConfirmDialog;
@@ -102,7 +105,7 @@
 
 	function handleEdit() {
 		if (contextSongId) {
-			editingSongId = contextSongId;
+			selectedSongId = contextSongId;
 		}
 	}
 
@@ -221,12 +224,8 @@
 				{#each filteredSongs as song (song.id)}
 					<SongRow
 						{song}
-						supabase={data.supabase}
-						bind:editing={
-							() => editingSongId === song.id,
-							(v) =>
-								(editingSongId = v ? song.id : editingSongId === song.id ? null : editingSongId)
-						}
+						audioCount={song.song_audio.length}
+						onclick={() => (selectedSongId = song.id)}
 						oncontextmenu={(pos) => showContextMenu(song.id, song.title, pos)}
 					/>
 				{/each}
@@ -287,6 +286,18 @@
 
 <!-- Context menu (page-level singleton) -->
 <ContextMenu items={contextMenuItems} x={contextX} y={contextY} bind:visible={contextVisible} />
+
+<!-- Song detail flyout -->
+{#if selectedSong}
+	<SongDetailPanel
+		song={selectedSong}
+		variants={selectedSong.song_audio}
+		files={selectedSong.song_files}
+		supabase={data.supabase}
+		practiceHref="/songs/{selectedSong.id}/practice?from=/songs"
+		onclose={() => (selectedSongId = null)}
+	/>
+{/if}
 
 <!-- Confirm dialog (page-level singleton) -->
 <ConfirmDialog bind:this={confirmDialog} />

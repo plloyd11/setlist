@@ -18,7 +18,10 @@
 		markers = [],
 		ontimeupdate,
 		onmarkerclick,
-		onloaderror
+		onloaderror,
+		onready,
+		onfinish,
+		onplaystatechange
 	}: {
 		url: string;
 		peaks?: number[] | null;
@@ -27,6 +30,9 @@
 		ontimeupdate?: (time: number) => void;
 		onmarkerclick?: (id: string) => void;
 		onloaderror?: () => void;
+		onready?: () => void;
+		onfinish?: () => void;
+		onplaystatechange?: (playing: boolean) => void;
 	} = $props();
 
 	let container: HTMLDivElement;
@@ -84,10 +90,20 @@
 			instance.on('ready', (d: number) => {
 				ready = true;
 				if (d > 0) totalDuration = d;
+				onready?.();
 			});
-			instance.on('play', () => (playing = true));
-			instance.on('pause', () => (playing = false));
-			instance.on('finish', () => (playing = false));
+			instance.on('play', () => {
+				playing = true;
+				onplaystatechange?.(true);
+			});
+			instance.on('pause', () => {
+				playing = false;
+				onplaystatechange?.(false);
+			});
+			instance.on('finish', () => {
+				playing = false;
+				onfinish?.();
+			});
 			instance.on('timeupdate', (t: number) => {
 				currentTime = t;
 				// Throttle to ~4/sec for the comment-list highlight
@@ -117,6 +133,20 @@
 
 	export function playPause() {
 		void ws?.playPause();
+	}
+
+	/** Returns false when playback was blocked (browser autoplay policy). */
+	export async function play(): Promise<boolean> {
+		try {
+			await ws?.play();
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	export function pause() {
+		ws?.pause();
 	}
 
 	export function getCurrentTime(): number {
@@ -225,7 +255,7 @@
 			type="button"
 			onclick={playPause}
 			disabled={!ready}
-			class="focus-live flex h-10 w-10 items-center justify-center rounded-full bg-accent-500 text-white shadow-sm hover:bg-accent-600 disabled:opacity-50"
+			class="focus-live flex h-11 w-11 items-center justify-center rounded-full bg-accent-500 text-white shadow-sm hover:bg-accent-600 disabled:opacity-50"
 			aria-label={playing ? 'Pause' : 'Play'}
 		>
 			{#if playing}

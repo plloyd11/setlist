@@ -107,7 +107,7 @@
 
 {#if topLevel.length === 0}
 	<p class="py-6 text-center text-sm text-surface-500 dark:text-surface-300">
-		No feedback yet. Play the track and pin a comment at any moment.
+		No feedback yet. Play the demo and pin a comment at any moment.
 	</p>
 {:else}
 	<div class="space-y-3">

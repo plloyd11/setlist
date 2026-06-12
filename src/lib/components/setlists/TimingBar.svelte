@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { formatDuration, parseDurationLenient } from '$lib/utils/duration';
+	import { countTransitionPairs } from '$lib/utils/setlistTiming';
 	import ProgressBar from '$lib/components/ui/ProgressBar.svelte';
 
 	let {
@@ -32,15 +33,9 @@
 	let totalSongSeconds = $derived(
 		setlistItems.reduce((sum, song) => sum + (song.duration_seconds || 0), 0)
 	);
-	// Transitions apply between consecutive songs; an explicit gap IS the break,
-	// so pairs touching a gap don't get extra transition time
-	let totalTransitionSeconds = $derived.by(() => {
-		let pairs = 0;
-		for (let i = 0; i < setlistItems.length - 1; i++) {
-			if (setlistItems[i].gap_seconds == null && setlistItems[i + 1].gap_seconds == null) pairs++;
-		}
-		return pairs * transitionSeconds;
-	});
+	// The transition rule lives in setlistTiming.ts — shared with the rehearse
+	// timeline so the two screens' totals can't drift apart
+	let totalTransitionSeconds = $derived(countTransitionPairs(setlistItems) * transitionSeconds);
 	let totalSeconds = $derived(totalSongSeconds + totalTransitionSeconds);
 	let overUnderSeconds = $derived(targetSeconds ? totalSeconds - targetSeconds : 0);
 	let progressPercent = $derived(

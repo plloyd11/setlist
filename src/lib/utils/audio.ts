@@ -12,6 +12,8 @@ const PEAK_BUCKETS = 1500;
 export interface AudioMetadata {
 	durationSeconds: number | null;
 	peaks: number[] | null;
+	/** Decoded PCM, reused by the MP3 compression step; null when WebAudio couldn't decode */
+	buffer: AudioBuffer | null;
 }
 
 export async function extractAudioMetadata(file: File): Promise<AudioMetadata> {
@@ -20,14 +22,14 @@ export async function extractAudioMetadata(file: File): Promise<AudioMetadata> {
 		const ctx = new AudioContext();
 		try {
 			const buffer = await ctx.decodeAudioData(arrayBuffer);
-			return { durationSeconds: buffer.duration, peaks: computePeaks(buffer) };
+			return { durationSeconds: buffer.duration, peaks: computePeaks(buffer), buffer };
 		} finally {
 			void ctx.close();
 		}
 	} catch {
 		// Codec not decodable by WebAudio (some AAC/ADTS variants) — an <audio>
 		// element can often still read duration from metadata.
-		return { durationSeconds: await durationFromElement(file), peaks: null };
+		return { durationSeconds: await durationFromElement(file), peaks: null, buffer: null };
 	}
 }
 

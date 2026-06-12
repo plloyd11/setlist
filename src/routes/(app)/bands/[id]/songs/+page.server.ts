@@ -1,5 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { parseDuration } from '$lib/utils/duration';
+import { processSongAudioDelete, processSongAudioUpload } from '$lib/server/songAudio';
+import { processSongFileDelete, processSongFileUpload } from '$lib/server/songFiles';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase, safeGetSession } }) => {
@@ -8,10 +10,13 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 		return { bandSongs: [], personalSongs: [] };
 	}
 
-	// Load band songs via junction table
+	// Load band songs via junction table, with each song's rehearsal audio
+	// variants (peaks excluded to keep the list payload small) and charts
 	const { data: bandSongs } = await supabase
 		.from('band_songs')
-		.select('id, song_id, added_by, songs(id, title, duration_seconds, notes, user_id)')
+		.select(
+			'id, song_id, added_by, songs(id, title, duration_seconds, notes, user_id, song_audio(id, song_id, label, storage_path, file_name, mime_type, file_size_bytes, duration_seconds, created_at), song_files(*))'
+		)
 		.eq('band_id', params.id)
 		.order('added_at', { ascending: true });
 
@@ -190,5 +195,43 @@ export const actions: Actions = {
 		}
 
 		return { updated: true };
+	},
+
+	// RLS makes both owner-only: a non-owner member's insert/delete is
+	// rejected even though the actions are reachable from the band page.
+	uploadAudio: async ({ request, locals: { supabase, safeGetSession } }) => {
+		const { session } = await safeGetSession();
+		if (!session) {
+			return fail(401, { error: 'Not authenticated' });
+		}
+
+		return processSongAudioUpload(supabase, request);
+	},
+
+	deleteAudio: async ({ request, locals: { supabase, safeGetSession } }) => {
+		const { session } = await safeGetSession();
+		if (!session) {
+			return fail(401, { error: 'Not authenticated' });
+		}
+
+		return processSongAudioDelete(supabase, request);
+	},
+
+	uploadFile: async ({ request, locals: { supabase, safeGetSession } }) => {
+		const { session } = await safeGetSession();
+		if (!session) {
+			return fail(401, { error: 'Not authenticated' });
+		}
+
+		return processSongFileUpload(supabase, request);
+	},
+
+	deleteFile: async ({ request, locals: { supabase, safeGetSession } }) => {
+		const { session } = await safeGetSession();
+		if (!session) {
+			return fail(401, { error: 'Not authenticated' });
+		}
+
+		return processSongFileDelete(supabase, request);
 	}
 };

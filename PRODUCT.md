@@ -10,7 +10,7 @@ Working musicians and bands. They manage a shared song library, build timed setl
 
 ## Product Purpose
 
-Setlist removes the spreadsheet/paper-scrap workflow from set planning. Songs are name + duration; setlists show running totals against a target time as you drag songs in, with optional timed gaps for breaks. Bands also share work-in-progress audio in a track workspace — versioned uploads, nestable folders, and timestamped comments on a waveform — so rehearsal feedback lives next to the set. Success looks like: a band keeps its library here, builds every gig's set here, swaps demo recordings here, and the share link is what ends up on stage. Out of scope by decision: song metadata beyond name + length, set sections, real-time collaboration.
+Setlist removes the spreadsheet/paper-scrap workflow from set planning. Songs are name + duration; setlists show running totals against a target time as you drag songs in, with optional timed gaps for breaks. Bands also share work-in-progress recordings in a Demos workspace — versioned uploads, nestable folders, and timestamped comments on a waveform — so rehearsal feedback lives next to the set. Success looks like: a band keeps its library here, builds every gig's set here, swaps demo recordings here, and the share link is what ends up on stage. Out of scope by decision: song metadata beyond name + length, set sections, real-time collaboration.
 
 ## Brand Personality
 

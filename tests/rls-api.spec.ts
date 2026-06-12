@@ -10,6 +10,11 @@
  *   - removal of the broad `to anon` read policies
  *   - band_members self-leave DELETE policy
  *
+ * RLS-API-08 additionally requires 20260611220000_create_song_audio.sql
+ * (song_audio table + the private 'song-audio' storage bucket).
+ * RLS-API-09 additionally requires 20260612000000_create_song_files.sql
+ * (song_files table + the private 'song-files' storage bucket).
+ *
  * Unlike the UI specs, these talk to Supabase directly with publishable-key
  * clients signed in as two admin-created users (plus one anon client).
  * No browser pages are used.
@@ -17,6 +22,8 @@
 import { test, expect } from '@playwright/test';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { createTestUser, deleteTestUser } from './helpers/auth';
 import { adminClient } from './helpers/supabase-admin';
 import { safeDelete } from './helpers/cleanup';
@@ -299,5 +306,211 @@ test.describe('API-level RLS write isolation', () => {
 			.eq('band_id', bandA.id)
 			.eq('user_id', userB.id);
 		expect(adminRows ?? []).toHaveLength(0);
+	});
+
+	test('song_audio visibility and storage signing follow song visibility (RLS-API-08)', async () => {
+		const storagePath = `songs/${songA.id}/${crypto.randomUUID()}.wav`;
+		const fileBuffer = fs.readFileSync(path.resolve('tests/fixtures/sample.wav'));
+
+		// Admin: audio object + metadata row attached to A's song
+		const { error: uploadError } = await adminClient.storage
+			.from('song-audio')
+			.upload(storagePath, fileBuffer, { contentType: 'audio/wav' });
+		if (uploadError) throw new Error(`Setup song-audio upload failed: ${uploadError.message}`);
+
+		const { data: audioRow, error: audioError } = await adminClient
+			.from('song_audio')
+			.insert({
+				song_id: songA.id,
+				label: 'RLS API Mix',
+				storage_path: storagePath,
+				file_name: 'sample.wav',
+				mime_type: 'audio/wav',
+				file_size_bytes: fileBuffer.length
+			})
+			.select()
+			.single();
+		if (audioError) throw new Error(`Setup song_audio failed: ${audioError.message}`);
+
+		const forgedInsert = () =>
+			userB.client
+				.from('song_audio')
+				.insert({
+					song_id: songA.id,
+					storage_path: `songs/${songA.id}/${crypto.randomUUID()}.wav`,
+					file_name: 'forged.wav',
+					mime_type: 'audio/wav',
+					file_size_bytes: 10
+				})
+				.select();
+
+		try {
+			// Outsider B: no metadata rows, no signed URL
+			const { data: bRows, error: bSelectError } = await userB.client
+				.from('song_audio')
+				.select('*')
+				.eq('song_id', songA.id);
+			expect(bSelectError).toBeNull();
+			expect(bRows ?? []).toHaveLength(0);
+
+			const { data: bSigned, error: bSignError } = await userB.client.storage
+				.from('song-audio')
+				.createSignedUrl(storagePath, 60);
+			expect(bSignError).not.toBeNull();
+			expect(bSigned).toBeNull();
+
+			// Outsider B cannot attach audio to A's song
+			const { data: bInsert, error: bInsertError } = await forgedInsert();
+			expect(bInsertError !== null || (bInsert ?? []).length === 0).toBe(true);
+
+			// Link the song into band A and make B a member: listening follows
+			const { error: linkError } = await adminClient
+				.from('band_songs')
+				.insert({ band_id: bandA.id, song_id: songA.id, added_by: userA.id });
+			if (linkError) throw new Error(`Setup band_songs failed: ${linkError.message}`);
+			const { error: memberError } = await adminClient
+				.from('band_members')
+				.insert({ band_id: bandA.id, user_id: userB.id, role: 'member' });
+			if (memberError) throw new Error(`Setup band_members failed: ${memberError.message}`);
+
+			const { data: memberRows } = await userB.client
+				.from('song_audio')
+				.select('id')
+				.eq('song_id', songA.id);
+			expect(memberRows ?? []).toHaveLength(1);
+
+			const { data: memberSigned, error: memberSignError } = await userB.client.storage
+				.from('song-audio')
+				.createSignedUrl(storagePath, 60);
+			expect(memberSignError).toBeNull();
+			expect(memberSigned?.signedUrl).toBeTruthy();
+
+			// Membership grants listening, not uploading — insert stays owner-only
+			const { data: mInsert, error: mInsertError } = await forgedInsert();
+			expect(mInsertError !== null || (mInsert ?? []).length === 0).toBe(true);
+
+			// Sanity: the owner can sign their own path
+			const { data: ownerSigned, error: ownerSignError } = await userA.client.storage
+				.from('song-audio')
+				.createSignedUrl(storagePath, 60);
+			expect(ownerSignError).toBeNull();
+			expect(ownerSigned?.signedUrl).toBeTruthy();
+		} finally {
+			await adminClient
+				.from('band_members')
+				.delete()
+				.eq('band_id', bandA.id)
+				.eq('user_id', userB.id);
+			await adminClient.from('band_songs').delete().eq('band_id', bandA.id).eq('song_id', songA.id);
+			if (audioRow) await safeDelete('song_audio', audioRow.id);
+			try {
+				await adminClient.storage.from('song-audio').remove([storagePath]);
+			} catch (e) {
+				console.warn('Cleanup warning [song-audio storage]:', e);
+			}
+		}
+	});
+
+	test('song_files visibility and storage signing follow song visibility (RLS-API-09)', async () => {
+		const storagePath = `songs/${songA.id}/${crypto.randomUUID()}.pdf`;
+		const fileBuffer = fs.readFileSync(path.resolve('tests/fixtures/sample.pdf'));
+
+		// Admin: chart object + metadata row attached to A's song
+		const { error: uploadError } = await adminClient.storage
+			.from('song-files')
+			.upload(storagePath, fileBuffer, { contentType: 'application/pdf' });
+		if (uploadError) throw new Error(`Setup song-files upload failed: ${uploadError.message}`);
+
+		const { data: fileRow, error: fileError } = await adminClient
+			.from('song_files')
+			.insert({
+				song_id: songA.id,
+				label: 'RLS API Chart',
+				storage_path: storagePath,
+				file_name: 'sample.pdf',
+				mime_type: 'application/pdf',
+				file_size_bytes: fileBuffer.length
+			})
+			.select()
+			.single();
+		if (fileError) throw new Error(`Setup song_files failed: ${fileError.message}`);
+
+		const forgedInsert = () =>
+			userB.client
+				.from('song_files')
+				.insert({
+					song_id: songA.id,
+					storage_path: `songs/${songA.id}/${crypto.randomUUID()}.pdf`,
+					file_name: 'forged.pdf',
+					mime_type: 'application/pdf',
+					file_size_bytes: 10
+				})
+				.select();
+
+		try {
+			// Outsider B: no metadata rows, no signed URL
+			const { data: bRows, error: bSelectError } = await userB.client
+				.from('song_files')
+				.select('*')
+				.eq('song_id', songA.id);
+			expect(bSelectError).toBeNull();
+			expect(bRows ?? []).toHaveLength(0);
+
+			const { data: bSigned, error: bSignError } = await userB.client.storage
+				.from('song-files')
+				.createSignedUrl(storagePath, 60);
+			expect(bSignError).not.toBeNull();
+			expect(bSigned).toBeNull();
+
+			// Outsider B cannot attach a chart to A's song
+			const { data: bInsert, error: bInsertError } = await forgedInsert();
+			expect(bInsertError !== null || (bInsert ?? []).length === 0).toBe(true);
+
+			// Link the song into band A and make B a member: reading follows
+			const { error: linkError } = await adminClient
+				.from('band_songs')
+				.insert({ band_id: bandA.id, song_id: songA.id, added_by: userA.id });
+			if (linkError) throw new Error(`Setup band_songs failed: ${linkError.message}`);
+			const { error: memberError } = await adminClient
+				.from('band_members')
+				.insert({ band_id: bandA.id, user_id: userB.id, role: 'member' });
+			if (memberError) throw new Error(`Setup band_members failed: ${memberError.message}`);
+
+			const { data: memberRows } = await userB.client
+				.from('song_files')
+				.select('id')
+				.eq('song_id', songA.id);
+			expect(memberRows ?? []).toHaveLength(1);
+
+			const { data: memberSigned, error: memberSignError } = await userB.client.storage
+				.from('song-files')
+				.createSignedUrl(storagePath, 60);
+			expect(memberSignError).toBeNull();
+			expect(memberSigned?.signedUrl).toBeTruthy();
+
+			// Membership grants reading, not uploading — insert stays owner-only
+			const { data: mInsert, error: mInsertError } = await forgedInsert();
+			expect(mInsertError !== null || (mInsert ?? []).length === 0).toBe(true);
+
+			// Sanity: the owner can sign their own path
+			const { data: ownerSigned, error: ownerSignError } = await userA.client.storage
+				.from('song-files')
+				.createSignedUrl(storagePath, 60);
+			expect(ownerSignError).toBeNull();
+			expect(ownerSigned?.signedUrl).toBeTruthy();
+		} finally {
+			await adminClient
+				.from('band_members')
+				.delete()
+				.eq('band_id', bandA.id)
+				.eq('user_id', userB.id);
+			await adminClient.from('band_songs').delete().eq('band_id', bandA.id).eq('song_id', songA.id);
+			if (fileRow) await safeDelete('song_files', fileRow.id);
+			try {
+				await adminClient.storage.from('song-files').remove([storagePath]);
+			} catch (e) {
+				console.warn('Cleanup warning [song-files storage]:', e);
+			}
+		}
 	});
 });

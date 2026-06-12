@@ -16,7 +16,7 @@
 	let { data } = $props();
 
 	let bandId = $derived(data.band.id);
-	let basePath = $derived(`/bands/${bandId}/tracks`);
+	let basePath = $derived(`/bands/${bandId}/demos`);
 
 	let showUploadForm = $state(false);
 	let toast: Toast;
@@ -44,7 +44,7 @@
 	let hasFolders = $derived(data.folders.length > 0);
 	let currentFolderId = $derived(data.currentFolder?.id ?? null);
 	let trackCountLabel = $derived(
-		data.tracks.length === 1 ? '1 track' : `${data.tracks.length} tracks`
+		data.tracks.length === 1 ? '1 demo' : `${data.tracks.length} demos`
 	);
 
 	// The in-flight in-app drag — page-level so folder rows and crumbs can
@@ -70,7 +70,7 @@
 	});
 
 	let crumbs = $derived([
-		{ label: 'Tracks', href: basePath },
+		{ label: 'Demos', href: basePath },
 		...data.breadcrumb.map((b, i) => ({
 			label: b.name,
 			href: i === data.breadcrumb.length - 1 ? null : `${basePath}?folder=${b.id}`
@@ -97,7 +97,7 @@
 
 	function handleUploaded(result: { trackId: string }) {
 		showUploadForm = false;
-		toast.show('Track uploaded', { variant: 'success' });
+		toast.show('Demo uploaded', { variant: 'success' });
 		goto(`${basePath}/${result.trackId}`);
 	}
 
@@ -160,7 +160,7 @@
 	async function deleteFolder(folder: { id: string; name: string }) {
 		const ok = await confirmDialog.confirm(
 			`Delete "${folder.name}"?`,
-			'Tracks and folders inside will move up a level.'
+			'Demos and folders inside will move up a level.'
 		);
 		if (!ok) return;
 		const err = await postAction('deleteFolder', { folder_id: folder.id });
@@ -180,7 +180,7 @@
 		if (err) {
 			toast.show(err, { variant: 'error' });
 		} else {
-			toast.show(item.kind === 'track' ? 'Track moved' : 'Folder moved', { variant: 'success' });
+			toast.show(item.kind === 'track' ? 'Demo moved' : 'Folder moved', { variant: 'success' });
 		}
 	}
 
@@ -204,7 +204,7 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div class="flex items-baseline gap-3">
-			<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Tracks</h1>
+			<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Demos</h1>
 			{#if hasTracks}
 				<span class="text-sm text-surface-500 dark:text-surface-300">{trackCountLabel}</span>
 			{/if}
@@ -235,7 +235,7 @@
 			<button
 				onclick={() => (showUploadForm = !showUploadForm)}
 				class="flex items-center justify-center rounded-lg bg-accent-500 p-2 text-white shadow-sm hover:bg-accent-600"
-				aria-label="New track"
+				aria-label="New demo"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -389,7 +389,7 @@
 					This folder is empty
 				</p>
 				<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
-					Upload a track here, or drag tracks in.
+					Upload a demo here, or drag demos in.
 				</p>
 			</div>
 		{/if}
@@ -414,7 +414,7 @@
 					d="M9 19V6l12-3v13M9 19c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3zm12-3c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"
 				/>
 			</svg>
-			<p class="mt-4 font-display text-lg text-surface-700 dark:text-surface-300">No tracks yet</p>
+			<p class="mt-4 font-display text-lg text-surface-700 dark:text-surface-300">No demos yet</p>
 			<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
 				Share a demo with your band and get timestamped feedback.
 			</p>
@@ -422,7 +422,7 @@
 				onclick={() => (showUploadForm = true)}
 				class="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-accent-500 px-4 py-2 font-semibold text-white shadow-sm hover:bg-accent-600"
 			>
-				Upload your first track
+				Upload your first demo
 			</button>
 		</div>
 	{/if}

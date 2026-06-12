@@ -32,7 +32,7 @@
 <select
 	value={String(selected)}
 	onchange={handleChange}
-	aria-label="Track version"
+	aria-label="Demo version"
 	class="focus-live rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
 >
 	{#each versions as version (version.version_number)}

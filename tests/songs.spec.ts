@@ -60,23 +60,24 @@ test.describe('Song Library - Form Validation (SONG-01 negative)', () => {
 });
 
 test.describe('Song Library - Edit Song (SONG-02)', () => {
-	test('should edit song title and duration via inline edit', async ({ page, testUser }) => {
+	test('should edit song title and duration via the detail panel', async ({ page, testUser }) => {
 		const song = await createSong(page, testUser.id, {
 			title: 'Before Edit',
 			duration_seconds: 225
 		});
 
-		// Click song text to enter edit mode
+		// Clicking the row opens the detail flyout
 		await page.getByText('Before Edit').click();
+		await expect(page.getByRole('dialog')).toBeVisible();
 
-		// Fill updated values
-		await page.locator('input[placeholder="Song title"]').fill('After Edit');
-		await page.locator('input[placeholder="3:45"]').fill('5:00');
+		// Update title and length, save
+		await page.getByLabel('Title').fill('After Edit');
+		await page.getByLabel('Length').fill('5:00');
+		await page.getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(page.getByText('Saved')).toBeVisible();
 
-		// Save
-		await page.getByLabel('Save').click();
-
-		// Verify updated values
+		// Close the panel — the list row reflects the new values
+		await page.getByLabel('Close', { exact: true }).click();
 		await expect(page.getByText('After Edit')).toBeVisible();
 		await expect(page.getByText('5:00')).toBeVisible();
 
