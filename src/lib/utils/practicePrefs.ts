@@ -8,6 +8,7 @@ const STORAGE_KEY = 'practice:prefs:v1';
 export const SPEED_DETENTS = [0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1] as const;
 export const PRE_ROLL_SECONDS = 2;
 export const MAX_SECTIONS = 20;
+export const MIN_LOOP_SECONDS = 0.5;
 const MAX_LABEL_LENGTH = 40;
 const MAX_SONGS = 100;
 
@@ -98,6 +99,17 @@ function loadAll(): Record<string, unknown> {
 		// Corrupt/blocked storage just means no remembered prefs
 	}
 	return {};
+}
+
+/**
+ * Fit a saved loop range to a mix's length, or null when it can't fit: mixes of a
+ * song can differ in length, and a range past the end would arm as a tiny sliver
+ * at the end of the file. Unknown length (0) leaves the range alone.
+ */
+export function fitLoop(range: LoopRange, duration: number): LoopRange | null {
+	if (!duration) return { start: range.start, end: range.end };
+	if (range.start >= duration - MIN_LOOP_SECONDS) return null;
+	return { start: range.start, end: Math.min(range.end, duration) };
 }
 
 export function loadPracticePrefs(songId: string): PracticePrefs {

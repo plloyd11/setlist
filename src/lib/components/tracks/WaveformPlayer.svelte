@@ -3,7 +3,7 @@
 	import type RegionsPlugin from 'wavesurfer.js/plugins/regions';
 	import type { Region } from 'wavesurfer.js/plugins/regions';
 	import { formatDuration } from '#lib/utils/duration.js';
-	import { PRE_ROLL_SECONDS } from '#lib/utils/practicePrefs.js';
+	import { MIN_LOOP_SECONDS, PRE_ROLL_SECONDS } from '#lib/utils/practicePrefs.js';
 
 	export interface WaveformMarker {
 		id: string;
@@ -43,8 +43,6 @@
 		/** Practice mode: the user dragged or resized the loop region */
 		onregionchange?: (region: { start: number; end: number } | null) => void;
 	} = $props();
-
-	const MIN_LOOP_SECONDS = 0.5;
 
 	let container: HTMLDivElement;
 	let ws: WaveSurfer | null = null;

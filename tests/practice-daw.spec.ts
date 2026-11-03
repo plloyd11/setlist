@@ -143,4 +143,102 @@ test.describe('DAW practice controls', () => {
 			await safeDelete('songs', song.id);
 		}
 	});
+
+	test('shortcuts still work right after clicking the waveform, a knob, or a button', async ({
+		page,
+		testUser
+	}) => {
+		const song = await createSong(page, testUser.id, { title: 'Focus Song' });
+		await createSongAudio(song.id, { label: 'Full mix' });
+
+		try {
+			await page.goto(`/songs/${song.id}/practice`);
+			await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 10_000 });
+
+			const seek = page.getByRole('slider', { name: 'Seek' });
+			const volumeKnob = page.getByRole('slider', { name: 'Volume' });
+			const loopButton = page.getByRole('button', { name: /Loop/ });
+
+			// Clicking the waveform leaves focus on the seek slider. Its own arrow keys
+			// must seek once (not also fire the page shortcut), and `]` must still pin.
+			await seek.click();
+			await page.keyboard.press('ArrowRight');
+			await expect(seek).toHaveAttribute('aria-valuenow', '1');
+			await page.keyboard.press(']');
+			await expect(page.locator('[part~="region"]')).toBeVisible();
+
+			await page.keyboard.press('l');
+			await expect(loopButton).toHaveAttribute('aria-pressed', 'true');
+
+			// A knob keeps its arrows and leaves the playhead alone, but L works
+			await volumeKnob.click();
+			await page.keyboard.press('ArrowDown');
+			await expect(volumeKnob).toHaveAttribute('aria-valuenow', '0.95');
+			await expect(seek).toHaveAttribute('aria-valuenow', '1');
+			await page.keyboard.press('l');
+			await expect(loopButton).toHaveAttribute('aria-pressed', 'false');
+
+			// Same from a button
+			await loopButton.click();
+			await expect(loopButton).toHaveAttribute('aria-pressed', 'true');
+			await page.keyboard.press('l');
+			await expect(loopButton).toHaveAttribute('aria-pressed', 'false');
+
+			// Typing in a field never triggers shortcuts
+			await page.getByRole('button', { name: '+ Save section' }).click();
+			await page.getByLabel('Section name').fill('');
+			await page.keyboard.press('l');
+			await expect(page.getByLabel('Section name')).toHaveValue('l');
+			await expect(loopButton).toHaveAttribute('aria-pressed', 'false');
+		} finally {
+			await cleanupSongAudio(song.id);
+			await safeDelete('songs', song.id);
+		}
+	});
+
+	test('a saved section is fitted to a shorter mix, or refused if it starts past the end', async ({
+		page,
+		testUser
+	}) => {
+		const song = await createSong(page, testUser.id, { title: 'Short Mix Song' });
+		await createSongAudio(song.id, { label: 'Full mix' });
+
+		try {
+			await page.goto(`/songs/${song.id}/practice`);
+			await page.evaluate((songId) => {
+				const sections = [
+					{ id: 'past-end', label: 'Outro', start: 30, end: 40 },
+					{ id: 'overlaps', label: 'Whole', start: 0, end: 40 }
+				];
+				localStorage.setItem('practice:prefs:v1', JSON.stringify({ [songId]: { sections } }));
+			}, song.id);
+			await page.reload();
+			await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 10_000 });
+
+			const loopButton = page.getByRole('button', { name: /Loop/ });
+
+			// The fixture is ~1s: a section starting at 0:30 can't exist on this mix
+			await page.getByRole('button', { name: 'Outro', exact: true }).click();
+			await expect(page.getByText('"Outro" runs past the end of this mix.')).toBeVisible();
+			await expect(page.locator('[part~="region"]')).toHaveCount(0);
+			await expect(loopButton).toHaveAttribute('aria-pressed', 'false');
+
+			// One that overlaps is trimmed to the mix and armed
+			await page.getByRole('button', { name: 'Whole', exact: true }).click();
+			await expect(page.locator('[part~="region"]')).toBeVisible();
+			await expect(loopButton).toHaveAttribute('aria-pressed', 'true');
+			await expect(page.getByText('runs past the end of this mix')).toHaveCount(0);
+
+			// The saved section itself keeps its range for longer mixes
+			const saved = await page.evaluate(
+				(songId) => JSON.parse(localStorage.getItem('practice:prefs:v1') ?? '{}')[songId],
+				song.id
+			);
+			expect(saved.sections[1].end).toBe(40);
+			expect(saved.loop.end).toBeLessThan(5);
+		} finally {
+			await cleanupSongAudio(song.id);
+			await safeDelete('songs', song.id);
+		}
+	});
 });
