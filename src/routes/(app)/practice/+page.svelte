@@ -1,14 +1,29 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import Metronome from '#lib/components/practice/Metronome.svelte';
-	import SongRows from '#lib/components/practice/SongRows.svelte';
 	import { daysUntil, formatGigDate } from '#lib/utils/gigDate.js';
+	import { startPlan } from '#lib/utils/practicePlan.js';
+	import { formatPracticeTime } from '#lib/utils/practiceTime.js';
 
 	let { data } = $props();
+
+	const KIND_LABELS = { 'warm-up': 'Warm-up', technique: 'Technique', song: 'Song' };
+	const STATUS_LABELS: Record<string, string> = {
+		learning: 'Learning',
+		needs_work: 'Needs work'
+	};
+
+	let totalSeconds = $derived(data.steps.reduce((sum, step) => sum + step.seconds, 0));
 
 	function countdown(date: string): string {
 		const days = daysUntil(date);
 		if (days <= 0) return 'Today';
 		return days === 1 ? 'Tomorrow' : `In ${days} days`;
+	}
+
+	function start() {
+		startPlan(data.steps.map((step) => ({ href: step.href, label: step.label })));
+		goto(data.steps[0].href);
 	}
 </script>
 
@@ -37,33 +52,100 @@
 					.filter(Boolean)
 					.join(' · ')}
 			</p>
+		{/if}
 
-			{#if data.songs.length > 0}
-				<h3 class="mt-6 text-sm font-medium text-surface-700 dark:text-surface-300">
-					Songs to shed
-				</h3>
-				<div class="mt-2"><SongRows songs={data.songs} from="/practice" /></div>
-			{:else}
-				<p class="mt-6 text-sm text-surface-500 dark:text-surface-300">
-					This set has no songs yet. <a
-						href="/practice/shed"
-						class="focus-live font-medium text-accent-600 underline dark:text-accent-400"
-						>Pick any song to shed</a
-					>.
-				</p>
-			{/if}
+		{#if data.steps.length > 0}
+			<section aria-label="Today's session" class={data.gig ? 'mt-6' : ''}>
+				<div class="flex flex-wrap items-center justify-between gap-3">
+					<h3 class="font-display text-lg font-semibold text-surface-900 dark:text-surface-100">
+						Today's session
+						<span
+							class="ml-1 text-sm font-normal text-surface-500 tabular-nums dark:text-surface-300"
+						>
+							about {formatPracticeTime(totalSeconds)}
+						</span>
+					</h3>
+					<!-- The hero CTA: the one always-energized button on this screen -->
+					<button
+						type="button"
+						onclick={start}
+						class="focus-live rounded-lg bg-accent-hot px-6 py-3 font-display font-bold text-surface-950 shadow-glow-accent hover:brightness-105"
+					>
+						Start session
+					</button>
+				</div>
+				<ol
+					class="mt-3 divide-y divide-surface-200 overflow-hidden rounded-xl border border-surface-200 bg-surface-50 dark:divide-surface-700 dark:border-surface-700 dark:bg-surface-800/50"
+				>
+					{#each data.steps as step (step.key)}
+						<li>
+							<a
+								href={step.href}
+								class="focus-live flex min-h-12 items-center gap-3 px-4 py-2 hover:bg-surface-100 dark:hover:bg-surface-800"
+							>
+								<span class="min-w-0 flex-1">
+									<span
+										class="block text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+									>
+										{KIND_LABELS[step.kind]}
+									</span>
+									<span
+										class="block truncate text-sm font-medium text-surface-900 dark:text-surface-100"
+									>
+										{step.label}
+									</span>
+								</span>
+								{#if step.status}
+									<span
+										class="shrink-0 rounded-full bg-accent-100 px-2 py-0.5 text-xs font-medium text-accent-800 dark:bg-accent-900/30 dark:text-accent-400"
+									>
+										{STATUS_LABELS[step.status]}
+									</span>
+								{/if}
+								{#if step.hasChart}
+									<span class="sr-only">Has a chart</span>
+								{/if}
+								{#if step.hasAudio}
+									<span class="sr-only">Has audio</span>
+								{/if}
+								<span class="shrink-0 text-sm text-surface-500 tabular-nums dark:text-surface-300">
+									{formatPracticeTime(step.seconds)}
+								</span>
+							</a>
+						</li>
+					{/each}
+				</ol>
+			</section>
 		{:else}
-			<p class="font-display text-xl text-surface-900 dark:text-surface-100">No gig coming up</p>
-			<p class="mt-1 max-w-prose text-sm text-surface-500 dark:text-surface-300">
-				Good time to learn something new. Pick a song and shed it, with its chart on screen and a
-				loop on the hard part.
-			</p>
-			<a
-				href="/practice/shed"
-				class="focus-live mt-5 inline-block rounded-lg bg-accent-500 px-4 py-2 font-semibold text-white shadow-sm hover:bg-accent-600"
-			>
-				Pick a song
-			</a>
+			<div class={data.gig ? 'mt-6' : ''}>
+				<p class="font-display text-xl text-surface-900 dark:text-surface-100">
+					Nothing planned yet
+				</p>
+				<p class="mt-1 max-w-prose text-sm text-surface-500 dark:text-surface-300">
+					Set up a warm-up, pick a technique, or mark a song you're learning, and Today builds a
+					session from them.
+				</p>
+				<div class="mt-5 flex flex-wrap gap-2">
+					<a
+						href="/practice/shed"
+						class="focus-live inline-block rounded-lg bg-accent-500 px-4 py-2 font-semibold text-white shadow-sm hover:bg-accent-600"
+					>
+						Pick a song
+					</a>
+					<a
+						href="/practice/warm-up"
+						class="focus-live inline-block rounded-lg border border-surface-300 px-4 py-2 text-sm font-medium text-surface-700 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-800"
+					>
+						Set up a warm-up
+					</a>
+					<a
+						href="/practice/techniques"
+						class="focus-live inline-block rounded-lg border border-surface-300 px-4 py-2 text-sm font-medium text-surface-700 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-800"
+					>
+						Browse techniques
+					</a>
+				</div>
+			</div>
 		{/if}
 	</div>
 

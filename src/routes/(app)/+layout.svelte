@@ -6,7 +6,11 @@
 	let { data, children } = $props();
 
 	// A phone on a music stand needs every pixel; the shed screen has a Back link
-	let immersive = $derived(page.route.id === '/(app)/songs/[id]/practice');
+	let immersive = $derived(
+		page.route.id === '/(app)/songs/[id]/practice' ||
+			page.route.id === '/(app)/demos/[id]/practice' ||
+			page.route.id === '/(app)/exercises/[id]'
+	);
 </script>
 
 <!-- app-shell is a print-CSS hook (see the print editor page) -->

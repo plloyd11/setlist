@@ -20,8 +20,8 @@
 		skill_id: string | null;
 	}): string | null {
 		if (item.song_id) return `/songs/${item.song_id}/practice?from=/practice/log`;
-		if (item.exercise_id) return `/practice/exercises/${item.exercise_id}?from=/practice/log`;
-		if (item.skill_id) return `/practice/skills/${item.skill_id}`;
+		if (item.exercise_id) return `/exercises/${item.exercise_id}?from=/practice/log`;
+		if (item.skill_id) return `/practice/techniques/${item.skill_id}`;
 		return null;
 	}
 

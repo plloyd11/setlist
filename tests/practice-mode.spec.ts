@@ -1,12 +1,19 @@
+import fs from 'node:fs';
 import { test, expect } from './fixtures';
 import {
 	createBand,
 	createSetlist,
 	createSong,
 	createSongAudio,
-	createSongFile
+	createSongFile,
+	createTrackData
 } from './helpers/factories';
-import { cleanupSongAudio, cleanupSongFiles, safeDelete } from './helpers/cleanup';
+import {
+	cleanupSongAudio,
+	cleanupSongFiles,
+	cleanupTrackAudio,
+	safeDelete
+} from './helpers/cleanup';
 import { createSecondUser } from './helpers/multi-user';
 import { adminClient } from './helpers/supabase-admin';
 
@@ -50,11 +57,11 @@ test.describe('Practice on the main menu', () => {
 });
 
 test.describe('Today', () => {
-	test('with no gig coming up, points at a song to shed', async ({ browser }) => {
+	test('with nothing planned, points at where to start', async ({ browser }) => {
 		const fresh = await createSecondUser(browser);
 		try {
 			await fresh.page.goto('/practice');
-			await expect(fresh.page.getByText('No gig coming up')).toBeVisible();
+			await expect(fresh.page.getByText('Nothing planned yet')).toBeVisible();
 			await expect(fresh.page.getByRole('link', { name: 'Pick a song' })).toHaveAttribute(
 				'href',
 				'/practice/shed'
@@ -111,8 +118,8 @@ test.describe('Today', () => {
 			const rows = member.page.getByRole('listitem').getByRole('link');
 			await expect(rows).toHaveCount(2);
 			await expect(rows.first()).toContainText('Encore Twice');
-			await expect(rows.first().getByRole('img', { name: 'Has audio' })).toBeVisible();
-			await expect(rows.last().getByRole('img', { name: 'Has a chart' })).toBeVisible();
+			await expect(rows.first()).toContainText('Has audio');
+			await expect(rows.last()).toContainText('Has a chart');
 
 			await rows.first().click();
 			await expect(member.page.getByRole('heading', { name: 'Encore Twice' })).toBeVisible();
@@ -189,6 +196,178 @@ test.describe('Shed list', () => {
 			await safeDelete('songs', stranger.id);
 			await safeDelete('bands', band.id);
 		}
+	});
+});
+
+test.describe('Shed demos', () => {
+	async function addVersion(trackId: string, bandId: string, userId: string, number: number) {
+		const path = `bands/${bandId}/tracks/${crypto.randomUUID()}.wav`;
+		const file = fs.readFileSync('tests/fixtures/sample.wav');
+		await adminClient.storage.from('tracks').upload(path, file, { contentType: 'audio/wav' });
+		const { error } = await adminClient.from('track_versions').insert({
+			track_id: trackId,
+			version_number: number,
+			storage_path: path,
+			file_name: `take-${number}.wav`,
+			mime_type: 'audio/wav',
+			file_size_bytes: file.length,
+			duration_seconds: 1,
+			uploaded_by: userId
+		});
+		if (error) throw new Error(error.message);
+	}
+
+	test("lists your bands' demos, opens the newest take, and logs time privately", async ({
+		page,
+		browser,
+		testUser
+	}) => {
+		const band = await createBand(page, testUser.id);
+		const demo = await createTrackData(band.id, testUser.id, { title: 'Bridge Idea' });
+		const member = await createSecondUser(browser);
+		const outsider = await createSecondUser(browser);
+		try {
+			await addVersion(demo.id, band.id, testUser.id, 2);
+			await adminClient
+				.from('band_members')
+				.insert({ band_id: band.id, user_id: member.user.id, role: 'member' });
+
+			// Not in the band: not in the list, and no way in by address
+			await outsider.page.goto('/practice/shed');
+			await expect(outsider.page.getByText('Nothing to shed yet')).toBeVisible();
+			await expect(outsider.page.getByText('Bridge Idea')).toHaveCount(0);
+			const denied = await outsider.page.goto(`/demos/${demo.id}/practice`);
+			expect(denied?.status()).toBe(404);
+
+			// No songs of your own: the demos still make it a page, not an empty state
+			await member.page.goto('/practice/shed');
+			await expect(member.page.getByText('Nothing to shed yet')).toHaveCount(0);
+			const demos = member.page.getByRole('region', { name: 'Demos' });
+			await expect(demos.getByRole('link')).toContainText('Bridge Idea');
+			await expect(demos.getByRole('link')).toContainText('2');
+
+			await member.page.getByLabel('Search songs and demos').fill('nothing like it');
+			await expect(demos).toHaveCount(0);
+			await expect(member.page.getByText('Nothing matches.')).toBeVisible();
+			await member.page.getByLabel('Search songs and demos').fill('bridge');
+			await demos.getByRole('link').click();
+
+			await expect(member.page).toHaveURL(new RegExp(`/demos/${demo.id}/practice`));
+			const heading = member.page.getByRole('heading', { name: 'Bridge Idea' });
+			await expect(heading).toBeVisible();
+			await expect(member.page.locator('a[href="/practice"]:visible')).toHaveAttribute(
+				'aria-current',
+				'page'
+			);
+
+			// The player is really loaded, on the newest take
+			const take = member.page.getByLabel('Mix');
+			await expect(take.locator('option:checked')).toHaveText('Version 2 (latest)');
+			await expect(member.page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+
+			// An old take is one tap away, but never where you land next time
+			await take.selectOption({ label: 'Version 1' });
+			await expect(take.locator('option:checked')).toHaveText('Version 1');
+			await member.page.reload();
+			await expect(take.locator('option:checked')).toHaveText('Version 2 (latest)');
+
+			await member.page.getByRole('link', { name: 'Back', exact: true }).click();
+			await expect(member.page).toHaveURL(/\/practice\/shed$/);
+
+			// Time counts toward the log, and belongs to the person who played
+			await member.page.clock.install();
+			await member.page.goto(`/demos/${demo.id}/practice`);
+			await expect(member.page.getByTestId('practice-clock')).toBeVisible();
+			await member.page.clock.runFor(65_000);
+			await expect
+				.poll(async () => {
+					const { data } = await adminClient
+						.from('practice_session_items')
+						.select('kind, song_id, practice_seconds, practice_sessions!inner(user_id)')
+						.eq('label', 'Bridge Idea')
+						.eq('practice_sessions.user_id', member.user.id);
+					return data?.[0]?.practice_seconds ?? 0;
+				})
+				.toBeGreaterThanOrEqual(60);
+		} finally {
+			await member.cleanup();
+			await outsider.cleanup();
+			await cleanupTrackAudio(band.id);
+			await safeDelete('bands', band.id);
+		}
+	});
+
+	test('shows the newest few first, with the rest a tap or a search away', async ({
+		page,
+		testUser
+	}) => {
+		const band = await createBand(page, testUser.id);
+		try {
+			for (const title of ['Oldest Demo', 'Second Demo', 'Third Demo', 'Newest Demo']) {
+				const { id } = await createTrackData(band.id, testUser.id, { title });
+				// updated_at is what orders the list, and these can land in one millisecond
+				await adminClient
+					.from('tracks')
+					.update({ updated_at: new Date(Date.now() + title.length).toISOString() })
+					.eq('id', id);
+			}
+			const { data: ordered } = await adminClient
+				.from('tracks')
+				.select('title')
+				.eq('band_id', band.id)
+				.order('updated_at', { ascending: false });
+			const titles = (ordered ?? []).map((t) => t.title);
+
+			await page.goto('/practice/shed');
+			const demos = page.getByRole('region', { name: 'Demos' });
+			const rows = demos.getByRole('link');
+			await expect(rows).toHaveCount(3);
+			await expect(rows.nth(0)).toContainText(titles[0]);
+			await expect(demos).not.toContainText(titles[3]);
+
+			// Search looks through all of them, not just the ones showing
+			await page.getByLabel('Search songs and demos').fill(titles[3]);
+			await expect(rows).toHaveCount(1);
+			await page.getByLabel('Search songs and demos').fill('');
+
+			await demos.getByRole('button', { name: 'Show all 4 demos' }).click();
+			await expect(rows).toHaveCount(4);
+			await expect(demos.getByRole('button')).toHaveCount(0);
+		} finally {
+			await cleanupTrackAudio(band.id);
+			await safeDelete('bands', band.id);
+		}
+	});
+
+	test('a setlist filter leaves only songs, because demos are not on setlists', async ({
+		page,
+		testUser
+	}) => {
+		const band = await createBand(page, testUser.id);
+		const song = await createSong(page, testUser.id, { title: 'On The Set' });
+		const setlist = await createSetlist(page, testUser.id, { name: 'Demo Free', gig_date: null });
+		try {
+			await createTrackData(band.id, testUser.id, { title: 'Off The Set' });
+			await adminClient
+				.from('setlist_songs')
+				.insert({ setlist_id: setlist.id, song_id: song.id, position: 0 });
+
+			await page.goto('/practice/shed');
+			await expect(page.getByRole('region', { name: 'Demos' })).toContainText('Off The Set');
+			await page.getByLabel('Filter by setlist').selectOption({ label: 'Demo Free' });
+			await expect(page.getByRole('region', { name: 'Demos' })).toHaveCount(0);
+			await expect(page.getByRole('link', { name: /On The Set/ })).toBeVisible();
+		} finally {
+			await safeDelete('setlists', setlist.id);
+			await safeDelete('songs', song.id);
+			await cleanupTrackAudio(band.id);
+			await safeDelete('bands', band.id);
+		}
+	});
+
+	test('a malformed address is a 404', async ({ page }) => {
+		const response = await page.goto('/demos/not-a-uuid/practice');
+		expect(response?.status()).toBe(404);
 	});
 });
 

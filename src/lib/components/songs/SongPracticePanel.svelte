@@ -34,6 +34,7 @@
 		media,
 		transport = true,
 		compactStrip = false,
+		versioned = false,
 		loadPeaks,
 		onfinish,
 		onplaystatechange,
@@ -56,6 +57,12 @@
 		transport?: boolean;
 		/** One quiet line, for screens that already have a loud reading and need the room */
 		compactStrip?: boolean;
+		/**
+		 * The variants are takes of one recording, newest first, not mixes of a song. So
+		 * each has its own length, and this always opens on the newest: nobody should
+		 * keep learning an old take without noticing the band has moved on.
+		 */
+		versioned?: boolean;
 		/** Fetches peaks for variants that don't carry them */
 		loadPeaks?: (variantId: string) => Promise<number[] | null>;
 		onfinish?: () => void;
@@ -77,6 +84,9 @@
 	// Audio exists but nothing signed — a storage/signing failure, not an
 	// empty library. Must not render as "No rehearsal audio yet".
 	let signingFailed = $derived(variants.length > 0 && playable.length === 0);
+	let shownLength = $derived(
+		versioned ? (currentVariant?.duration_seconds ?? lengthSeconds) : lengthSeconds
+	);
 
 	// DAW practice state — durable per song; the player instance is recreated
 	// per variant, so these are re-applied in applySettings on every `ready`
@@ -133,7 +143,7 @@
 	// The remembered choices live in localStorage (variant shared with rehearse
 	// mode), so they can only be applied after hydration
 	onMount(() => {
-		const remembered = getRememberedVariant(songId);
+		const remembered = versioned ? undefined : getRememberedVariant(songId);
 		if (remembered && playable.some((v) => v.id === remembered)) {
 			selectedVariantId = remembered;
 		}
@@ -173,7 +183,7 @@
 		playing = false;
 		playerReady = false;
 		sectionNotice = '';
-		rememberVariant(songId, id);
+		if (!versioned) rememberVariant(songId, id);
 	}
 
 	// Refresh signed URLs once if one expired mid-session; a second failure on
@@ -337,7 +347,7 @@
 		<div class="flex items-center gap-3">
 			<span class="text-sm font-medium text-surface-600 tabular-nums dark:text-surface-300">
 				<span class="sr-only">Length</span>
-				{formatDuration(lengthSeconds)}
+				{formatDuration(shownLength)}
 			</span>
 			{#if playable.length > 1}
 				<label for="practice-variant" class="sr-only">Mix</label>
@@ -375,7 +385,7 @@
 					Length
 				</p>
 				<p class="font-display text-xl font-bold text-accent-600 tabular-nums dark:text-accent-hot">
-					{formatDuration(lengthSeconds)}
+					{formatDuration(shownLength)}
 				</p>
 			</div>
 			{#if playable.length > 1}

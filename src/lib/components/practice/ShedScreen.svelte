@@ -4,6 +4,7 @@
 	import SongPracticePanel from '#lib/components/songs/SongPracticePanel.svelte';
 	import ChartList from '#lib/components/songs/ChartList.svelte';
 	import Metronome from '#lib/components/practice/Metronome.svelte';
+	import PlanBar from '#lib/components/practice/PlanBar.svelte';
 	import { PracticeTracker, type PracticeItemRef } from './practiceTracker.svelte.js';
 	import { formatDuration } from '#lib/utils/duration.js';
 	import { formatPracticeTime } from '#lib/utils/practiceTime.js';
@@ -23,6 +24,8 @@
 		emptyAudio,
 		side,
 		sideLabel = 'More',
+		prefsKey,
+		versioned = false,
 		onready
 	}: {
 		/** What this screen's practice time counts toward */
@@ -37,6 +40,10 @@
 		/** Extra tools beside the player: status, a run timer, uploads */
 		side?: Snippet<[PracticeTracker | null]>;
 		sideLabel?: string;
+		/** Keys remembered settings when the item has no link to keep in the practice log */
+		prefsKey?: string;
+		/** See SongPracticePanel */
+		versioned?: boolean;
 		onready?: () => void;
 	} = $props();
 
@@ -150,7 +157,7 @@
 			<div class="stage-pane {pane === 'metronome' ? '' : 'hidden md:block'}">
 				<Metronome
 					bind:this={metronome}
-					songId={item.refId ?? undefined}
+					songId={prefsKey ?? item.refId ?? undefined}
 					onrunningchange={(running) => (metronomeRunning = running)}
 				/>
 			</div>
@@ -199,7 +206,8 @@
 			</svg>
 			Back
 		</a>
-		<div class="ml-auto flex items-center gap-2">
+		<div class="ml-auto flex min-w-0 items-center gap-2">
+			<PlanBar />
 			{#if tracker}
 				<p class="text-right" aria-live="off">
 					<span class="sr-only">Practiced </span>
@@ -225,9 +233,10 @@
 
 	<SongPracticePanel
 		bind:this={panel}
-		songId={item.refId ?? item.label}
+		songId={prefsKey ?? item.refId ?? item.label}
 		{lengthSeconds}
 		{variants}
+		{versioned}
 		transport={false}
 		compactStrip
 		empty={emptyAudio}

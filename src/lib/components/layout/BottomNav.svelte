@@ -37,7 +37,9 @@
 	function isActive(pathname: string, href: string): boolean {
 		if (href === '/dashboard') return pathname === '/dashboard';
 		// The shed screen lives under a song's address but belongs to Practice
-		if (pathname.endsWith('/practice')) return href === '/practice';
+		if (pathname.endsWith('/practice') || pathname.startsWith('/exercises')) {
+			return href === '/practice';
+		}
 		return pathname.startsWith(href);
 	}
 </script>
