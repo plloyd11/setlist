@@ -3,6 +3,7 @@
 	import type { AlphaTabApi, model } from '@coderline/alphatab';
 	import { formatDuration } from '#lib/utils/duration.js';
 	import { practiceShortcut } from '#lib/utils/practiceKeys.js';
+	import { alignVisualsWithSound } from '#lib/utils/tabSoundSync.js';
 
 	let {
 		url,
@@ -72,6 +73,7 @@
 
 	onMount(() => {
 		let cancelled = false;
+		let stopAligning: (() => void) | undefined;
 
 		(async () => {
 			try {
@@ -108,6 +110,7 @@
 						enableUserInteraction: true
 					}
 				});
+				stopAligning = alignVisualsWithSound(api, alphaTab);
 				api.metronomeVolume = 0;
 				api.countInVolume = 0;
 
@@ -135,6 +138,7 @@
 
 		return () => {
 			cancelled = true;
+			stopAligning?.();
 			api?.destroy();
 			api = null;
 		};
