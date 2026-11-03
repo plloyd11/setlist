@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import type { TrackComment, Profile } from '$lib/types/database';
+	import type { TrackComment, Profile } from '#lib/types/database.js';
 
 	export type EnrichedComment = TrackComment & {
 		author_name: string;

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Setlist } from '$lib/types/database';
-	import { formatDuration } from '$lib/utils/duration';
+	import type { Setlist } from '#lib/types/database.js';
+	import { formatDuration } from '#lib/utils/duration.js';
 
 	let {
 		setlist,

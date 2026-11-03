@@ -1,17 +1,44 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { goto, invalidateAll } from '$app/navigation';
-	import WaveformPlayer from '$lib/components/tracks/WaveformPlayer.svelte';
-	import VersionSwitcher from '$lib/components/tracks/VersionSwitcher.svelte';
-	import TrackUploadForm from '$lib/components/tracks/TrackUploadForm.svelte';
-	import CommentForm from '$lib/components/tracks/CommentForm.svelte';
-	import CommentList, { type EnrichedComment } from '$lib/components/tracks/CommentList.svelte';
-	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
-	import Toast from '$lib/components/ui/Toast.svelte';
+	import { goto, refreshAll } from '$app/navigation';
+	import WaveformPlayer from '#lib/components/tracks/WaveformPlayer.svelte';
+	import VersionSwitcher from '#lib/components/tracks/VersionSwitcher.svelte';
+	import TrackUploadForm from '#lib/components/tracks/TrackUploadForm.svelte';
+	import CommentForm from '#lib/components/tracks/CommentForm.svelte';
+	import CommentList, { type EnrichedComment } from '#lib/components/tracks/CommentList.svelte';
+	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
+	import Toast from '#lib/components/ui/Toast.svelte';
 
 	let { data } = $props();
 
 	let bandId = $derived(data.band.id);
+
+	// Every load mints a new signed URL for the same file, and any comment action
+	// reruns the load. WaveformPlayer rebuilds itself when its URL changes, so give
+	// it a source that only changes when the audio really should: a different
+	// version, or a fresh link after a playback error.
+	function playerSource() {
+		return {
+			versionId: data.selectedVersion.id,
+			url: data.signedUrl,
+			peaks: data.selectedVersion.waveform_peaks,
+			duration: data.selectedVersion.duration_seconds
+		};
+	}
+	// svelte-ignore state_referenced_locally
+	let source = $state.raw(playerSource());
+	let wantFreshUrl = false;
+
+	$effect.pre(() => {
+		const next = playerSource();
+		untrack(() => {
+			if (next.versionId !== source.versionId || wantFreshUrl) {
+				source = next;
+				wantFreshUrl = false;
+			}
+		});
+	});
 	let showVersionForm = $state(false);
 	let currentTime = $state(0);
 	let replyTo = $state<EnrichedComment | null>(null);
@@ -85,7 +112,7 @@
 	function handleVersionUploaded(result: { versionNumber: number }) {
 		showVersionForm = false;
 		toast.show(`Version ${result.versionNumber} uploaded`, { variant: 'success' });
-		goto(`?version=${result.versionNumber}`, { noScroll: true, invalidateAll: true });
+		goto(`?version=${result.versionNumber}`, { reset: false, refreshAll: true });
 	}
 
 	function handleToggleResolve(comment: EnrichedComment) {
@@ -129,7 +156,8 @@
 		if (retriedVersionId !== data.selectedVersion.id) {
 			retriedVersionId = data.selectedVersion.id;
 			toast.show('Playback session expired — reloading', { variant: 'error' });
-			invalidateAll();
+			wantFreshUrl = true;
+			refreshAll();
 		} else {
 			failedVersionId = data.selectedVersion.id;
 		}
@@ -210,13 +238,13 @@
 
 	<!-- Player -->
 	<div class="mt-4">
-		{#if data.signedUrl && !audioFailed}
-			{#key data.selectedVersion.id}
+		{#if source.url && !audioFailed}
+			{#key source.versionId}
 				<WaveformPlayer
 					bind:this={player}
-					url={data.signedUrl}
-					peaks={data.selectedVersion.waveform_peaks}
-					duration={data.selectedVersion.duration_seconds}
+					url={source.url}
+					peaks={source.peaks}
+					duration={source.duration}
 					{markers}
 					ontimeupdate={(t) => (currentTime = t)}
 					onmarkerclick={(id) => commentList?.scrollToComment(id)}

@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import WaveformPlayer from '$lib/components/tracks/WaveformPlayer.svelte';
-	import { buildRehearseItems, RehearseState } from '$lib/components/rehearse/rehearseState.svelte';
-	import { formatDuration } from '$lib/utils/duration';
+	import WaveformPlayer from '#lib/components/tracks/WaveformPlayer.svelte';
+	import {
+		buildRehearseItems,
+		RehearseState
+	} from '#lib/components/rehearse/rehearseState.svelte.js';
+	import { formatDuration } from '#lib/utils/duration.js';
 
 	let { data } = $props();
 
@@ -327,17 +330,20 @@
 				{#if variant?.signedUrl}
 					{#if peaksReady}
 						<div class="mt-3">
-							<WaveformPlayer
-								bind:this={player}
-								url={variant.signedUrl}
-								peaks={currentPeaks}
-								duration={variant.duration_seconds}
-								onready={handlePlayerReady}
-								onfinish={() => rehearse.onAudioFinished()}
-								onplaystatechange={handlePlayStateChange}
-								ontimeupdate={(t) => (rehearse.songElapsed = t)}
-								onloaderror={() => (loadError = true)}
-							/>
+							<!-- Keyed per row, not per song: the same song twice in a row must reload -->
+							{#key item.key}
+								<WaveformPlayer
+									bind:this={player}
+									url={variant.signedUrl}
+									peaks={currentPeaks}
+									duration={variant.duration_seconds}
+									onready={handlePlayerReady}
+									onfinish={() => rehearse.onAudioFinished()}
+									onplaystatechange={handlePlayStateChange}
+									ontimeupdate={(t) => (rehearse.songElapsed = t)}
+									onloaderror={() => (loadError = true)}
+								/>
+							{/key}
 						</div>
 					{/if}
 					{#if autoplayBlocked}

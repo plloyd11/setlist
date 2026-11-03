@@ -1,5 +1,5 @@
 <script lang="ts">
-	import BandCard from '$lib/components/bands/BandCard.svelte';
+	import BandCard from '#lib/components/bands/BandCard.svelte';
 	import { enhance } from '$app/forms';
 
 	let { data } = $props();

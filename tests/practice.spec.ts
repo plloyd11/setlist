@@ -1,8 +1,8 @@
 /**
  * Per-song practice player E2E tests (PRACTICE-01..02).
  *
- * REQUIRES migrations 20260611220000_create_song_audio.sql and
- * 20260612000000_create_song_files.sql to be applied.
+ * REQUIRES migrations 20260611230456_create_song_audio.sql and
+ * 20260612023803_create_song_files.sql to be applied.
  *
  * Audio playback assertions stay shallow (player chrome renders, transport
  * enables) — headless Chromium audio output is not asserted.
@@ -43,6 +43,10 @@ test.describe('Practice player (PRACTICE-01)', () => {
 			await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 10_000 });
 
 			// The chart is listed; PDFs open the inline viewer
+			// The first PDF opens by itself; its chip closes and reopens it
+			await expect(page.locator('iframe[title^="Chart:"]')).toBeVisible();
+			await page.getByRole('button', { name: 'Tab', exact: true }).click();
+			await expect(page.locator('iframe[title^="Chart:"]')).toBeHidden();
 			await page.getByRole('button', { name: 'Tab', exact: true }).click();
 			await expect(page.locator('iframe[title^="Chart:"]')).toBeVisible();
 			await expect(page.getByRole('link', { name: 'Open in new tab' })).toBeVisible();

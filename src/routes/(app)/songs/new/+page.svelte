@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import Toast from '$lib/components/ui/Toast.svelte';
+	import Toast from '#lib/components/ui/Toast.svelte';
 
 	let { form } = $props();
 	let toast: Toast;

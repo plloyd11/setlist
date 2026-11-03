@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { formatDuration } from '$lib/utils/duration';
-	import { LOGO_SIZES, PRINT_FONT_FAMILIES } from '$lib/utils/printSettings';
-	import type { PrintSettings } from '$lib/types/database';
+	import { formatDuration } from '#lib/utils/duration.js';
+	import { LOGO_SIZES, PRINT_FONT_FAMILIES } from '#lib/utils/printSettings.js';
+	import type { PrintSettings } from '#lib/types/database.js';
 
 	// Matches the get_shared_setlist RPC entry shape: song rows carry
 	// title + notes, gap rows carry gap_seconds + gap_label.

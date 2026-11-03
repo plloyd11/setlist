@@ -1,7 +1,7 @@
-import { browser } from '$app/environment';
-import type { SongAudio } from '$lib/types/database';
-import { isTransitionPair } from '$lib/utils/setlistTiming';
-import { loadVariantChoices, saveVariantChoices } from '$lib/utils/variantChoice';
+import { browser } from '$app/env';
+import type { SongAudio } from '#lib/types/database.js';
+import { isTransitionPair } from '#lib/utils/setlistTiming.js';
+import { loadVariantChoices, saveVariantChoices } from '#lib/utils/variantChoice.js';
 
 // Peaks are deliberately absent: they're heavy (~10KB/variant) and fetched
 // lazily per-variant by the rehearse page, not shipped in the load payload.
@@ -17,7 +17,12 @@ export type RehearseItem =
 			durationSeconds: number;
 			variants: RehearseVariant[];
 	  }
-	| { kind: 'gap'; key: string; label: string | null; seconds: number }
+	| {
+			kind: 'gap';
+			key: string;
+			label: string | null;
+			seconds: number;
+	  }
 	| { kind: 'transition'; key: string; seconds: number };
 
 export interface RehearseSourceRow {
@@ -140,7 +145,6 @@ export class RehearseState {
 			0
 		)
 	);
-
 	#elapsedBefore = $derived(
 		this.items
 			.slice(0, this.status === 'finished' ? this.items.length : this.index)

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Setlist, Profile } from '$lib/types/database';
+	import type { Setlist, Profile } from '#lib/types/database.js';
 
 	let {
 		setlist,
@@ -17,7 +17,7 @@
 	let venueValue = $state('');
 
 	// Sync local state only when the SERVER value actually changes — an
-	// invalidateAll elsewhere gives `setlist` a new reference with the same
+	// refreshAll elsewhere gives `setlist` a new reference with the same
 	// values, and unconditionally syncing would wipe in-progress typing.
 	let lastServerName: string | undefined;
 	let lastServerDate: string | undefined;

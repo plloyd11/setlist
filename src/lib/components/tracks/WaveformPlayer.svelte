@@ -2,8 +2,8 @@
 	import type WaveSurfer from 'wavesurfer.js';
 	import type RegionsPlugin from 'wavesurfer.js/plugins/regions';
 	import type { Region } from 'wavesurfer.js/plugins/regions';
-	import { formatDuration } from '$lib/utils/duration';
-	import { PRE_ROLL_SECONDS } from '$lib/utils/practicePrefs';
+	import { formatDuration } from '#lib/utils/duration.js';
+	import { MIN_LOOP_SECONDS, PRE_ROLL_SECONDS } from '#lib/utils/practicePrefs.js';
 
 	export interface WaveformMarker {
 		id: string;
@@ -20,6 +20,8 @@
 		duration = null,
 		markers = [],
 		practice = false,
+		media,
+		transport = true,
 		ontimeupdate,
 		onmarkerclick,
 		onloaderror,
@@ -34,6 +36,14 @@
 		markers?: WaveformMarker[];
 		/** Enables the DAW practice surface: loop region drag-selection + skip buttons */
 		practice?: boolean;
+		/** A media element owned by the caller, reused across player instances. iOS only
+		 * lets an element play without a tap once it has played from one, so a page that
+		 * advances on its own must keep the same element. Cleared on every teardown:
+		 * destroy() leaves external media alone, and wavesurfer skips setting an identical
+		 * URL, so the same song twice in a row would otherwise never reload. */
+		media?: HTMLMediaElement;
+		/** False when the caller renders its own transport: only the time readout stays */
+		transport?: boolean;
 		ontimeupdate?: (time: number) => void;
 		onmarkerclick?: (id: string) => void;
 		onloaderror?: () => void;
@@ -44,11 +54,9 @@
 		onregionchange?: (region: { start: number; end: number } | null) => void;
 	} = $props();
 
-	const MIN_LOOP_SECONDS = 0.5;
-
 	let container: HTMLDivElement;
 	let ws: WaveSurfer | null = null;
-	let regions: RegionsPlugin | null = null;
+	let regions: ReturnType<(typeof RegionsPlugin)['create']> | null = null;
 	let loopRegion: Region | null = null;
 	let loopEnabled = $state(false);
 	let preRollOn = false;
@@ -103,13 +111,15 @@
 
 			instance = WaveSurferCtor.create({
 				container,
+				media,
 				url: sourceUrl,
 				// Stored peaks + duration let wavesurfer render immediately and
 				// stream playback via media element instead of downloading and
 				// decoding the whole file.
 				peaks: sourcePeaks ? [sourcePeaks] : undefined,
 				duration: sourceDuration ?? undefined,
-				height: 80,
+				// A page with its own transport is short of room on a phone
+				height: !transport && window.matchMedia('(max-width: 767px)').matches ? 56 : 80,
 				normalize: true,
 				barWidth: 2,
 				barGap: 1,
@@ -155,9 +165,10 @@
 				onplaystatechange?.(false);
 			});
 			instance.on('finish', () => {
-				// A loop whose B point sits at the end of the file can hit the media
-				// 'ended' event before the tick check below — re-arm instead of stopping
-				if (loopEnabled && loopRegion && loopRegion.end >= totalDuration - 0.1) {
+				// An armed loop always wins. A B point at the end of the file can hit the
+				// media 'ended' event before the tick check below, and a seek past B plays
+				// on to the end: either way, re-trap instead of stopping.
+				if (loopEnabled && loopRegion) {
 					instance?.setTime(loopJumpTarget());
 					void instance?.play().catch(() => {});
 					return;
@@ -197,6 +208,11 @@
 			cancelled = true;
 			disableDragSelection?.();
 			instance?.destroy();
+			if (media) {
+				media.pause();
+				media.removeAttribute('src');
+				media.load();
+			}
 			ws = null;
 			regions = null;
 			loopRegion = null;
@@ -334,7 +350,9 @@
 </script>
 
 <div
-	class="rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-800 dark:bg-surface-900"
+	class="rounded-xl border border-surface-200 bg-surface-50 dark:border-surface-800 dark:bg-surface-900 {transport
+		? 'p-4'
+		: 'p-2 md:p-4'}"
 >
 	<!-- Waveform + comment markers -->
 	<div class="relative">
@@ -351,9 +369,9 @@
 				Math.round(totalDuration)
 			)}"
 			onkeydown={handleSeekKeydown}
-			class="focus-live waveform-region-host min-h-[80px] rounded {loopEnabled
-				? 'loop-active'
-				: ''}"
+			class="focus-live waveform-region-host rounded {transport
+				? 'min-h-[80px]'
+				: 'min-h-14 md:min-h-[80px]'} {loopEnabled ? 'loop-active' : ''}"
 		></div>
 
 		{#if totalDuration > 0}
@@ -397,8 +415,8 @@
 	</div>
 
 	<!-- Transport -->
-	<div class="mt-3 flex items-center gap-3">
-		{#if practice}
+	<div class="flex items-center gap-3 {transport ? 'mt-3' : 'mt-1 md:mt-2'}">
+		{#if practice && transport}
 			<button
 				type="button"
 				onclick={() => seekTo(Math.max(0, currentTime - 5))}
@@ -421,25 +439,29 @@
 				</svg>
 			</button>
 		{/if}
-		<button
-			type="button"
-			onclick={playPause}
-			disabled={!ready}
-			class="focus-live flex h-11 w-11 items-center justify-center rounded-full bg-accent-500 text-white shadow-sm hover:bg-accent-600 disabled:opacity-50"
-			aria-label={playing ? 'Pause' : 'Play'}
-		>
-			{#if playing}
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-					<rect x="6" y="4" width="4" height="16" rx="1" />
-					<rect x="14" y="4" width="4" height="16" rx="1" />
-				</svg>
-			{:else}
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-					<path d="M8 5.14v13.72a1 1 0 001.5.86l11-6.86a1 1 0 000-1.72l-11-6.86a1 1 0 00-1.5.86z" />
-				</svg>
-			{/if}
-		</button>
-		{#if practice}
+		{#if transport}
+			<button
+				type="button"
+				onclick={playPause}
+				disabled={!ready}
+				class="focus-live flex h-11 w-11 items-center justify-center rounded-full bg-accent-500 text-white shadow-sm hover:bg-accent-600 disabled:opacity-50"
+				aria-label={playing ? 'Pause' : 'Play'}
+			>
+				{#if playing}
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+						<rect x="6" y="4" width="4" height="16" rx="1" />
+						<rect x="14" y="4" width="4" height="16" rx="1" />
+					</svg>
+				{:else}
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+						<path
+							d="M8 5.14v13.72a1 1 0 001.5.86l11-6.86a1 1 0 000-1.72l-11-6.86a1 1 0 00-1.5.86z"
+						/>
+					</svg>
+				{/if}
+			</button>
+		{/if}
+		{#if practice && transport}
 			<button
 				type="button"
 				onclick={() => seekTo(Math.min(totalDuration, currentTime + 5))}

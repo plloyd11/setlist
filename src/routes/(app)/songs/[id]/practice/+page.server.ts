@@ -1,10 +1,8 @@
-import { error } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
-import type { SongAudio, SongFile } from '$lib/types/database';
-
-// 6h — outlives any realistic practice session; WaveformPlayer's onloaderror
-// path covers the rare mid-session expiry.
-const SIGNED_URL_TTL = 21600;
+import { error, fail } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
+import type { SongAudio, SongFile } from '#lib/types/database.js';
+import { safeInternalPath } from '#lib/utils/safeRedirect.js';
+import { signAll } from '#lib/server/songMedia.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -34,7 +32,7 @@ export const load: PageServerLoad = async ({
 	] = await Promise.all([
 		supabase
 			.from('songs')
-			.select('id, title, duration_seconds, notes')
+			.select('id, user_id, title, duration_seconds, notes')
 			.eq('id', params.id)
 			.single(),
 		// Peaks ship inline — one song's variants are a few tens of KB, not
@@ -66,44 +64,112 @@ export const load: PageServerLoad = async ({
 	const audio = (audioRaw ?? []) as SongAudio[];
 	const files = (filesRaw ?? []) as SongFile[];
 
-	// One round-trip per bucket signs everything; per-path failures (deleted
-	// object, revoked access) come back as null and render as unavailable.
-	const signAll = async (bucket: string, paths: string[]) => {
-		const byPath = new Map<string, string | null>();
-		if (paths.length === 0) return byPath;
-		const { data: signed } = await supabase.storage
-			.from(bucket)
-			.createSignedUrls(paths, SIGNED_URL_TTL);
-		for (const entry of signed ?? []) {
-			if (entry.path) byPath.set(entry.path, entry.error ? null : entry.signedUrl);
-		}
-		return byPath;
-	};
-
 	const [audioUrls, fileUrls] = await Promise.all([
 		signAll(
+			supabase,
 			'song-audio',
 			audio.map((v) => v.storage_path)
 		),
 		signAll(
+			supabase,
 			'song-files',
 			files.map((f) => f.storage_path)
 		)
 	]);
 
-	// Internal-path check so ?from= can't bounce users to another origin.
-	// Backslashes are rejected too: browsers normalize "\" to "/", so
-	// "/\evil.com" would otherwise resolve as a protocol-relative URL.
-	const from = url.searchParams.get('from');
-	const backHref =
-		from && from.startsWith('/') && !from.startsWith('//') && !from.includes('\\')
-			? from
-			: '/songs';
+	// Internal-path check so ?from= can't bounce users to another origin
+	const backHref = safeInternalPath(url.searchParams.get('from'), '/songs');
+
+	const [{ data: practice }, { count: bandLinks }] = await Promise.all([
+		supabase
+			.from('song_practice')
+			.select('status, note')
+			.eq('song_id', params.id)
+			.eq('user_id', session.user.id)
+			.maybeSingle(),
+		supabase
+			.from('band_songs')
+			.select('song_id', { count: 'exact', head: true })
+			.eq('song_id', params.id)
+	]);
 
 	return {
 		song,
 		variants: audio.map((v) => ({ ...v, signedUrl: audioUrls.get(v.storage_path) ?? null })),
 		charts: files.map((f) => ({ ...f, signedUrl: fileUrls.get(f.storage_path) ?? null })),
-		backHref
+		backHref,
+		practice: practice ?? null,
+		// A timed run changes this song for someone else too: the app warns first
+		isShared: song.user_id !== session.user.id || (bandLinks ?? 0) > 0
 	};
+};
+
+const STATUSES = new Set(['learning', 'needs_work', 'solid']);
+const MAX_NOTE_LENGTH = 500;
+const MAX_SONG_SECONDS = 86_400;
+
+export const actions: Actions = {
+	setStatus: async ({ params, request, locals: { supabase, safeGetSession } }) => {
+		const { session } = await safeGetSession();
+		if (!session) return fail(401, { error: 'Not authenticated' });
+
+		const formData = await request.formData();
+		const status = (formData.get('status') as string) ?? '';
+		const note = ((formData.get('note') as string) ?? '').trim().slice(0, MAX_NOTE_LENGTH);
+
+		if (status === '') {
+			const { error: deleteError } = await supabase
+				.from('song_practice')
+				.delete()
+				.eq('song_id', params.id)
+				.eq('user_id', session.user.id);
+			if (deleteError) return fail(500, { error: 'Could not save status' });
+			return { status: null };
+		}
+		if (!STATUSES.has(status)) return fail(400, { error: 'Invalid status' });
+
+		// RLS only accepts songs the caller can see
+		const { error: upsertError } = await supabase.from('song_practice').upsert(
+			{
+				user_id: session.user.id,
+				song_id: params.id,
+				status,
+				note: note || null,
+				updated_at: new Date().toISOString()
+			},
+			{ onConflict: 'user_id,song_id' }
+		);
+		if (upsertError) return fail(500, { error: 'Could not save status' });
+		return { status };
+	},
+
+	applyLength: async ({ params, request, locals: { supabase, safeGetSession } }) => {
+		const { session } = await safeGetSession();
+		if (!session) return fail(401, { error: 'Not authenticated' });
+
+		const formData = await request.formData();
+		const seconds = Number(formData.get('seconds'));
+		const expected = Number(formData.get('expected'));
+		if (
+			!Number.isInteger(seconds) ||
+			seconds <= 0 ||
+			seconds > MAX_SONG_SECONDS ||
+			!Number.isInteger(expected)
+		) {
+			return fail(400, { error: 'Invalid length' });
+		}
+
+		// songs has no updated_at, so compare against the length the musician saw: a
+		// bandmate's edit in the meantime makes this match nothing rather than be overwritten.
+		// RLS limits this to the owner and members of a band it's linked to.
+		const { data: updated, error: updateError } = await supabase
+			.from('songs')
+			.update({ duration_seconds: seconds })
+			.eq('id', params.id)
+			.eq('duration_seconds', expected)
+			.select('id');
+		if (updateError) return fail(500, { error: 'Could not update the length' });
+		if (!updated?.length) return fail(409, { error: 'The song changed in the meantime' });
+		return { seconds };
+	}
 };

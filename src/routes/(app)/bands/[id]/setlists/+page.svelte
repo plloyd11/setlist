@@ -1,7 +1,7 @@
 <script lang="ts">
-	import SetlistCard from '$lib/components/setlists/SetlistCard.svelte';
-	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
-	import Toast from '$lib/components/ui/Toast.svelte';
+	import SetlistCard from '#lib/components/setlists/SetlistCard.svelte';
+	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
+	import Toast from '#lib/components/ui/Toast.svelte';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 

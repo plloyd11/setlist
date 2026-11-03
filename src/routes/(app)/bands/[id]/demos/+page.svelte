@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto, refreshAll } from '$app/navigation';
 	import { deserialize } from '$app/forms';
-	import TrackCard from '$lib/components/tracks/TrackCard.svelte';
-	import TrackUploadForm from '$lib/components/tracks/TrackUploadForm.svelte';
-	import FolderRow from '$lib/components/tracks/FolderRow.svelte';
-	import MoveDialog from '$lib/components/tracks/MoveDialog.svelte';
-	import FolderNameDialog from '$lib/components/tracks/FolderNameDialog.svelte';
-	import Breadcrumb from '$lib/components/ui/Breadcrumb.svelte';
-	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
-	import ContextMenu from '$lib/components/ui/ContextMenu.svelte';
-	import Toast from '$lib/components/ui/Toast.svelte';
-	import { TRACK_DRAG_TYPE, FOLDER_DRAG_TYPE } from '$lib/utils/trackDrag';
+	import TrackCard from '#lib/components/tracks/TrackCard.svelte';
+	import TrackUploadForm from '#lib/components/tracks/TrackUploadForm.svelte';
+	import FolderRow from '#lib/components/tracks/FolderRow.svelte';
+	import MoveDialog from '#lib/components/tracks/MoveDialog.svelte';
+	import FolderNameDialog from '#lib/components/tracks/FolderNameDialog.svelte';
+	import Breadcrumb from '#lib/components/ui/Breadcrumb.svelte';
+	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
+	import ContextMenu from '#lib/components/ui/ContextMenu.svelte';
+	import Toast from '#lib/components/ui/Toast.svelte';
+	import { TRACK_DRAG_TYPE, FOLDER_DRAG_TYPE } from '#lib/utils/trackDrag.js';
 
 	let { data } = $props();
 
@@ -86,7 +86,7 @@
 		const response = await fetch(`?/${action}`, { method: 'POST', body });
 		const result = deserialize(await response.text());
 		if (result.type === 'success') {
-			await invalidateAll();
+			await refreshAll();
 			return null;
 		}
 		if (result.type === 'failure') {

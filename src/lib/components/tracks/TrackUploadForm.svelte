@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SupabaseClient } from '@supabase/supabase-js';
-	import AudioUploadZone from '$lib/components/ui/AudioUploadZone.svelte';
+	import AudioUploadZone from '#lib/components/ui/AudioUploadZone.svelte';
 
 	let {
 		bandId,

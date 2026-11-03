@@ -114,7 +114,8 @@
 				</p>
 				<p>
 					Attach rehearsal audio as variants — "Full mix", "No guitar" — so everyone plays along
-					against the mix they need. Charts and tabs (PDF, Word, Guitar Pro) live on the song too.
+					against the mix they need. Charts and tabs (PDF, Word, Guitar Pro, TuxGuitar) live on the
+					song too.
 				</p>
 				<p>
 					Open a song and hit <span class="font-medium text-surface-700 dark:text-surface-200"

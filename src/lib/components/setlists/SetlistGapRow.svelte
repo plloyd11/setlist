@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatDuration } from '$lib/utils/duration';
+	import { formatDuration } from '#lib/utils/duration.js';
 
 	let {
 		gap,
@@ -15,7 +15,7 @@
 
 	let seconds = $derived(gap.gap_seconds ?? 30);
 
-	// Editable label, synced from the prop (e.g. after invalidateAll)
+	// Editable label, synced from the prop (e.g. after refreshAll)
 	let labelInput = $state('');
 	$effect(() => {
 		labelInput = gap.gap_label ?? '';

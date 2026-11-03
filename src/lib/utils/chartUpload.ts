@@ -1,13 +1,23 @@
 /**
  * Client-side pieces of the chart/tab upload flow (song_files). Shares the
  * generic signed-URL PUT with audioUpload.ts; validation here is
- * extension-based because Guitar Pro files have no registered MIME type —
+ * extension-based because Guitar Pro and TuxGuitar files have no registered MIME type —
  * browsers report them as empty or application/octet-stream.
  */
 
 export const MAX_CHART_FILE_SIZE = 25 * 1024 * 1024; // matches the bucket file_size_limit
 
-export const CHART_EXTENSIONS = ['pdf', 'doc', 'docx', 'gp', 'gp3', 'gp4', 'gp5', 'gpx'] as const;
+export const CHART_EXTENSIONS = [
+	'pdf',
+	'doc',
+	'docx',
+	'gp',
+	'gp3',
+	'gp4',
+	'gp5',
+	'gpx',
+	'tg'
+] as const;
 
 export const CHART_ACCEPT = CHART_EXTENSIONS.map((ext) => `.${ext}`).join(',');
 
@@ -22,7 +32,8 @@ const EXT_MIME: Record<string, string> = {
 	gp3: 'application/octet-stream',
 	gp4: 'application/octet-stream',
 	gp5: 'application/octet-stream',
-	gpx: 'application/octet-stream'
+	gpx: 'application/octet-stream',
+	tg: 'application/octet-stream'
 };
 
 export function resolveChartMimeType(f: File): string | null {

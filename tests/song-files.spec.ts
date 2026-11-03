@@ -1,7 +1,7 @@
 /**
  * Song charts & tabs E2E tests (FILE-01..02).
  *
- * REQUIRES migration 20260612000000_create_song_files.sql to be applied
+ * REQUIRES migration 20260612023803_create_song_files.sql to be applied
  * (song_files table + the private 'song-files' storage bucket).
  *
  * Uploads go through the real dropzone (signed-URL PUT direct to storage,
@@ -94,7 +94,10 @@ test.describe('Song charts band visibility (FILE-02)', () => {
 			// navigation request instead of waiting for the page to load.
 			const signedNav = userB.page
 				.context()
-				.waitForEvent('request', (r) => r.isNavigationRequest() && r.url().includes('/object/sign/'));
+				.waitForEvent(
+					'request',
+					(r) => r.isNavigationRequest() && r.url().includes('/object/sign/')
+				);
 			const popupPromise = userB.page.waitForEvent('popup');
 			await panel.getByLabel('Open Lead sheet').click();
 			await popupPromise;

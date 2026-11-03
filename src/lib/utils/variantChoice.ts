@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 // Variant choice is song-scoped, not setlist-scoped — "no guitar" is a
 // property of how this user rehearses that song, wherever it appears.

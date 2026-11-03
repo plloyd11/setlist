@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createBrowserClient } from '@supabase/ssr';
-	import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
-	import { invalidateAll } from '$app/navigation';
+	import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$app/env/public';
+	import { refreshAll } from '$app/navigation';
 
 	let {
 		currentLogoUrl = null,
@@ -11,15 +11,16 @@
 		column = 'logo_url',
 		label = 'Profile Photo / Band Logo',
 		previewOnLight = false
+
+		// bands only: which column the URL is saved to (logo_url | logo_dark_url)
+		// Preview dark logos on a white chip so they're visible in the dark UI
 	}: {
 		currentLogoUrl: string | null;
 		userId: string;
 		table?: 'profiles' | 'bands';
 		storagePath?: string;
-		// bands only: which column the URL is saved to (logo_url | logo_dark_url)
 		column?: 'logo_url' | 'logo_dark_url';
 		label?: string;
-		// Preview dark logos on a white chip so they're visible in the dark UI
 		previewOnLight?: boolean;
 	} = $props();
 
@@ -96,7 +97,7 @@
 			}
 
 			previewUrl = publicUrl;
-			await invalidateAll();
+			await refreshAll();
 		} catch {
 			error = 'An unexpected error occurred.';
 		} finally {
@@ -158,7 +159,7 @@
 			}
 
 			previewUrl = null;
-			await invalidateAll();
+			await refreshAll();
 		} catch {
 			error = 'An unexpected error occurred.';
 		} finally {
@@ -239,7 +240,7 @@
 						stroke-linecap="round"
 						stroke-linejoin="round"
 						d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
-					/>
+					></path>
 				</svg>
 				<span class="text-sm text-surface-500 dark:text-surface-300">
 					{uploading ? 'Uploading...' : 'Click or drag to upload logo'}
@@ -255,19 +256,13 @@
 				class="absolute inset-0 flex items-center justify-center rounded-xl bg-surface-50/70 dark:bg-surface-900/70"
 			>
 				<svg class="h-6 w-6 animate-spin text-accent-500" viewBox="0 0 24 24" fill="none">
-					<circle
-						cx="12"
-						cy="12"
-						r="10"
-						stroke="currentColor"
-						stroke-width="4"
-						class="opacity-25"
-					/>
+					<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"
+					></circle>
 					<path
 						fill="currentColor"
 						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
 						class="opacity-75"
-					/>
+					></path>
 				</svg>
 			</div>
 		{/if}

@@ -5,16 +5,64 @@ const MAX_FILE_SIZE = 25 * 1024 * 1024; // mirrors the bucket file_size_limit
 const MAX_LABEL_LENGTH = 60;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Extension is the real gate (Guitar Pro has no registered MIME type — the
+// Extension is the real gate (Guitar Pro and TuxGuitar have no registered MIME type — the
 // bucket allowlist has to admit application/octet-stream); mirror the client
-// list in $lib/utils/chartUpload.ts.
-const ALLOWED_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'gp', 'gp3', 'gp4', 'gp5', 'gpx']);
+// list in #lib/utils/chartUpload.js.
+const ALLOWED_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'gp', 'gp3', 'gp4', 'gp5', 'gpx', 'tg']);
 const ALLOWED_MIME_TYPES = new Set([
 	'application/pdf',
 	'application/msword',
 	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 	'application/octet-stream'
 ]);
+
+/**
+ * Validate the metadata of a chart already in storage. Shared by song charts and
+ * exercise charts: `ownerField` is the form field holding the parent's id, and
+ * `folder` is its top-level storage folder.
+ */
+export function parseFileUpload(formData: FormData, ownerField: string, folder: string) {
+	const ownerId = ((formData.get(ownerField) as string) ?? '').trim();
+	const label = ((formData.get('label') as string) ?? '').trim();
+	const storagePath = (formData.get('storage_path') as string) ?? '';
+	const fileName = ((formData.get('file_name') as string) ?? '').trim();
+	const mimeType = (formData.get('mime_type') as string) ?? '';
+	const fileSize = Number(formData.get('file_size_bytes'));
+
+	if (!UUID_RE.test(ownerId)) {
+		return { error: fail(400, { error: 'Invalid song' }) };
+	}
+	if (label.length > MAX_LABEL_LENGTH) {
+		return { error: fail(400, { error: `Label must be ${MAX_LABEL_LENGTH} characters or fewer` }) };
+	}
+	if (!storagePath.startsWith(`${folder}/${ownerId}/`)) {
+		return { error: fail(400, { error: 'Invalid storage path' }) };
+	}
+	if (!fileName) {
+		return { error: fail(400, { error: 'File name is required' }) };
+	}
+	const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
+	if (!ALLOWED_EXTENSIONS.has(ext)) {
+		return { error: fail(400, { error: 'Unsupported file type' }) };
+	}
+	if (!ALLOWED_MIME_TYPES.has(mimeType)) {
+		return { error: fail(400, { error: 'Unsupported file type' }) };
+	}
+	if (!Number.isFinite(fileSize) || fileSize <= 0 || fileSize > MAX_FILE_SIZE) {
+		return { error: fail(400, { error: 'Invalid file size' }) };
+	}
+
+	return {
+		ownerId,
+		row: {
+			label: label || null,
+			storage_path: storagePath,
+			file_name: fileName,
+			mime_type: mimeType,
+			file_size_bytes: fileSize
+		}
+	};
+}
 
 /**
  * Handler for the song chart/tab upload form action. The file is already in
@@ -25,49 +73,13 @@ const ALLOWED_MIME_TYPES = new Set([
  * file to someone else's song.
  */
 export async function processSongFileUpload(supabase: SupabaseClient, request: Request) {
-	const formData = await request.formData();
-
-	const songId = ((formData.get('song_id') as string) ?? '').trim();
-	const label = ((formData.get('label') as string) ?? '').trim();
-	const storagePath = (formData.get('storage_path') as string) ?? '';
-	const fileName = ((formData.get('file_name') as string) ?? '').trim();
-	const mimeType = (formData.get('mime_type') as string) ?? '';
-	const fileSize = Number(formData.get('file_size_bytes'));
-
-	if (!UUID_RE.test(songId)) {
-		return fail(400, { error: 'Invalid song' });
-	}
-	if (label.length > MAX_LABEL_LENGTH) {
-		return fail(400, { error: `Label must be ${MAX_LABEL_LENGTH} characters or fewer` });
-	}
-	if (!storagePath.startsWith(`songs/${songId}/`)) {
-		return fail(400, { error: 'Invalid storage path' });
-	}
-	if (!fileName) {
-		return fail(400, { error: 'File name is required' });
-	}
-	const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
-	if (!ALLOWED_EXTENSIONS.has(ext)) {
-		return fail(400, { error: 'Unsupported file type' });
-	}
-	if (!ALLOWED_MIME_TYPES.has(mimeType)) {
-		return fail(400, { error: 'Unsupported file type' });
-	}
-	if (!Number.isFinite(fileSize) || fileSize <= 0 || fileSize > MAX_FILE_SIZE) {
-		return fail(400, { error: 'Invalid file size' });
-	}
+	const parsed = parseFileUpload(await request.formData(), 'song_id', 'songs');
+	if (parsed.error) return parsed.error;
 
 	// .select() so an RLS-filtered no-op fails loudly instead of faking success
 	const { data, error } = await supabase
 		.from('song_files')
-		.insert({
-			song_id: songId,
-			label: label || null,
-			storage_path: storagePath,
-			file_name: fileName,
-			mime_type: mimeType,
-			file_size_bytes: fileSize
-		})
+		.insert({ song_id: parsed.ownerId, ...parsed.row })
 		.select('id')
 		.single();
 

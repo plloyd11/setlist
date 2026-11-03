@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import gsap from 'gsap';
 	import ThemeToggle from './ThemeToggle.svelte';
 	import {
@@ -8,7 +8,7 @@
 		initSidebar,
 		setSidebarMode,
 		type SidebarMode
-	} from '$lib/stores/sidebar.svelte';
+	} from '#lib/stores/sidebar.svelte.js';
 
 	interface Props {
 		user: { email?: string; user_metadata?: { full_name?: string; avatar_url?: string } } | null;
@@ -33,6 +33,11 @@
 			icon: 'M4 6h16M4 10h16M4 14h10M4 18h10'
 		},
 		{
+			href: '/practice',
+			label: 'Practice',
+			icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664zM21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+		},
+		{
 			href: '/bands',
 			label: 'Bands',
 			icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'
@@ -51,6 +56,10 @@
 
 	function isActive(pathname: string, href: string): boolean {
 		if (href === '/dashboard') return pathname === '/dashboard';
+		// The shed screen lives under a song's address but belongs to Practice
+		if (pathname.endsWith('/practice') || pathname.startsWith('/exercises')) {
+			return href === '/practice';
+		}
 		return pathname.startsWith(href);
 	}
 
@@ -184,11 +193,11 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 						stroke-linecap="round"
 						stroke-linejoin="round"
 					>
-						<path d="M21 15V6" />
-						<path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-						<path d="M12 12H3" />
-						<path d="M16 6H3" />
-						<path d="M12 18H3" />
+						<path d="M21 15V6"></path>
+						<path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"></path>
+						<path d="M12 12H3"></path>
+						<path d="M16 6H3"></path>
+						<path d="M12 18H3"></path>
 					</svg>
 				</span>
 				<span class="nav-label font-display text-2xl whitespace-nowrap">Setlist</span>
@@ -200,9 +209,10 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 			{#each navItems as item}
 				<a
 					href={item.href}
+					aria-current={isActive(page.url.pathname, item.href) ? 'page' : undefined}
 					title={item.label}
 					class="focus-live flex h-10 items-center rounded-lg text-sm transition-colors
-						{isActive($page.url.pathname, item.href)
+						{isActive(page.url.pathname, item.href)
 						? 'bg-surface-200/70 font-semibold text-surface-950 dark:bg-surface-800 dark:text-surface-50'
 						: 'font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'}"
 				>
@@ -216,10 +226,8 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 							stroke="currentColor"
 							stroke-width="2"
 							stroke-linecap="round"
-							stroke-linejoin="round"
+							stroke-linejoin="round"><path d={item.icon}></path></svg
 						>
-							<path d={item.icon} />
-						</svg>
 					</span>
 					<span class="nav-label whitespace-nowrap">{item.label}</span>
 				</a>
@@ -270,8 +278,8 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 						stroke-linecap="round"
 						stroke-linejoin="round"
 					>
-						<rect width="18" height="18" x="3" y="3" rx="2" />
-						<path d="M9 3v18" />
+						<rect width="18" height="18" x="3" y="3" rx="2"></rect>
+						<path d="M9 3v18"></path>
 					</svg>
 				</span>
 				<span class="nav-label whitespace-nowrap">Sidebar control</span>

@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import { fade, fly } from 'svelte/transition';
 	import type { SupabaseClient } from '@supabase/supabase-js';
-	import type { SongAudio, SongFile } from '$lib/types/database';
-	import AudioUploadZone from '$lib/components/ui/AudioUploadZone.svelte';
-	import FileUploadZone from '$lib/components/ui/FileUploadZone.svelte';
-	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
-	import { formatDuration } from '$lib/utils/duration';
+	import type { SongAudio, SongFile } from '#lib/types/database.js';
+	import AudioUploadZone from '#lib/components/ui/AudioUploadZone.svelte';
+	import FileUploadZone from '#lib/components/ui/FileUploadZone.svelte';
+	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
+	import { formatDuration } from '#lib/utils/duration.js';
 
 	type Variant = Omit<SongAudio, 'waveform_peaks'>;
 
@@ -156,7 +156,7 @@
 			return;
 		}
 		renamingId = null;
-		await invalidateAll();
+		await refreshAll();
 	}
 
 	function handleRenameKeydown(e: KeyboardEvent) {
@@ -579,7 +579,7 @@
 				Charts & tabs
 			</h4>
 			<p class="mt-0.5 text-xs text-surface-500 dark:text-surface-300">
-				PDFs, Word docs, and Guitar Pro files — chord charts, tabs, lyric sheets.
+				PDFs, Word docs, Guitar Pro and TuxGuitar files: chord charts, tabs, lyric sheets.
 			</p>
 
 			{#if files.length > 0}

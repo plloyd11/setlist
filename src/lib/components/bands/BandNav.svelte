@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import BandLogo from './BandLogo.svelte';
 
 	interface Props {
@@ -43,7 +43,7 @@
 			<a
 				href={tab.href}
 				class="focus-live flex items-center rounded-lg px-3 py-2 text-sm transition-colors
-					{isActive($page.url.pathname, tab.href, tab.exact)
+					{isActive(page.url.pathname, tab.href, tab.exact)
 					? 'bg-surface-200/70 font-semibold text-surface-950 dark:bg-surface-800 dark:text-surface-50'
 					: 'font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'}"
 			>
@@ -70,7 +70,7 @@
 			<a
 				href={tab.href}
 				class="border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors
-					{isActive($page.url.pathname, tab.href, tab.exact)
+					{isActive(page.url.pathname, tab.href, tab.exact)
 					? 'border-accent-500 text-accent-600 dark:text-accent-400'
 					: 'border-transparent text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-200'}"
 			>

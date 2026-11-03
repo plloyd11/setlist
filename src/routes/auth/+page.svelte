@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { safeInternalPath } from '#lib/utils/safeRedirect.js';
 
 	const errorMessages: Record<string, string> = {
 		auth_exchange_failed: 'Sign in failed. Please try again.',
@@ -13,23 +14,13 @@
 	let confirmationSentTo = $state('');
 	let submitting = $state(false);
 
-	// Only allow same-origin relative paths — an attacker-supplied
-	// ?redirect=https://evil.com must not be followed after sign-in.
-	const safeRedirect = (value: string | null): string => {
-		if (!value) return '/dashboard';
-		const decoded = decodeURIComponent(value);
-		if (decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.startsWith('/\\')) {
-			return decoded;
-		}
-		return '/dashboard';
-	};
-
 	const submitEmailForm = async (e: Event) => {
 		e.preventDefault();
 		error = '';
 		submitting = true;
 		try {
-			const next = safeRedirect(page.url.searchParams.get('redirect'));
+			// An attacker-supplied ?redirect= must not be followed after sign-in
+			const next = safeInternalPath(page.url.searchParams.get('redirect'));
 
 			if (mode === 'reset') {
 				const { error: authError } = await page.data.supabase.auth.resetPasswordForEmail(email, {

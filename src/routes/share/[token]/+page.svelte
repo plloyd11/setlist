@@ -1,6 +1,6 @@
 <script lang="ts">
-	import PrintableSheet from '$lib/components/setlists/PrintableSheet.svelte';
-	import { normalizePrintSettings } from '$lib/utils/printSettings';
+	import PrintableSheet from '#lib/components/setlists/PrintableSheet.svelte';
+	import { normalizePrintSettings } from '#lib/utils/printSettings.js';
 
 	let { data } = $props();
 

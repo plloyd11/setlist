@@ -1,4 +1,4 @@
-import { error, json } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 /**
@@ -23,7 +23,7 @@ export const GET: RequestHandler = async ({ params, locals: { supabase, safeGetS
 		throw error(404, 'Audio not found');
 	}
 
-	return json(
+	return Response.json(
 		{ peaks: data.waveform_peaks ?? null },
 		// Peaks are immutable per variant (uploads never overwrite), so a
 		// session-length private cache is safe

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { formatDuration } from '$lib/utils/duration';
-	import Toast from '$lib/components/ui/Toast.svelte';
-	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
-	import SongSearch from '$lib/components/songs/SongSearch.svelte';
-	import SongDetailPanel from '$lib/components/songs/SongDetailPanel.svelte';
-	import AudioCountChip from '$lib/components/songs/AudioCountChip.svelte';
+	import { formatDuration } from '#lib/utils/duration.js';
+	import Toast from '#lib/components/ui/Toast.svelte';
+	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
+	import SongSearch from '#lib/components/songs/SongSearch.svelte';
+	import SongDetailPanel from '#lib/components/songs/SongDetailPanel.svelte';
+	import AudioCountChip from '#lib/components/songs/AudioCountChip.svelte';
 
 	let { data } = $props();
 
@@ -25,7 +25,7 @@
 	let newNotes = $state('');
 
 	// Detail panel state — derived from data so the panel stays live across
-	// invalidateAll() after saves/uploads/renames/deletes
+	// refreshAll() after saves/uploads/renames/deletes
 	let selectedSongId = $state<string | null>(null);
 
 	// Component refs

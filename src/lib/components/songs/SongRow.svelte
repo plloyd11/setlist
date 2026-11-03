@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Song } from '$lib/types/database';
-	import { formatDuration } from '$lib/utils/duration';
-	import { longpress } from '$lib/actions/longpress';
+	import type { Song } from '#lib/types/database.js';
+	import { formatDuration } from '#lib/utils/duration.js';
+	import { longpress } from '#lib/actions/longpress.js';
 	import AudioCountChip from './AudioCountChip.svelte';
 
 	let {

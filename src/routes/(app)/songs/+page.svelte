@@ -1,10 +1,10 @@
 <script lang="ts">
-	import SongRow from '$lib/components/songs/SongRow.svelte';
-	import SongDetailPanel from '$lib/components/songs/SongDetailPanel.svelte';
-	import SongSearch from '$lib/components/songs/SongSearch.svelte';
-	import ContextMenu from '$lib/components/ui/ContextMenu.svelte';
-	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
-	import Toast from '$lib/components/ui/Toast.svelte';
+	import SongRow from '#lib/components/songs/SongRow.svelte';
+	import SongDetailPanel from '#lib/components/songs/SongDetailPanel.svelte';
+	import SongSearch from '#lib/components/songs/SongSearch.svelte';
+	import ContextMenu from '#lib/components/ui/ContextMenu.svelte';
+	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
+	import Toast from '#lib/components/ui/Toast.svelte';
 	import { enhance } from '$app/forms';
 
 	let { data } = $props();
@@ -26,7 +26,7 @@
 	let contextSongTitle = $state('');
 
 	// Detail panel state — derived from data so the panel stays live across
-	// invalidateAll() after saves/uploads/renames/deletes
+	// refreshAll() after saves/uploads/renames/deletes
 	let selectedSongId = $state<string | null>(null);
 	let selectedSong = $derived(data.songs.find((s) => s.id === selectedSongId) ?? null);
 

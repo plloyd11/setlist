@@ -18,7 +18,7 @@ declare global {
 
 declare module 'svelte/elements' {
 	interface HTMLAttributes<T extends EventTarget> {
-		// Dispatched by the `longpress` action ($lib/actions/longpress)
+		// Dispatched by the `longpress` action (#lib/actions/longpress.js)
 		onlongpress?: (e: CustomEvent<{ x: number; y: number }>) => void;
 	}
 }

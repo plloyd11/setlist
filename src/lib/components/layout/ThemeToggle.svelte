@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { theme, initTheme, toggleTheme } from '$lib/stores/theme.svelte';
+	import { theme, initTheme, toggleTheme } from '#lib/stores/theme.svelte.js';
 
 	let {
 		variant = 'icon',

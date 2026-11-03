@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import type { PrintSettings } from '$lib/types/database';
+import type { PrintSettings } from '#lib/types/database.js';
 
 type SharedSetlist = {
 	name: string;

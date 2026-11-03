@@ -10,9 +10,9 @@
  *   - removal of the broad `to anon` read policies
  *   - band_members self-leave DELETE policy
  *
- * RLS-API-08 additionally requires 20260611220000_create_song_audio.sql
+ * RLS-API-08 additionally requires 20260611230456_create_song_audio.sql
  * (song_audio table + the private 'song-audio' storage bucket).
- * RLS-API-09 additionally requires 20260612000000_create_song_files.sql
+ * RLS-API-09 additionally requires 20260612023803_create_song_files.sql
  * (song_files table + the private 'song-files' storage bucket).
  *
  * Unlike the UI specs, these talk to Supabase directly with publishable-key
