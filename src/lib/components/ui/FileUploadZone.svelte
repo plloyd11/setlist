@@ -2,9 +2,13 @@
 	import { enhance } from '$app/forms';
 	import type { Snippet } from 'svelte';
 	import type { SupabaseClient } from '@supabase/supabase-js';
-	import ProgressBar from '$lib/components/ui/ProgressBar.svelte';
-	import { fileExt, putWithProgress } from '$lib/utils/audioUpload';
-	import { MAX_CHART_FILE_SIZE, CHART_ACCEPT, resolveChartMimeType } from '$lib/utils/chartUpload';
+	import ProgressBar from '#lib/components/ui/ProgressBar.svelte';
+	import { fileExt, putWithProgress } from '#lib/utils/audioUpload.js';
+	import {
+		MAX_CHART_FILE_SIZE,
+		CHART_ACCEPT,
+		resolveChartMimeType
+	} from '#lib/utils/chartUpload.js';
 
 	let {
 		supabase,

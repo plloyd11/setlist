@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 
 	const navItems = [
 		{
@@ -42,7 +42,7 @@
 		<a
 			href={item.href}
 			class="focus-live flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] transition-colors
-				{isActive($page.url.pathname, item.href)
+				{isActive(page.url.pathname, item.href)
 				? 'font-bold text-surface-950 dark:text-surface-50'
 				: 'font-medium text-surface-500 dark:text-surface-300'}"
 		>
@@ -55,10 +55,9 @@
 				stroke="currentColor"
 				stroke-width="2"
 				stroke-linecap="round"
-				stroke-linejoin="round"
+				stroke-linejoin="round"><path d={item.icon}></path></svg
 			>
-				<path d={item.icon} />
-			</svg>
+
 			{item.label}
 		</a>
 	{/each}

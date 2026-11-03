@@ -2,8 +2,8 @@
 	import type WaveSurfer from 'wavesurfer.js';
 	import type RegionsPlugin from 'wavesurfer.js/plugins/regions';
 	import type { Region } from 'wavesurfer.js/plugins/regions';
-	import { formatDuration } from '$lib/utils/duration';
-	import { PRE_ROLL_SECONDS } from '$lib/utils/practicePrefs';
+	import { formatDuration } from '#lib/utils/duration.js';
+	import { PRE_ROLL_SECONDS } from '#lib/utils/practicePrefs.js';
 
 	export interface WaveformMarker {
 		id: string;
@@ -48,7 +48,7 @@
 
 	let container: HTMLDivElement;
 	let ws: WaveSurfer | null = null;
-	let regions: RegionsPlugin | null = null;
+	let regions: ReturnType<(typeof RegionsPlugin)['create']> | null = null;
 	let loopRegion: Region | null = null;
 	let loopEnabled = $state(false);
 	let preRollOn = false;

@@ -5,7 +5,7 @@
  * `dark` class before any rendering occurs — `initTheme` reads that result so
  * every ThemeToggle instance shares one source of truth.
  */
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 export const theme = $state({ dark: false });
 

@@ -7,7 +7,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 // Extension is the real gate (Guitar Pro has no registered MIME type — the
 // bucket allowlist has to admit application/octet-stream); mirror the client
-// list in $lib/utils/chartUpload.ts.
+// list in #lib/utils/chartUpload.js.
 const ALLOWED_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'gp', 'gp3', 'gp4', 'gp5', 'gpx']);
 const ALLOWED_MIME_TYPES = new Set([
 	'application/pdf',

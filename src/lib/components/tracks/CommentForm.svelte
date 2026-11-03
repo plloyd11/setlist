@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { formatDuration } from '$lib/utils/duration';
-	import type { TrackComment } from '$lib/types/database';
+	import { formatDuration } from '#lib/utils/duration.js';
+	import type { TrackComment } from '#lib/types/database.js';
 
 	let {
 		versionId,

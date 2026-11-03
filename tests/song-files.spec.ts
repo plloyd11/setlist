@@ -94,7 +94,10 @@ test.describe('Song charts band visibility (FILE-02)', () => {
 			// navigation request instead of waiting for the page to load.
 			const signedNav = userB.page
 				.context()
-				.waitForEvent('request', (r) => r.isNavigationRequest() && r.url().includes('/object/sign/'));
+				.waitForEvent(
+					'request',
+					(r) => r.isNavigationRequest() && r.url().includes('/object/sign/')
+				);
 			const popupPromise = userB.page.waitForEvent('popup');
 			await panel.getByLabel('Open Lead sheet').click();
 			await popupPromise;

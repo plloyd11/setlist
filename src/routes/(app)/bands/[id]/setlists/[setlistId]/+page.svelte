@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { dndzone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import { deserialize } from '$app/forms';
-	import SetlistSongRow from '$lib/components/setlists/SetlistSongRow.svelte';
-	import SetlistGapRow from '$lib/components/setlists/SetlistGapRow.svelte';
-	import LibrarySongRow from '$lib/components/setlists/LibrarySongRow.svelte';
-	import SetlistHeader from '$lib/components/setlists/SetlistHeader.svelte';
-	import TimingBar from '$lib/components/setlists/TimingBar.svelte';
-	import Toast from '$lib/components/ui/Toast.svelte';
-	import type { Song } from '$lib/types/database';
+	import SetlistSongRow from '#lib/components/setlists/SetlistSongRow.svelte';
+	import SetlistGapRow from '#lib/components/setlists/SetlistGapRow.svelte';
+	import LibrarySongRow from '#lib/components/setlists/LibrarySongRow.svelte';
+	import SetlistHeader from '#lib/components/setlists/SetlistHeader.svelte';
+	import TimingBar from '#lib/components/setlists/TimingBar.svelte';
+	import Toast from '#lib/components/ui/Toast.svelte';
+	import type { Song } from '#lib/types/database.js';
 
 	let { data } = $props();
 
@@ -74,7 +74,7 @@
 	}
 
 	// State for DnD zones — initialized inline so SSR renders the setlist
-	// immediately; the $effect blocks below resync after invalidateAll.
+	// immediately; the $effect blocks below resync after refreshAll.
 	// svelte-ignore state_referenced_locally
 	let libraryItems = $state<LibraryItem[]>(data.songs.map((s: Song) => ({ ...s, id: s.id })));
 	let setlistItems = $state<SetlistItem[]>(
@@ -92,7 +92,7 @@
 	// Keep a set of song IDs already in the setlist (for visual indicator)
 	let songsInSetlist = $derived(new Set(setlistItems.map((s) => s.song_id)));
 
-	// Sync library items when data changes (e.g. after invalidateAll)
+	// Sync library items when data changes (e.g. after refreshAll)
 	$effect(() => {
 		libraryItems = data.songs.map((s: Song) => ({ ...s, id: s.id }));
 	});
@@ -237,7 +237,7 @@
 				toast?.show('Failed to add song', { variant: 'error' });
 				return;
 			}
-			// Append the returned row directly -- no invalidateAll needed
+			// Append the returned row directly -- no refreshAll needed
 			const text = await response.text();
 			let appended = false;
 			try {
@@ -268,7 +268,7 @@
 			toast?.show(`Added "${song.title}"`, { variant: 'success' });
 			if (!appended && epoch === mutationEpoch) {
 				endMutation(epoch);
-				await invalidateAll();
+				await refreshAll();
 			}
 		} catch {
 			toast?.show('Failed to add song', { variant: 'error' });
@@ -295,14 +295,14 @@
 				// Revert (e.g. 404 row didn't exist): release guard then
 				// invalidate so $effect resyncs from the server
 				endMutation(epoch);
-				await invalidateAll();
+				await refreshAll();
 				return;
 			}
 			// Server confirmed the removal -- optimistic state is already correct
 		} catch {
 			toast?.show('Failed to remove song', { variant: 'error' });
 			endMutation(epoch);
-			await invalidateAll();
+			await refreshAll();
 			return;
 		}
 		endMutation(epoch);
@@ -351,7 +351,7 @@
 			}
 			if (!appended && epoch === mutationEpoch) {
 				endMutation(epoch);
-				await invalidateAll();
+				await refreshAll();
 			}
 		} catch {
 			toast?.show('Failed to add gap', { variant: 'error' });
@@ -394,13 +394,13 @@
 			});
 			if (!response.ok) {
 				endMutation(epoch);
-				await invalidateAll();
+				await refreshAll();
 				return;
 			}
 		} catch {
 			toast?.show('Failed to update gap', { variant: 'error' });
 			endMutation(epoch);
-			await invalidateAll();
+			await refreshAll();
 			return;
 		}
 		endMutation(epoch);
@@ -429,7 +429,9 @@
 				body: formData
 			});
 			if (response.ok) {
-				await invalidateAll();
+				await refreshAll();
+			} else {
+				toast?.show('Failed to update setlist', { variant: 'error' });
 			}
 		} catch {
 			toast?.show('Failed to update setlist', { variant: 'error' });
@@ -460,7 +462,9 @@
 				body: formData
 			});
 			if (response.ok) {
-				await invalidateAll();
+				await refreshAll();
+			} else {
+				toast?.show('Failed to update sharing', { variant: 'error' });
 			}
 		} catch {
 			toast?.show('Failed to update sharing', { variant: 'error' });

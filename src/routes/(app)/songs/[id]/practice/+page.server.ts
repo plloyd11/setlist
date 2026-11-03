@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import type { SongAudio, SongFile } from '$lib/types/database';
+import type { SongAudio, SongFile } from '#lib/types/database.js';
+import { safeInternalPath } from '#lib/utils/safeRedirect.js';
 
 // 6h — outlives any realistic practice session; WaveformPlayer's onloaderror
 // path covers the rare mid-session expiry.
@@ -91,14 +92,8 @@ export const load: PageServerLoad = async ({
 		)
 	]);
 
-	// Internal-path check so ?from= can't bounce users to another origin.
-	// Backslashes are rejected too: browsers normalize "\" to "/", so
-	// "/\evil.com" would otherwise resolve as a protocol-relative URL.
-	const from = url.searchParams.get('from');
-	const backHref =
-		from && from.startsWith('/') && !from.startsWith('//') && !from.includes('\\')
-			? from
-			: '/songs';
+	// Internal-path check so ?from= can't bounce users to another origin
+	const backHref = safeInternalPath(url.searchParams.get('from'), '/songs');
 
 	return {
 		song,

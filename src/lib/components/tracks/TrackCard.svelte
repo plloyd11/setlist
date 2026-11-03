@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { formatDuration } from '$lib/utils/duration';
-	import { longpress } from '$lib/actions/longpress';
-	import { TRACK_DRAG_TYPE } from '$lib/utils/trackDrag';
+	import { formatDuration } from '#lib/utils/duration.js';
+	import { longpress } from '#lib/actions/longpress.js';
+	import { TRACK_DRAG_TYPE } from '#lib/utils/trackDrag.js';
 
 	interface UploaderProfile {
 		id: string;

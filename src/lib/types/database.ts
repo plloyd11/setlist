@@ -19,7 +19,7 @@ export interface Profile {
  * Styling for the printable sheet, stored as JSONB on setlists.
  * Keys are snake_case because the value round-trips through the
  * get_shared_setlist RPC untransformed. Null column = app defaults
- * (see DEFAULT_PRINT_SETTINGS in $lib/utils/printSettings).
+ * (see DEFAULT_PRINT_SETTINGS in #lib/utils/printSettings.js).
  */
 export interface PrintSettings {
 	font_family: 'display' | 'sans' | 'serif' | 'mono';

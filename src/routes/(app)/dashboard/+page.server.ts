@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import type { Setlist } from '$lib/types/database';
+import type { Setlist } from '#lib/types/database.js';
 
 // gig_date is a date-only string; parse as local midnight so countdown
 // math doesn't drift across timezones

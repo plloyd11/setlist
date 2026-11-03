@@ -1,10 +1,10 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import type { SongAudio } from '$lib/types/database';
+import type { SongAudio } from '#lib/types/database.js';
 import type {
 	RehearseSourceRow,
 	RehearseVariant
-} from '$lib/components/rehearse/rehearseState.svelte';
+} from '#lib/components/rehearse/rehearseState.svelte.js';
 
 // 6h — outlives any realistic rehearsal session; WaveformPlayer's onloaderror
 // path covers the rare mid-session expiry.

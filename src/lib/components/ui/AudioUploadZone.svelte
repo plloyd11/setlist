@@ -2,21 +2,21 @@
 	import { enhance } from '$app/forms';
 	import type { Snippet } from 'svelte';
 	import type { SupabaseClient } from '@supabase/supabase-js';
-	import ProgressBar from '$lib/components/ui/ProgressBar.svelte';
-	import { extractAudioMetadata } from '$lib/utils/audio';
+	import ProgressBar from '#lib/components/ui/ProgressBar.svelte';
+	import { extractAudioMetadata } from '#lib/utils/audio.js';
 	import {
 		MAX_AUDIO_FILE_SIZE,
 		fileExt,
 		putWithProgress,
 		resolveAudioMimeType
-	} from '$lib/utils/audioUpload';
+	} from '#lib/utils/audioUpload.js';
 	import {
 		MAX_SOURCE_FILE_SIZE,
 		compressToMp3,
 		mp3FileName,
 		needsCompression
-	} from '$lib/utils/audioCompress';
-	import { formatDuration } from '$lib/utils/duration';
+	} from '#lib/utils/audioCompress.js';
+	import { formatDuration } from '#lib/utils/duration.js';
 
 	let {
 		supabase,

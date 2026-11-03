@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { gsap } from 'gsap';
 	import { ScrollTrigger } from 'gsap/ScrollTrigger';
-	import { formatDuration } from '$lib/utils/duration';
+	import { formatDuration } from '#lib/utils/duration.js';
 
 	const TARGET = 2100;
 

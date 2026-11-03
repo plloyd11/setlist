@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import gsap from 'gsap';
 	import ThemeToggle from './ThemeToggle.svelte';
 	import {
@@ -8,7 +8,7 @@
 		initSidebar,
 		setSidebarMode,
 		type SidebarMode
-	} from '$lib/stores/sidebar.svelte';
+	} from '#lib/stores/sidebar.svelte.js';
 
 	interface Props {
 		user: { email?: string; user_metadata?: { full_name?: string; avatar_url?: string } } | null;
@@ -184,11 +184,11 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 						stroke-linecap="round"
 						stroke-linejoin="round"
 					>
-						<path d="M21 15V6" />
-						<path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-						<path d="M12 12H3" />
-						<path d="M16 6H3" />
-						<path d="M12 18H3" />
+						<path d="M21 15V6"></path>
+						<path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"></path>
+						<path d="M12 12H3"></path>
+						<path d="M16 6H3"></path>
+						<path d="M12 18H3"></path>
 					</svg>
 				</span>
 				<span class="nav-label font-display text-2xl whitespace-nowrap">Setlist</span>
@@ -202,7 +202,7 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 					href={item.href}
 					title={item.label}
 					class="focus-live flex h-10 items-center rounded-lg text-sm transition-colors
-						{isActive($page.url.pathname, item.href)
+						{isActive(page.url.pathname, item.href)
 						? 'bg-surface-200/70 font-semibold text-surface-950 dark:bg-surface-800 dark:text-surface-50'
 						: 'font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'}"
 				>
@@ -216,10 +216,8 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 							stroke="currentColor"
 							stroke-width="2"
 							stroke-linecap="round"
-							stroke-linejoin="round"
+							stroke-linejoin="round"><path d={item.icon}></path></svg
 						>
-							<path d={item.icon} />
-						</svg>
 					</span>
 					<span class="nav-label whitespace-nowrap">{item.label}</span>
 				</a>
@@ -270,8 +268,8 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 						stroke-linecap="round"
 						stroke-linejoin="round"
 					>
-						<rect width="18" height="18" x="3" y="3" rx="2" />
-						<path d="M9 3v18" />
+						<rect width="18" height="18" x="3" y="3" rx="2"></rect>
+						<path d="M9 3v18"></path>
 					</svg>
 				</span>
 				<span class="nav-label whitespace-nowrap">Sidebar control</span>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { beforeNavigate } from '$app/navigation';
-	import PrintableSheet from '$lib/components/setlists/PrintableSheet.svelte';
-	import Toast from '$lib/components/ui/Toast.svelte';
+	import PrintableSheet from '#lib/components/setlists/PrintableSheet.svelte';
+	import Toast from '#lib/components/ui/Toast.svelte';
 	import {
 		FONT_SIZE_MAX,
 		FONT_SIZE_MIN,
@@ -9,15 +9,15 @@
 		LINE_SPACING_MIN,
 		normalizePrintSettings,
 		PRINT_FONT_FAMILIES
-	} from '$lib/utils/printSettings';
-	import type { PrintSettings } from '$lib/types/database';
+	} from '#lib/utils/printSettings.js';
+	import type { PrintSettings } from '#lib/types/database.js';
 
 	let { data } = $props();
 
 	let toast: Toast;
 
 	// Local state is the source of truth on this page; saves sync it back
-	// without invalidateAll() so slider drags never fight a stale reload.
+	// without refreshAll() so slider drags never fight a stale reload.
 	// svelte-ignore state_referenced_locally
 	let settings = $state(normalizePrintSettings(data.setlist.print_settings));
 
@@ -72,7 +72,8 @@
 
 	// Don't lose an edit made inside the debounce window (closing the tab
 	// outright can still drop one -- accepted for a styling preference)
-	beforeNavigate(() => {
+	beforeNavigate(({ shallow, type }) => {
+		if (shallow && type === 'goto') return;
 		if (saveTimer) persist();
 	});
 
@@ -107,7 +108,7 @@
 			class="focus-live inline-flex min-h-11 items-center gap-1.5 rounded text-sm font-medium text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100"
 		>
 			<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+				<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
 			</svg>
 			Back to setlist
 		</a>
@@ -120,6 +121,7 @@
 				>
 					Font
 				</p>
+
 				<div class="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Font family">
 					{#each fontOptions as [value, font] (value)}
 						<button
@@ -169,12 +171,12 @@
 					<label
 						for="print-line-spacing"
 						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+						>Spacing</label
 					>
-						Spacing
-					</label>
-					<span class="text-sm font-medium text-surface-700 dark:text-surface-300">
-						{settings.line_spacing}&times;
-					</span>
+
+					<span class="text-sm font-medium text-surface-700 dark:text-surface-300"
+						>{settings.line_spacing}×</span
+					>
 				</div>
 				<input
 					id="print-line-spacing"
@@ -195,6 +197,7 @@
 				>
 					Align
 				</p>
+
 				<div class="mt-2 flex gap-2" role="radiogroup" aria-label="Text alignment">
 					{#each alignOptions as opt (opt.value)}
 						<button
@@ -240,7 +243,7 @@
 							onchange={queueSave}
 							class="focus-live h-4 w-4 rounded border-surface-300 text-accent-600 dark:border-surface-600 dark:bg-surface-800"
 						/>
-						Venue &amp; date
+						Venue & date
 					</label>
 					<label
 						class="flex min-h-11 items-center gap-3 text-sm text-surface-700 dark:text-surface-300"
@@ -296,6 +299,7 @@
 				>
 					Logo size
 				</p>
+
 				<div class="mt-2 flex gap-2" role="radiogroup" aria-label="Logo size">
 					{#each logoSizes as opt (opt.value)}
 						<button
@@ -319,9 +323,9 @@
 			<button
 				onclick={() => window.print()}
 				class="focus-live rounded-lg bg-accent-500 px-4 py-2 font-semibold text-white shadow-sm hover:bg-accent-600"
+				>Print / PDF</button
 			>
-				Print / PDF
-			</button>
+
 			<span class="text-xs text-surface-500 dark:text-surface-300" aria-live="polite">
 				{#if saveState === 'saving'}
 					Saving…

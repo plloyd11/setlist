@@ -5,7 +5,7 @@
  * hover/focus and overlays the content. 'expanded' pins the sidebar open
  * (pushing content), 'collapsed' pins it shut.
  */
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 export type SidebarMode = 'expanded' | 'collapsed' | 'hover';
 

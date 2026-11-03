@@ -1,5 +1,5 @@
 <script lang="ts">
-	import BandNav from '$lib/components/bands/BandNav.svelte';
+	import BandNav from '#lib/components/bands/BandNav.svelte';
 
 	let { data, children } = $props();
 </script>

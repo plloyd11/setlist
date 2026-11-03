@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 // Practice prefs are song-scoped like the variant choice: how you shed a song
 // (volume, speed, the loop you're drilling) belongs to the song, not the mix.
@@ -15,7 +15,6 @@ export interface LoopRange {
 	start: number;
 	end: number;
 }
-
 export interface SavedSection extends LoopRange {
 	id: string;
 	label: string;

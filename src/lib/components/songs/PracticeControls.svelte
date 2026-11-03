@@ -1,12 +1,12 @@
 <script lang="ts">
-	import Knob from '$lib/components/ui/Knob.svelte';
-	import { formatDuration } from '$lib/utils/duration';
+	import Knob from '#lib/components/ui/Knob.svelte';
+	import { formatDuration } from '#lib/utils/duration.js';
 	import {
 		SPEED_DETENTS,
 		MAX_SECTIONS,
 		type LoopRange,
 		type SavedSection
-	} from '$lib/utils/practicePrefs';
+	} from '#lib/utils/practicePrefs.js';
 
 	let {
 		volume,

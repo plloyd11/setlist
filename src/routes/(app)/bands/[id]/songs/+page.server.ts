@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
-import { parseDuration } from '$lib/utils/duration';
-import { processSongAudioDelete, processSongAudioUpload } from '$lib/server/songAudio';
-import { processSongFileDelete, processSongFileUpload } from '$lib/server/songFiles';
+import { parseDuration } from '#lib/utils/duration.js';
+import { processSongAudioDelete, processSongAudioUpload } from '#lib/server/songAudio.js';
+import { processSongFileDelete, processSongFileUpload } from '#lib/server/songFiles.js';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase, safeGetSession } }) => {

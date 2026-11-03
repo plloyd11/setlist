@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatDuration } from '$lib/utils/duration';
+	import { formatDuration } from '#lib/utils/duration.js';
 	import type { EnrichedComment } from './CommentList.svelte';
 
 	let {

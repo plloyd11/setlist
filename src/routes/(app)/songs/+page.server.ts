@@ -1,9 +1,9 @@
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import type { Song, SongAudio, SongFile } from '$lib/types/database';
-import { parseDuration } from '$lib/utils/duration';
-import { processSongAudioDelete, processSongAudioUpload } from '$lib/server/songAudio';
-import { processSongFileDelete, processSongFileUpload } from '$lib/server/songFiles';
+import type { Song, SongAudio, SongFile } from '#lib/types/database.js';
+import { parseDuration } from '#lib/utils/duration.js';
+import { processSongAudioDelete, processSongAudioUpload } from '#lib/server/songAudio.js';
+import { processSongFileDelete, processSongFileUpload } from '#lib/server/songFiles.js';
 
 export type SongWithAudio = Song & {
 	song_audio: Omit<SongAudio, 'waveform_peaks'>[];

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { formatDuration } from '$lib/utils/duration';
-	import type { Song } from '$lib/types/database';
+	import { formatDuration } from '#lib/utils/duration.js';
+	import type { Song } from '#lib/types/database.js';
 
 	let {
 		song,

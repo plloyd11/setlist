@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import MemberRow from '$lib/components/bands/MemberRow.svelte';
-	import Toast from '$lib/components/ui/Toast.svelte';
+	import MemberRow from '#lib/components/bands/MemberRow.svelte';
+	import Toast from '#lib/components/ui/Toast.svelte';
 
 	let { data, form } = $props();
 

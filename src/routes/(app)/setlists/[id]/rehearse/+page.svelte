@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import WaveformPlayer from '$lib/components/tracks/WaveformPlayer.svelte';
-	import { buildRehearseItems, RehearseState } from '$lib/components/rehearse/rehearseState.svelte';
-	import { formatDuration } from '$lib/utils/duration';
+	import WaveformPlayer from '#lib/components/tracks/WaveformPlayer.svelte';
+	import {
+		buildRehearseItems,
+		RehearseState
+	} from '#lib/components/rehearse/rehearseState.svelte.js';
+	import { formatDuration } from '#lib/utils/duration.js';
 
 	let { data } = $props();
 

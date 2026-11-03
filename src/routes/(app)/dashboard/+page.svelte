@@ -1,6 +1,6 @@
 <script lang="ts">
-	import TrackCard from '$lib/components/tracks/TrackCard.svelte';
-	import { formatDuration } from '$lib/utils/duration';
+	import TrackCard from '#lib/components/tracks/TrackCard.svelte';
+	import { formatDuration } from '#lib/utils/duration.js';
 
 	let { data } = $props();
 

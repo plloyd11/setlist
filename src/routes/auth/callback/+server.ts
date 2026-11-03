@@ -1,4 +1,5 @@
 import { redirect } from '@sveltejs/kit';
+import { safeInternalPath } from '#lib/utils/safeRedirect.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url, cookies, locals: { supabase } }) => {
@@ -12,17 +13,12 @@ export const GET: RequestHandler = async ({ url, cookies, locals: { supabase } }
 		}
 	}
 
-	// Read redirect target from cookie (set before OAuth flow started).
-	// Only follow same-origin relative paths — the cookie value is
-	// attacker-influenced via the ?redirect= query param on /auth.
+	// Read redirect target from cookie (set before OAuth flow started). The
+	// value is attacker-influenced via the ?redirect= query param on /auth.
 	const redirectTo = cookies.get('auth_redirect');
 	if (redirectTo) {
 		cookies.delete('auth_redirect', { path: '/' });
-		const decoded = decodeURIComponent(redirectTo);
-		if (decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.startsWith('/\\')) {
-			redirect(303, decoded);
-		}
 	}
 
-	redirect(303, '/dashboard');
+	redirect(303, safeInternalPath(redirectTo));
 };

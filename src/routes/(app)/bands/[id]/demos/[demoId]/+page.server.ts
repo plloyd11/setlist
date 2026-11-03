@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { processTrackUpload } from '$lib/server/tracks';
+import { processTrackUpload } from '#lib/server/tracks.js';
 
 const SIGNED_URL_TTL = 21600; // 6h — outlives any realistic listening session
 

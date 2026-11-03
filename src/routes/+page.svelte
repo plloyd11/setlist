@@ -3,10 +3,10 @@
 	import { gsap } from 'gsap';
 	import { ScrollTrigger } from 'gsap/ScrollTrigger';
 	import { SplitText } from 'gsap/SplitText';
-	import StageScene from '$lib/components/landing/StageScene.svelte';
-	import SetBuilder from '$lib/components/landing/SetBuilder.svelte';
-	import TapeMarquee from '$lib/components/landing/TapeMarquee.svelte';
-	import TrackFeedback from '$lib/components/landing/TrackFeedback.svelte';
+	import StageScene from '#lib/components/landing/StageScene.svelte';
+	import SetBuilder from '#lib/components/landing/SetBuilder.svelte';
+	import TapeMarquee from '#lib/components/landing/TapeMarquee.svelte';
+	import TrackFeedback from '#lib/components/landing/TrackFeedback.svelte';
 
 	let pageEl: HTMLDivElement;
 	let navEl: HTMLElement;

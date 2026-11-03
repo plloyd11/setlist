@@ -10,3 +10,6 @@ bun.lockb
 
 # GSD planning artifacts — machine-generated, not subject to formatting
 .planning/
+
+# Vendored agent skills -- managed by skills-lock.json, not hand-edited
+.github/skills/

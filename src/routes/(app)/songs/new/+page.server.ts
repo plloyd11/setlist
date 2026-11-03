@@ -1,5 +1,5 @@
 import { fail } from '@sveltejs/kit';
-import { parseDuration } from '$lib/utils/duration';
+import { parseDuration } from '#lib/utils/duration.js';
 import type { Actions } from './$types';
 
 export const actions: Actions = {

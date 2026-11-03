@@ -25,7 +25,7 @@
 
 	function handleChange(e: Event) {
 		const value = (e.target as HTMLSelectElement).value;
-		goto(`?version=${value}`, { noScroll: true });
+		goto(`?version=${value}`, { reset: false });
 	}
 </script>
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { longpress } from '$lib/actions/longpress';
-	import { FOLDER_DRAG_TYPE, isAppDrag } from '$lib/utils/trackDrag';
+	import { longpress } from '#lib/actions/longpress.js';
+	import { FOLDER_DRAG_TYPE, isAppDrag } from '#lib/utils/trackDrag.js';
 
 	let {
 		folder,

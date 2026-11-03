@@ -1,4 +1,4 @@
-import type { PrintSettings } from '$lib/types/database';
+import type { PrintSettings } from '#lib/types/database.js';
 
 /**
  * Defaults reproduce the pre-customization share page exactly:

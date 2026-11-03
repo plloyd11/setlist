@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { goto, invalidateAll } from '$app/navigation';
-	import WaveformPlayer from '$lib/components/tracks/WaveformPlayer.svelte';
-	import VersionSwitcher from '$lib/components/tracks/VersionSwitcher.svelte';
-	import TrackUploadForm from '$lib/components/tracks/TrackUploadForm.svelte';
-	import CommentForm from '$lib/components/tracks/CommentForm.svelte';
-	import CommentList, { type EnrichedComment } from '$lib/components/tracks/CommentList.svelte';
-	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
-	import Toast from '$lib/components/ui/Toast.svelte';
+	import { goto, refreshAll } from '$app/navigation';
+	import WaveformPlayer from '#lib/components/tracks/WaveformPlayer.svelte';
+	import VersionSwitcher from '#lib/components/tracks/VersionSwitcher.svelte';
+	import TrackUploadForm from '#lib/components/tracks/TrackUploadForm.svelte';
+	import CommentForm from '#lib/components/tracks/CommentForm.svelte';
+	import CommentList, { type EnrichedComment } from '#lib/components/tracks/CommentList.svelte';
+	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
+	import Toast from '#lib/components/ui/Toast.svelte';
 
 	let { data } = $props();
 
@@ -85,7 +85,7 @@
 	function handleVersionUploaded(result: { versionNumber: number }) {
 		showVersionForm = false;
 		toast.show(`Version ${result.versionNumber} uploaded`, { variant: 'success' });
-		goto(`?version=${result.versionNumber}`, { noScroll: true, invalidateAll: true });
+		goto(`?version=${result.versionNumber}`, { reset: false, refreshAll: true });
 	}
 
 	function handleToggleResolve(comment: EnrichedComment) {
@@ -129,7 +129,7 @@
 		if (retriedVersionId !== data.selectedVersion.id) {
 			retriedVersionId = data.selectedVersion.id;
 			toast.show('Playback session expired — reloading', { variant: 'error' });
-			invalidateAll();
+			refreshAll();
 		} else {
 			failedVersionId = data.selectedVersion.id;
 		}

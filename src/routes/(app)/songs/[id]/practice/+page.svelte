@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { fade, slide } from 'svelte/transition';
-	import { invalidateAll } from '$app/navigation';
-	import WaveformPlayer from '$lib/components/tracks/WaveformPlayer.svelte';
-	import PracticeControls from '$lib/components/songs/PracticeControls.svelte';
-	import { getRememberedVariant, rememberVariant } from '$lib/utils/variantChoice';
+	import { refreshAll } from '$app/navigation';
+	import WaveformPlayer from '#lib/components/tracks/WaveformPlayer.svelte';
+	import PracticeControls from '#lib/components/songs/PracticeControls.svelte';
+	import { getRememberedVariant, rememberVariant } from '#lib/utils/variantChoice.js';
 	import {
 		loadPracticePrefs,
 		savePracticePrefs,
 		MAX_SECTIONS,
 		type LoopRange,
 		type SavedSection
-	} from '$lib/utils/practicePrefs';
-	import { formatDuration } from '$lib/utils/duration';
+	} from '#lib/utils/practicePrefs.js';
+	import { formatDuration } from '#lib/utils/duration.js';
 
 	let { data } = $props();
 
@@ -123,7 +123,7 @@
 		playing = false;
 		if (currentVariant && retriedVariantId !== currentVariant.id) {
 			retriedVariantId = currentVariant.id;
-			invalidateAll();
+			refreshAll();
 		} else if (currentVariant) {
 			failedVariantId = currentVariant.id;
 		}
@@ -139,7 +139,7 @@
 		retrying = true;
 		retriedVariantId = null;
 		failedVariantId = null;
-		await invalidateAll();
+		await refreshAll();
 		retrying = false;
 	}
 

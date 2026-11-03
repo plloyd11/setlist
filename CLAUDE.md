@@ -10,7 +10,7 @@ Setlist — a web app where bands and musicians manage song libraries and build 
 
 ## Commands
 
-Uses **pnpm** (pinned via `packageManager`), Node >= 20.
+Uses **pnpm** (pinned via `packageManager`), Node >= 22.17 (`.nvmrc` pins 24 for CI and Netlify).
 
 ```sh
 pnpm dev                 # Vite dev server
@@ -32,14 +32,16 @@ Tests run against a **real Supabase instance** (no mocks) and mutate live data. 
 
 ## Architecture
 
-**Stack:** SvelteKit 2 + Svelte 5 (runes), TypeScript strict, Tailwind CSS v4, Supabase (Postgres + Auth + RLS), `svelte-dnd-action`, deployed to Netlify.
+**Stack:** SvelteKit 3 + Svelte 5 (runes), Vite 8, TypeScript 6 strict (Kit and svelte-check don't support TS 7 yet), Tailwind CSS v4, Supabase (Postgres + Auth + RLS), `svelte-dnd-action`, deployed to Netlify.
 
 ### Auth & routing
 
 - `src/hooks.server.ts` creates a per-request Supabase server client (`@supabase/ssr` with cookie handlers) and a **memoized `safeGetSession()`** on `locals` (getUser() is a network call; guard + layouts all share one promise). It also enforces the auth guard: everything is protected except `/auth/*`, `/share/*`, and `/`.
 - `/` redirects logged-in users to `/dashboard` (marketing landing page for logged-out visitors).
+- **Cache safety:** the root layout serializes the session and cookies into every page, so `handle` rewrites any `public`/`s-maxage` response to `private, no-store` when the request carried cookies, and applies the no-store headers `@supabase/ssr` passes to `setAll` on token refresh. Regression coverage is in `tests/security-regressions.spec.ts`.
+- **Redirect targets** from query params or cookies go through `safeInternalPath` (`src/lib/utils/safeRedirect.ts`). Don't hand-roll prefix checks: browsers strip tabs and newlines, so `/\t/evil.com` passes them.
 - `src/routes/(app)/` is the authenticated app (dashboard, songs, setlists, bands, settings). `/share/[token]` is the public read-only setlist view. `/auth` handles Google OAuth (PKCE) and email/password sign-in.
-- `src/routes/+layout.ts` creates the browser/server Supabase client used client-side; invalidate with `depends('supabase:auth')`.
+- `src/routes/+layout.ts` creates the browser/server Supabase client used client-side; invalidate with `depends('supabase:auth')`. Public env vars are declared in `src/env.ts` and imported from `$app/env/public`; there is no `svelte.config.js` (Kit config lives in the `sveltekit()` plugin in `vite.config.ts`), and imports use `#lib/...js` rather than `$lib`.
 
 ### Data layer
 
@@ -58,7 +60,7 @@ Tests run against a **real Supabase instance** (no mocks) and mutate live data. 
 
 ### UI patterns
 
-- Setlist builder uses `svelte-dnd-action` with **copy-on-drag** from the library panel (library resets after drop) and **optimistic UI**: update local state immediately, sync via `fetch` + `invalidateAll()`.
+- Setlist builder uses `svelte-dnd-action` with **copy-on-drag** from the library panel (library resets after drop) and **optimistic UI**: update local state immediately, sync via `fetch` + `refreshAll()`. Kit 3 returns `fail()` as a real HTTP failure status, so `response.ok` is a valid check on these raw `fetch` calls to form actions.
 - Theme is DOM-based (inline script in `app.html` prevents FOUC), not store-driven; `src/lib/stores/theme.svelte.ts` wraps it.
 - Components organized by domain: `src/lib/components/{bands,layout,setlists,songs,ui}/`.
 - Prettier: tabs, single quotes, 100-char width, no trailing commas, Tailwind class sorting.

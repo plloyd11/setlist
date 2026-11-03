@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import LogoUpload from '$lib/components/ui/LogoUpload.svelte';
+	import LogoUpload from '#lib/components/ui/LogoUpload.svelte';
 
 	let { data } = $props();
 
@@ -10,7 +10,7 @@
 	let deleting = $state(false);
 
 	// Sync band name only when the SERVER value actually changes — an
-	// invalidateAll elsewhere gives `data` a new reference with the same
+	// refreshAll elsewhere gives `data` a new reference with the same
 	// values, and unconditionally syncing would wipe in-progress typing.
 	let lastServerBandName: string | undefined;
 	$effect(() => {

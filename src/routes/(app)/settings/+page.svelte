@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { invalidate, goto } from '$app/navigation';
 	import { enhance } from '$app/forms';
-	import ThemeToggle from '$lib/components/layout/ThemeToggle.svelte';
-	import LogoUpload from '$lib/components/ui/LogoUpload.svelte';
+	import ThemeToggle from '#lib/components/layout/ThemeToggle.svelte';
+	import LogoUpload from '#lib/components/ui/LogoUpload.svelte';
 
 	let { data } = $props();
 	let signingOut = $state(false);
@@ -10,7 +10,7 @@
 	let profileSaved = $state(false);
 
 	// Sync display name only when the SERVER value actually changes — an
-	// invalidateAll elsewhere gives `data` a new reference with the same
+	// refreshAll elsewhere gives `data` a new reference with the same
 	// values, and unconditionally syncing would wipe in-progress typing.
 	let lastServerDisplayName: string | undefined;
 	$effect(() => {

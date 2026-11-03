@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { formatDuration, parseDurationLenient } from '$lib/utils/duration';
-	import { countTransitionPairs } from '$lib/utils/setlistTiming';
-	import ProgressBar from '$lib/components/ui/ProgressBar.svelte';
+	import { formatDuration, parseDurationLenient } from '#lib/utils/duration.js';
+	import { countTransitionPairs } from '#lib/utils/setlistTiming.js';
+	import ProgressBar from '#lib/components/ui/ProgressBar.svelte';
 
 	let {
 		setlistItems,
