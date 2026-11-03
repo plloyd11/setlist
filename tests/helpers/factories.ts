@@ -7,6 +7,8 @@ import { adminClient } from './supabase-admin';
 
 const TRACK_FIXTURE = path.resolve('tests/fixtures/sample.wav');
 const PDF_FIXTURE = path.resolve('tests/fixtures/sample.pdf');
+// Generated with alphaTab's Gp7Exporter: two tracks ("Lead Guitar", "Bass"), four bars
+const TAB_FIXTURE = path.resolve('tests/fixtures/sample.gp');
 
 /**
  * Create a song via admin API and navigate the browser to /songs.
@@ -193,6 +195,38 @@ export async function createSongAudio(songId: string, overrides?: Record<string,
  * not navigate. Storage objects don't cascade with DB rows — call
  * cleanupSongFiles(songId) in teardown. Label with overrides: { label }.
  */
+/** A Guitar Pro chart. Pass `contents` to store something other than the valid fixture. */
+export async function createSongTabFile(
+	songId: string,
+	{ contents, ...overrides }: { contents?: Buffer } & Record<string, unknown> = {}
+) {
+	const storagePath = `songs/${songId}/${crypto.randomUUID()}.gp`;
+	const fileBuffer = contents ?? fs.readFileSync(TAB_FIXTURE);
+
+	const { error: uploadError } = await adminClient.storage
+		.from('song-files')
+		.upload(storagePath, fileBuffer, { contentType: 'application/octet-stream' });
+	if (uploadError)
+		throw new Error(`Factory createSongTabFile upload failed: ${uploadError.message}`);
+
+	const { data, error } = await adminClient
+		.from('song_files')
+		.insert({
+			song_id: songId,
+			label: null,
+			storage_path: storagePath,
+			file_name: 'sample.gp',
+			mime_type: 'application/octet-stream',
+			file_size_bytes: fileBuffer.length,
+			...overrides
+		})
+		.select()
+		.single();
+	if (error) throw new Error(`Factory createSongTabFile failed: ${error.message}`);
+
+	return data;
+}
+
 export async function createSongFile(songId: string, overrides?: Record<string, unknown>) {
 	const storagePath = `songs/${songId}/${crypto.randomUUID()}.pdf`;
 	const fileBuffer = fs.readFileSync(PDF_FIXTURE);

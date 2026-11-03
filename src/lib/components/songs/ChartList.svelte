@@ -1,30 +1,36 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
 	import type { SongFile } from '#lib/types/database.js';
+	import TabPlayer from '#lib/components/practice/TabPlayer.svelte';
 
 	type Chart = Omit<SongFile, 'song_id'> & { signedUrl: string | null };
 
 	let {
 		charts,
 		autoOpen = false,
-		compact = false
+		compact = false,
+		tabKeyboard = false
 	}: {
 		charts: Chart[];
 		/** Open the first PDF straight away, for when reading it is the point */
 		autoOpen?: boolean;
 		/** Drop the heading where the surrounding screen already says what this is */
 		compact?: boolean;
+		/** Let the tab player answer to Space and L: nothing else on the page is using them */
+		tabKeyboard?: boolean;
 	} = $props();
+
+	const isPdf = (c: Chart) => c.mime_type === 'application/pdf';
+	const isTab = (c: Chart) => /\.(gp|gp3|gp4|gp5|gpx)$/i.test(c.file_name);
+	const opensInline = (c: Chart) => (isPdf(c) || isTab(c)) && !!c.signedUrl;
 
 	const reduceMotion =
 		typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-	// PDF charts toggle an inline viewer; one open at a time
+	// PDFs and Guitar Pro files toggle an inline viewer; one open at a time
 	// svelte-ignore state_referenced_locally
 	let viewingChartId = $state<string | null>(
-		autoOpen
-			? (charts.find((c) => c.mime_type === 'application/pdf' && c.signedUrl)?.id ?? null)
-			: null
+		autoOpen ? (charts.find(opensInline)?.id ?? null) : null
 	);
 	let viewingChart = $derived(
 		viewingChartId ? (charts.find((c) => c.id === viewingChartId) ?? null) : null
@@ -53,7 +59,7 @@
 		<ul class="flex flex-wrap gap-2 {compact ? '' : 'mt-3'}">
 			{#each charts as chart (chart.id)}
 				<li class="flex max-w-full items-center gap-1">
-					{#if chart.mime_type === 'application/pdf' && chart.signedUrl}
+					{#if opensInline(chart)}
 						<button
 							type="button"
 							onclick={() => (viewingChartId = viewingChartId === chart.id ? null : chart.id)}
@@ -84,7 +90,17 @@
 			{/each}
 		</ul>
 
-		{#if viewingChart?.signedUrl}
+		{#if viewingChart?.signedUrl && isTab(viewingChart)}
+			<div class="mt-4">
+				{#key viewingChart.id}
+					<TabPlayer
+						url={viewingChart.signedUrl}
+						downloadHref={downloadHref(viewingChart)}
+						keyboard={tabKeyboard}
+					/>
+				{/key}
+			</div>
+		{:else if viewingChart?.signedUrl}
 			<div class="mt-4" transition:slide={{ duration: reduceMotion ? 0 : 200 }}>
 				<div class="flex items-center justify-between">
 					<!-- The chip already shows the label (or, unlabeled, the file name) —

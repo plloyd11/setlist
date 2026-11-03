@@ -28,3 +28,7 @@ vite.config.ts.timestamp-*
 
 # Supabase CLI local state
 supabase/.temp/
+
+# alphaTab's font and SoundFont, copied in by its Vite plugin
+/static/font/
+/static/soundfont/

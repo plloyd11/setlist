@@ -82,6 +82,8 @@
 	function handlePageKeydown(e: KeyboardEvent) {
 		const action = practiceShortcut(e);
 		if (!action || action === 'nextSong' || action === 'previousSong') return;
+		// With no audio, Space and L belong to the tab player, if there is one
+		if (!hasAudio && action !== 'toggleMetronome') return;
 		e.preventDefault();
 		if (action === 'toggleMetronome') {
 			metronome?.toggle();
@@ -126,11 +128,14 @@
 				</div>
 			{/if}
 
-			<div class="stage-player">{@render player()}</div>
+			<!-- Nothing to play and something to read: the chart gets the room -->
+			{#if hasAudio || charts.length === 0}
+				<div class="stage-player">{@render player()}</div>
+			{/if}
 
 			{#if charts.length > 0}
 				<div class="stage-pane {pane === 'chart' ? '' : 'hidden md:block'}">
-					<ChartList {charts} autoOpen compact />
+					<ChartList {charts} autoOpen compact tabKeyboard={!hasAudio} />
 				</div>
 			{/if}
 		</div>

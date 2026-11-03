@@ -21,6 +21,7 @@
 		"test:cleanup": "npx tsx scripts/cleanup-test-users.ts"
 	},
 	"devDependencies": {
+		"@coderline/alphatab-vite": "1.9.0",
 		"@faker-js/faker": "^10.6.0",
 		"@playwright/test": "^1.64.1",
 		"@sveltejs/adapter-netlify": "^7.0.1",
@@ -41,6 +42,7 @@
 	},
 	"dependencies": {
 		"@breezystack/lamejs": "^1.2.7",
+		"@coderline/alphatab": "1.9.0",
 		"@supabase/ssr": "^0.12.7",
 		"@supabase/supabase-js": "^2.118.0",
 		"gsap": "^3.15.0",
