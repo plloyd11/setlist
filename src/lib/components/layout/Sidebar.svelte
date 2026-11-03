@@ -33,6 +33,11 @@
 			icon: 'M4 6h16M4 10h16M4 14h10M4 18h10'
 		},
 		{
+			href: '/practice',
+			label: 'Practice',
+			icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664zM21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+		},
+		{
 			href: '/bands',
 			label: 'Bands',
 			icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'
@@ -51,6 +56,8 @@
 
 	function isActive(pathname: string, href: string): boolean {
 		if (href === '/dashboard') return pathname === '/dashboard';
+		// The shed screen lives under a song's address but belongs to Practice
+		if (pathname.endsWith('/practice')) return href === '/practice';
 		return pathname.startsWith(href);
 	}
 
@@ -200,6 +207,7 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 			{#each navItems as item}
 				<a
 					href={item.href}
+					aria-current={isActive(page.url.pathname, item.href) ? 'page' : undefined}
 					title={item.label}
 					class="focus-live flex h-10 items-center rounded-lg text-sm transition-colors
 						{isActive(page.url.pathname, item.href)

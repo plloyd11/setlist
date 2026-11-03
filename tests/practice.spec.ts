@@ -43,6 +43,10 @@ test.describe('Practice player (PRACTICE-01)', () => {
 			await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 10_000 });
 
 			// The chart is listed; PDFs open the inline viewer
+			// The first PDF opens by itself; its chip closes and reopens it
+			await expect(page.locator('iframe[title^="Chart:"]')).toBeVisible();
+			await page.getByRole('button', { name: 'Tab', exact: true }).click();
+			await expect(page.locator('iframe[title^="Chart:"]')).toBeHidden();
 			await page.getByRole('button', { name: 'Tab', exact: true }).click();
 			await expect(page.locator('iframe[title^="Chart:"]')).toBeVisible();
 			await expect(page.getByRole('link', { name: 'Open in new tab' })).toBeVisible();

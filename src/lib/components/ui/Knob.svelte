@@ -7,6 +7,7 @@
 		detents = null,
 		label,
 		format = (v: number) => String(v),
+		showValue = true,
 		disabled = false,
 		onchange
 	}: {
@@ -20,6 +21,8 @@
 		label: string;
 		/** Readout + aria-valuetext, e.g. v => `${Math.round(v * 100)}%` */
 		format?: (v: number) => string;
+		/** False when the value is already shown larger nearby */
+		showValue?: boolean;
 		disabled?: boolean;
 		onchange?: (v: number) => void;
 	} = $props();
@@ -158,7 +161,9 @@
 	>
 		{label}
 	</span>
-	<span class="-mt-1 text-xs font-medium text-surface-700 tabular-nums dark:text-surface-300">
-		{format(value)}
-	</span>
+	{#if showValue}
+		<span class="-mt-1 text-xs font-medium text-surface-700 tabular-nums dark:text-surface-300">
+			{format(value)}
+		</span>
+	{/if}
 </div>

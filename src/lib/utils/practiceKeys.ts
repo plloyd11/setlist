@@ -6,7 +6,8 @@ export type PracticeAction =
 	| 'back'
 	| 'forward'
 	| 'nextSong'
-	| 'previousSong';
+	| 'previousSong'
+	| 'toggleMetronome';
 
 /**
  * Which practice shortcut, if any, a window-level keydown means. Focus usually
@@ -41,6 +42,9 @@ export function practiceShortcut(e: KeyboardEvent): PracticeAction | null {
 		case 'p':
 		case 'P':
 			return 'previousSong';
+		case 'm':
+		case 'M':
+			return 'toggleMetronome';
 		default:
 			return null;
 	}
