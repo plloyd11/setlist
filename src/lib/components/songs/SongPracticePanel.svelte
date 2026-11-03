@@ -19,7 +19,7 @@
 	import type { SongAudio } from '#lib/types/database.js';
 
 	// Peaks may be absent: long sets fetch them per song through loadPeaks
-	type Variant = Omit<SongAudio, 'waveform_peaks'> & {
+	type Variant = Omit<SongAudio, 'waveform_peaks' | 'song_id'> & {
 		waveform_peaks?: number[] | null;
 		signedUrl: string | null;
 	};

@@ -178,3 +178,75 @@ export interface TrackComment {
 	resolved_by: string | null;
 	created_at: string;
 }
+
+// ---- Practice mode: private to the musician, even for band songs ----
+
+export type SongPracticeStatus = 'learning' | 'needs_work' | 'solid';
+
+export interface SongPractice {
+	user_id: string;
+	song_id: string;
+	status: SongPracticeStatus;
+	note: string | null;
+	updated_at: string;
+}
+
+export interface PracticeSession {
+	id: string;
+	user_id: string;
+	started_at: string;
+	last_active_at: string;
+	ended_at: string | null;
+}
+
+export interface PracticeSessionItem {
+	id: string;
+	session_id: string;
+	kind: 'song' | 'exercise' | 'skill';
+	song_id: string | null;
+	exercise_id: string | null;
+	skill_id: string | null;
+	label: string;
+	practice_seconds: number;
+	run_seconds: number | null;
+	run_source: 'audio' | 'stopwatch' | null;
+	length_before_apply: number | null;
+	note: string | null;
+	created_at: string;
+}
+
+export interface Skill {
+	id: string;
+	user_id: string;
+	title: string;
+	notes: string | null;
+	goal_bpm: number | null;
+	source: 'own' | 'curated' | 'claude';
+	curated_key: string | null;
+	lesson: Record<string, unknown> | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface SkillTempoLog {
+	id: string;
+	skill_id: string;
+	bpm: number;
+	note: string | null;
+	logged_at: string;
+}
+
+export interface Exercise {
+	id: string;
+	user_id: string;
+	skill_id: string | null;
+	title: string;
+	notes: string | null;
+	target_seconds: number;
+	routine_position: number | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export type ExerciseAudio = Omit<SongAudio, 'song_id'> & { exercise_id: string };
+export type ExerciseFile = Omit<SongFile, 'song_id'> & { exercise_id: string };

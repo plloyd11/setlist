@@ -2,11 +2,19 @@
 	let dialogEl: HTMLDialogElement | undefined = $state();
 	let title = $state('');
 	let message = $state('');
+	let confirmLabel = $state('Delete');
+	let destructive = $state(true);
 	let resolver: ((value: boolean) => void) | null = null;
 
-	export function confirm(t: string, msg: string): Promise<boolean> {
+	export function confirm(
+		t: string,
+		msg: string,
+		options: { confirmLabel?: string; destructive?: boolean } = {}
+	): Promise<boolean> {
 		title = t;
 		message = msg;
+		confirmLabel = options.confirmLabel ?? 'Delete';
+		destructive = options.destructive ?? true;
 		return new Promise<boolean>((resolve) => {
 			resolver = resolve;
 			dialogEl?.showModal();
@@ -46,10 +54,12 @@
 				Cancel
 			</button>
 			<button
-				class="rounded-lg bg-danger-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-danger-600"
+				class="rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm {destructive
+					? 'bg-danger-500 hover:bg-danger-600'
+					: 'bg-accent-500 hover:bg-accent-600'}"
 				onclick={handleConfirm}
 			>
-				Delete
+				{confirmLabel}
 			</button>
 		</div>
 	</div>

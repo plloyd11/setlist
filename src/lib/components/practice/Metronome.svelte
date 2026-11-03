@@ -13,7 +13,14 @@
 		tempoFromTaps
 	} from '#lib/utils/metronome.js';
 
-	let { songId }: { /** Remembers a tempo per song when given */ songId?: string } = $props();
+	let {
+		songId,
+		onrunningchange
+	}: {
+		/** Remembers a tempo per song when given */
+		songId?: string;
+		onrunningchange?: (running: boolean) => void;
+	} = $props();
 
 	let bpm = $state(100);
 	let beatsPerBar = $state(4);
@@ -77,6 +84,7 @@
 			engine.start();
 			running = true;
 		}
+		onrunningchange?.(running);
 	}
 </script>
 

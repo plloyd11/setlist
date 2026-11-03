@@ -11,10 +11,17 @@
 			durationSeconds: number;
 			hasAudio: boolean;
 			hasChart: boolean;
+			status?: string | null;
 		}[];
 		/** Where the shed screen's Back link returns to */
 		from: string;
 	} = $props();
+
+	const STATUS_LABELS: Record<string, string> = {
+		learning: 'Learning',
+		needs_work: 'Needs work',
+		solid: 'Solid'
+	};
 </script>
 
 <ul
@@ -31,6 +38,13 @@
 				>
 					{song.title}
 				</span>
+				{#if song.status}
+					<span
+						class="shrink-0 rounded-full bg-accent-100 px-2 py-0.5 text-xs font-medium text-accent-800 dark:bg-accent-900/30 dark:text-accent-400"
+					>
+						{STATUS_LABELS[song.status]}
+					</span>
+				{/if}
 				{#if song.hasChart}
 					<svg
 						xmlns="http://www.w3.org/2000/svg"

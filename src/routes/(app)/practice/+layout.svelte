@@ -5,7 +5,8 @@
 
 	const tabs = [
 		{ href: '/practice', label: 'Today' },
-		{ href: '/practice/shed', label: 'Shed' }
+		{ href: '/practice/shed', label: 'Shed' },
+		{ href: '/practice/log', label: 'Log' }
 	];
 </script>
 

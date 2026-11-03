@@ -2,7 +2,7 @@
 	import { slide } from 'svelte/transition';
 	import type { SongFile } from '#lib/types/database.js';
 
-	type Chart = SongFile & { signedUrl: string | null };
+	type Chart = Omit<SongFile, 'song_id'> & { signedUrl: string | null };
 
 	let {
 		charts,
