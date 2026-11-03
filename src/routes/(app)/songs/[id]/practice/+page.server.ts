@@ -2,10 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import type { SongAudio, SongFile } from '#lib/types/database.js';
 import { safeInternalPath } from '#lib/utils/safeRedirect.js';
-
-// 6h — outlives any realistic practice session; WaveformPlayer's onloaderror
-// path covers the rare mid-session expiry.
-const SIGNED_URL_TTL = 21600;
+import { signAll } from '#lib/server/songMedia.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -67,26 +64,14 @@ export const load: PageServerLoad = async ({
 	const audio = (audioRaw ?? []) as SongAudio[];
 	const files = (filesRaw ?? []) as SongFile[];
 
-	// One round-trip per bucket signs everything; per-path failures (deleted
-	// object, revoked access) come back as null and render as unavailable.
-	const signAll = async (bucket: string, paths: string[]) => {
-		const byPath = new Map<string, string | null>();
-		if (paths.length === 0) return byPath;
-		const { data: signed } = await supabase.storage
-			.from(bucket)
-			.createSignedUrls(paths, SIGNED_URL_TTL);
-		for (const entry of signed ?? []) {
-			if (entry.path) byPath.set(entry.path, entry.error ? null : entry.signedUrl);
-		}
-		return byPath;
-	};
-
 	const [audioUrls, fileUrls] = await Promise.all([
 		signAll(
+			supabase,
 			'song-audio',
 			audio.map((v) => v.storage_path)
 		),
 		signAll(
+			supabase,
 			'song-files',
 			files.map((f) => f.storage_path)
 		)

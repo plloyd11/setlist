@@ -4,13 +4,28 @@
 
 	type Chart = SongFile & { signedUrl: string | null };
 
-	let { charts }: { charts: Chart[] } = $props();
+	let {
+		charts,
+		autoOpen = false,
+		compact = false
+	}: {
+		charts: Chart[];
+		/** Open the first PDF straight away, for when reading it is the point */
+		autoOpen?: boolean;
+		/** Drop the heading where the surrounding screen already says what this is */
+		compact?: boolean;
+	} = $props();
 
 	const reduceMotion =
 		typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 	// PDF charts toggle an inline viewer; one open at a time
-	let viewingChartId = $state<string | null>(null);
+	// svelte-ignore state_referenced_locally
+	let viewingChartId = $state<string | null>(
+		autoOpen
+			? (charts.find((c) => c.mime_type === 'application/pdf' && c.signedUrl)?.id ?? null)
+			: null
+	);
 	let viewingChart = $derived(
 		viewingChartId ? (charts.find((c) => c.id === viewingChartId) ?? null) : null
 	);
@@ -29,11 +44,13 @@
 
 <!-- Charts & tabs -->
 {#if charts.length > 0}
-	<div class="mt-6">
-		<h2 class="font-display text-lg font-semibold text-surface-900 dark:text-surface-100">
-			Charts & tabs
-		</h2>
-		<ul class="mt-3 flex flex-wrap gap-2">
+	<div class={compact ? '' : 'mt-6'}>
+		{#if !compact}
+			<h2 class="font-display text-lg font-semibold text-surface-900 dark:text-surface-100">
+				Charts & tabs
+			</h2>
+		{/if}
+		<ul class="flex flex-wrap gap-2 {compact ? '' : 'mt-3'}">
 			{#each charts as chart (chart.id)}
 				<li class="flex max-w-full items-center gap-1">
 					{#if chart.mime_type === 'application/pdf' && chart.signedUrl}

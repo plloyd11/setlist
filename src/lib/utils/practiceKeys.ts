@@ -1,5 +1,12 @@
 export type PracticeAction =
-	'playPause' | 'toggleLoop' | 'pinLoopStart' | 'pinLoopEnd' | 'back' | 'forward';
+	| 'playPause'
+	| 'toggleLoop'
+	| 'pinLoopStart'
+	| 'pinLoopEnd'
+	| 'back'
+	| 'forward'
+	| 'nextSong'
+	| 'previousSong';
 
 /**
  * Which practice shortcut, if any, a window-level keydown means. Focus usually
@@ -28,6 +35,12 @@ export function practiceShortcut(e: KeyboardEvent): PracticeAction | null {
 			return 'back';
 		case 'ArrowRight':
 			return 'forward';
+		case 'n':
+		case 'N':
+			return 'nextSong';
+		case 'p':
+		case 'P':
+			return 'previousSong';
 		default:
 			return null;
 	}

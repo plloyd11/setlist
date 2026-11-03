@@ -18,13 +18,27 @@
 	import { formatDuration } from '#lib/utils/duration.js';
 	import type { SongAudio } from '#lib/types/database.js';
 
-	type Variant = SongAudio & { signedUrl: string | null };
+	// Peaks may be absent: long sets fetch them per song through loadPeaks
+	type Variant = Omit<SongAudio, 'waveform_peaks'> & {
+		waveform_peaks?: number[] | null;
+		signedUrl: string | null;
+	};
 
 	let {
 		songId,
 		lengthSeconds,
 		variants,
-		empty
+		empty,
+		arrange,
+		autoplay = false,
+		media,
+		transport = true,
+		compactStrip = false,
+		loadPeaks,
+		onfinish,
+		onplaystatechange,
+		onautoplayblocked,
+		onreadychange
 	}: {
 		/** Keys the durable per-song settings and the remembered mix */
 		songId: string;
@@ -32,6 +46,22 @@
 		variants: Variant[];
 		/** Shown when the song has no audio at all */
 		empty?: Snippet;
+		/** Lay out the readout strip, player and controls. Defaults to stacking them. */
+		arrange?: Snippet<[Snippet, Snippet, Snippet]>;
+		/** Start playing as soon as the player is ready */
+		autoplay?: boolean;
+		/** See WaveformPlayer: required for playing on without a tap on iOS */
+		media?: HTMLMediaElement;
+		/** False when the caller renders its own transport */
+		transport?: boolean;
+		/** One quiet line, for screens that already have a loud reading and need the room */
+		compactStrip?: boolean;
+		/** Fetches peaks for variants that don't carry them */
+		loadPeaks?: (variantId: string) => Promise<number[] | null>;
+		onfinish?: () => void;
+		onplaystatechange?: (playing: boolean) => void;
+		onautoplayblocked?: () => void;
+		onreadychange?: (ready: boolean) => void;
 	} = $props();
 
 	const reduceMotion =
@@ -61,6 +91,34 @@
 	let playerReady = $state(false);
 	let sectionNotice = $state('');
 
+	$effect(() => onreadychange?.(playerReady));
+
+	// A variant without peaks waits for them before the player mounts, or wavesurfer
+	// would download and decode the whole file to draw its own.
+	let fetchedPeaks = $state<{ variantId: string; peaks: number[] | null } | null>(null);
+	let peaksReady = $derived(
+		!currentVariant ||
+			currentVariant.waveform_peaks !== undefined ||
+			fetchedPeaks?.variantId === currentVariant.id
+	);
+	let currentPeaks = $derived(
+		currentVariant?.waveform_peaks ??
+			(fetchedPeaks?.variantId === currentVariant?.id ? fetchedPeaks?.peaks : null) ??
+			null
+	);
+
+	$effect(() => {
+		const variantId = currentVariant?.id;
+		if (!variantId || peaksReady || !loadPeaks) return;
+		let cancelled = false;
+		loadPeaks(variantId).then((peaks) => {
+			if (!cancelled) fetchedPeaks = { variantId, peaks };
+		});
+		return () => {
+			cancelled = true;
+		};
+	});
+
 	function persist() {
 		savePracticePrefs(songId, {
 			volume,
@@ -89,7 +147,7 @@
 
 	// Push everything onto the fresh wavesurfer instance. A loop from another
 	// variant (or a stale store) may overshoot this file — clamp or drop it.
-	function applySettings() {
+	async function applySettings() {
 		playerReady = true;
 		player?.setVolume(volume);
 		player?.setPlaybackRate(speed);
@@ -106,6 +164,7 @@
 			}
 		}
 		player?.setLoopEnabled(loopEnabled);
+		if (autoplay && (await player?.play()) === false) onautoplayblocked?.();
 	}
 
 	function handleVariantChange(e: Event) {
@@ -236,6 +295,12 @@
 		persist();
 	}
 
+	/** Back to the top of the track and play */
+	export function restart() {
+		player?.seekTo(0);
+		void player?.play();
+	}
+
 	/** Run a keyboard shortcut (see practiceShortcut) */
 	export function perform(action: PracticeAction) {
 		switch (action) {
@@ -267,102 +332,129 @@
      the user; switching mixes is the recovery path. -->
 <!-- items-start so the micro-labels sit on one line across cells of unequal
      height (the xl number, the sm mix value, the select all differ) -->
-<div
-	class="mt-5 flex items-start gap-6 rounded-xl border border-surface-200 bg-surface-50 px-4 py-3 dark:border-surface-700 dark:bg-surface-800"
->
-	<div class="shrink-0">
-		<p
-			class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-		>
-			Length
-		</p>
-		<p class="font-display text-xl font-bold text-accent-600 tabular-nums dark:text-accent-hot">
-			{formatDuration(lengthSeconds)}
-		</p>
-	</div>
-	{#if playable.length > 1}
-		<div class="min-w-0">
-			<label
-				for="practice-variant"
-				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-			>
-				Mix
-			</label>
-			<select
-				id="practice-variant"
-				value={currentVariant?.id}
-				onchange={handleVariantChange}
-				class="focus-live mt-0.5 block max-w-full min-w-0 rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
-			>
-				{#each playable as variant (variant.id)}
-					<option value={variant.id}>{variant.label ?? variant.file_name}</option>
-				{/each}
-			</select>
+{#snippet stripBlock()}
+	{#if compactStrip}
+		<div class="flex items-center gap-3">
+			<span class="text-sm font-medium text-surface-600 tabular-nums dark:text-surface-300">
+				<span class="sr-only">Length</span>
+				{formatDuration(lengthSeconds)}
+			</span>
+			{#if playable.length > 1}
+				<label for="practice-variant" class="sr-only">Mix</label>
+				<select
+					id="practice-variant"
+					value={currentVariant?.id}
+					onchange={handleVariantChange}
+					class="focus-live min-h-11 max-w-48 min-w-0 rounded-lg border border-surface-300 bg-surface-50 px-3 py-1 text-sm text-surface-900 md:min-h-9 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
+				>
+					{#each playable as variant (variant.id)}
+						<option value={variant.id}>{variant.label ?? variant.file_name}</option>
+					{/each}
+				</select>
+			{:else if currentVariant}
+				<span class="truncate text-sm text-surface-500 dark:text-surface-300">
+					{currentVariant.label ?? currentVariant.file_name}
+				</span>
+			{/if}
+			{#if playing}
+				<span
+					class="h-2 w-2 shrink-0 animate-pulse rounded-full bg-neon-600 shadow-glow-neon motion-reduce:animate-none dark:bg-neon-400"
+					role="img"
+					aria-label="Playing"
+				></span>
+			{/if}
 		</div>
-	{:else if currentVariant}
-		<div class="min-w-0">
-			<p
-				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-			>
-				Mix
-			</p>
-			<p class="truncate text-sm font-medium text-surface-700 dark:text-surface-300">
-				{currentVariant.label ?? currentVariant.file_name}
-			</p>
-		</div>
-	{/if}
-	{#if playing}
-		<!-- Powered-on: the lamp lights only while audio is actually playing -->
+	{:else}
 		<div
-			class="ml-auto flex shrink-0 items-center gap-2 self-center"
-			transition:fade={{ duration: reduceMotion ? 0 : 150 }}
+			class="flex items-start gap-6 rounded-xl border border-surface-200 bg-surface-50 px-4 py-3 dark:border-surface-700 dark:bg-surface-800"
 		>
-			<span
-				class="h-2 w-2 animate-pulse rounded-full bg-neon-600 shadow-glow-neon motion-reduce:animate-none dark:bg-neon-400"
-			></span>
-			<span class="text-xs font-medium text-surface-500 dark:text-surface-300">Playing</span>
+			<div class="shrink-0">
+				<p
+					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+				>
+					Length
+				</p>
+				<p class="font-display text-xl font-bold text-accent-600 tabular-nums dark:text-accent-hot">
+					{formatDuration(lengthSeconds)}
+				</p>
+			</div>
+			{#if playable.length > 1}
+				<div class="min-w-0">
+					<label
+						for="practice-variant"
+						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+					>
+						Mix
+					</label>
+					<select
+						id="practice-variant"
+						value={currentVariant?.id}
+						onchange={handleVariantChange}
+						class="focus-live mt-0.5 block max-w-full min-w-0 rounded-lg border border-surface-300 bg-surface-50 px-3 py-1.5 text-sm text-surface-900 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
+					>
+						{#each playable as variant (variant.id)}
+							<option value={variant.id}>{variant.label ?? variant.file_name}</option>
+						{/each}
+					</select>
+				</div>
+			{:else if currentVariant}
+				<div class="min-w-0">
+					<p
+						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+					>
+						Mix
+					</p>
+					<p class="truncate text-sm font-medium text-surface-700 dark:text-surface-300">
+						{currentVariant.label ?? currentVariant.file_name}
+					</p>
+				</div>
+			{/if}
+			{#if playing}
+				<!-- Powered-on: the lamp lights only while audio is actually playing -->
+				<div
+					class="ml-auto flex shrink-0 items-center gap-2 self-center"
+					transition:fade={{ duration: reduceMotion ? 0 : 150 }}
+				>
+					<span
+						class="h-2 w-2 animate-pulse rounded-full bg-neon-600 shadow-glow-neon motion-reduce:animate-none dark:bg-neon-400"
+					></span>
+					<span class="text-xs font-medium text-surface-500 dark:text-surface-300">Playing</span>
+				</div>
+			{/if}
 		</div>
 	{/if}
-</div>
+{/snippet}
 
-<!-- Player -->
-<div class="mt-6">
+{#snippet playerBlock()}
 	{#if currentVariant?.signedUrl && !audioFailed}
-		{#key currentVariant.id}
-			<WaveformPlayer
-				bind:this={player}
-				url={currentVariant.signedUrl}
-				peaks={currentVariant.waveform_peaks}
-				duration={currentVariant.duration_seconds}
-				practice={true}
-				onready={applySettings}
-				onregionchange={handleRegionChange}
-				onloaderror={handlePlayerError}
-				onplaystatechange={(p) => (playing = p)}
-				onfinish={() => (playing = false)}
-			/>
-		{/key}
-		<PracticeControls
-			{volume}
-			{speed}
-			{loop}
-			{loopEnabled}
-			{preRoll}
-			{sections}
-			disabled={!playerReady}
-			onvolumechange={setVolume}
-			onspeedchange={setSpeed}
-			onlooptoggle={toggleLoop}
-			onloopclear={clearLoop}
-			onprerolltoggle={togglePreRoll}
-			onsavesection={saveSection}
-			onrecallsection={recallSection}
-			ondeletesection={deleteSection}
-		/>
-		{#if sectionNotice}
-			<p role="status" class="mt-2 text-sm text-surface-600 dark:text-surface-300">
-				{sectionNotice}
-			</p>
+		{#if peaksReady}
+			{#key currentVariant.id}
+				<WaveformPlayer
+					bind:this={player}
+					url={currentVariant.signedUrl}
+					peaks={currentPeaks}
+					duration={currentVariant.duration_seconds}
+					practice={true}
+					{media}
+					{transport}
+					onready={applySettings}
+					onregionchange={handleRegionChange}
+					onloaderror={handlePlayerError}
+					onplaystatechange={(p) => {
+						playing = p;
+						onplaystatechange?.(p);
+					}}
+					onfinish={() => {
+						playing = false;
+						onfinish?.();
+					}}
+				/>
+			{/key}
+		{:else}
+			<div
+				class="min-h-[8.5rem] animate-pulse rounded-xl border border-surface-200 bg-surface-50 motion-reduce:animate-none dark:border-surface-800 dark:bg-surface-900"
+				aria-hidden="true"
+			></div>
 		{/if}
 	{:else if audioFailed || signingFailed}
 		<div
@@ -386,4 +478,41 @@
 	{:else}
 		{@render empty?.()}
 	{/if}
-</div>
+{/snippet}
+
+{#snippet controlsBlock()}
+	{#if currentVariant?.signedUrl && !audioFailed}
+		<PracticeControls
+			{volume}
+			{speed}
+			{loop}
+			{loopEnabled}
+			{preRoll}
+			{sections}
+			disabled={!playerReady}
+			onvolumechange={setVolume}
+			onspeedchange={setSpeed}
+			onlooptoggle={toggleLoop}
+			onloopclear={clearLoop}
+			onprerolltoggle={togglePreRoll}
+			onsavesection={saveSection}
+			onrecallsection={recallSection}
+			ondeletesection={deleteSection}
+		/>
+		{#if sectionNotice}
+			<p role="status" class="mt-2 text-sm text-surface-600 dark:text-surface-300">
+				{sectionNotice}
+			</p>
+		{/if}
+	{/if}
+{/snippet}
+
+{#if arrange}
+	{@render arrange(stripBlock, playerBlock, controlsBlock)}
+{:else}
+	<div class="mt-5">{@render stripBlock()}</div>
+	<div class="mt-6">
+		{@render playerBlock()}
+		{@render controlsBlock()}
+	</div>
+{/if}
