@@ -579,7 +579,7 @@
 				Charts & tabs
 			</h4>
 			<p class="mt-0.5 text-xs text-surface-500 dark:text-surface-300">
-				PDFs, Word docs, and Guitar Pro files — chord charts, tabs, lyric sheets.
+				PDFs, Word docs, Guitar Pro and TuxGuitar files: chord charts, tabs, lyric sheets.
 			</p>
 
 			{#if files.length > 0}

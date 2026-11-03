@@ -117,7 +117,7 @@ export interface SongAudio {
 }
 
 /**
- * A chart/tab document attached to a library song — PDF, Word, or Guitar Pro.
+ * A chart/tab document attached to a library song — PDF, Word, Guitar Pro or TuxGuitar.
  * Visibility mirrors the song's (owner + band members when the song is
  * band-linked); only the owner uploads/manages.
  */

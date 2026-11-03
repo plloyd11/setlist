@@ -180,7 +180,7 @@
 				</ul>
 			{:else}
 				<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
-					Add a drill, then attach a chart, Guitar Pro file or backing track to it.
+					Add a drill, then attach a chart, tab or backing track to it.
 				</p>
 			{/if}
 			<form

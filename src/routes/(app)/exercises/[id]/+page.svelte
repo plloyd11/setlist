@@ -92,7 +92,7 @@
 				</form>
 
 				<div>
-					<p class={labelClass}>Add a chart or Guitar Pro file</p>
+					<p class={labelClass}>Add a chart or tab</p>
 					<div class="mt-1">
 						<FileUploadZone
 							supabase={page.data.supabase}

@@ -5,10 +5,10 @@ const MAX_FILE_SIZE = 25 * 1024 * 1024; // mirrors the bucket file_size_limit
 const MAX_LABEL_LENGTH = 60;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Extension is the real gate (Guitar Pro has no registered MIME type — the
+// Extension is the real gate (Guitar Pro and TuxGuitar have no registered MIME type — the
 // bucket allowlist has to admit application/octet-stream); mirror the client
 // list in #lib/utils/chartUpload.js.
-const ALLOWED_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'gp', 'gp3', 'gp4', 'gp5', 'gpx']);
+const ALLOWED_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'gp', 'gp3', 'gp4', 'gp5', 'gpx', 'tg']);
 const ALLOWED_MIME_TYPES = new Set([
 	'application/pdf',
 	'application/msword',

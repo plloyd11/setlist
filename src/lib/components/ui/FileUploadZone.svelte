@@ -74,7 +74,7 @@
 		error = '';
 		notice = '';
 		if (!resolveChartMimeType(f)) {
-			error = 'Please upload a PDF, Word doc, or Guitar Pro file.';
+			error = 'Please upload a PDF, Word doc, Guitar Pro or TuxGuitar file.';
 			return;
 		}
 		if (f.size > MAX_CHART_FILE_SIZE) {
@@ -233,7 +233,7 @@
 				Click or drag to choose a chart or tab
 			</span>
 			<span class="text-xs text-surface-500 dark:text-surface-300">
-				PDF, Word, or Guitar Pro (max 25MB)
+				PDF, Word, Guitar Pro or TuxGuitar (max 25MB)
 			</span>
 		{/if}
 	</div>

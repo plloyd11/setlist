@@ -5,9 +5,9 @@ import { createSong } from './helpers/factories';
 import { safeDelete } from './helpers/cleanup';
 import { adminClient } from './helpers/supabase-admin';
 
-async function attachTab(songId: string, fixture: string, fileName: string) {
+async function attachTab(songId: string, fixture: string | Buffer, fileName: string) {
 	const path = `songs/${songId}/${crypto.randomUUID()}.${fileName.split('.').pop()}`;
-	const file = fs.readFileSync(fixture);
+	const file = typeof fixture === 'string' ? fs.readFileSync(fixture) : fixture;
 	const { error: uploadError } = await adminClient.storage
 		.from('song-files')
 		.upload(path, file, { contentType: 'application/octet-stream' });
@@ -130,4 +130,130 @@ test.describe('Tab player and the sound', () => {
 			await safeDelete('songs', song.id);
 		}
 	});
+});
+
+test.describe('TuxGuitar files', () => {
+	const fixture = (name: string) => `tests/fixtures/tuxguitar/${name}`;
+
+	async function openTab(page: Page, songId: string) {
+		await page.goto(`/songs/${songId}/practice`);
+		await expect(page.getByRole('button', { name: 'Play tab' })).toBeEnabled({ timeout: 30_000 });
+	}
+
+	test('both generations of the format read as the same song', async ({ page, testUser }) => {
+		await page.setViewportSize({ width: 1500, height: 1300 });
+		const seen: { texts: string[]; length: string | null }[] = [];
+		for (const file of ['reference_15.tg', 'reference_20.tg']) {
+			const song = await createSong(page, testUser.id, { title: file });
+			try {
+				await attachTab(song.id, fixture(file), file);
+				await openTab(page, song.id);
+				await expect(page.getByLabel('Track')).toContainText('Track 3');
+				seen.push({
+					texts: await page.locator('.at-surface text').allTextContents(),
+					length: await page.getByText(/\d:\d\d \/ \d:\d\d/).textContent()
+				});
+			} finally {
+				await safeDelete('songs', song.id);
+			}
+		}
+		const [old, current] = seen;
+		expect(old).toEqual(current);
+		expect(current.length).toContain('1:20');
+		// The song's chords, markers, repeats and tempo all made it across
+		for (const expected of ['C6add9', 'testMarker', 'testText', 'x4', ' = 100']) {
+			expect(current.texts).toContain(expected);
+		}
+	});
+
+	test('strings land the right way up, low strings at the bottom', async ({ page, testUser }) => {
+		await page.setViewportSize({ width: 1500, height: 1300 });
+		const song = await createSong(page, testUser.id, { title: 'Open Strings' });
+		try {
+			// Its first six bars play the open strings, from string 6 up to string 1
+			await attachTab(song.id, fixture('demo_20.tg'), 'demo_20.tg');
+			await openTab(page, song.id);
+			const heights = await page
+				.locator('.at-surface text', { hasText: /^0$/ })
+				.evaluateAll((frets) => frets.slice(0, 6).map((f) => f.getBoundingClientRect().y));
+			expect(heights).toHaveLength(6);
+			for (let i = 1; i < heights.length; i++) {
+				expect(heights[i]).toBeLessThan(heights[i - 1]);
+			}
+		} finally {
+			await safeDelete('songs', song.id);
+		}
+	});
+
+	test('a drum track shows notation and no tab, and the song plays', async ({ page, testUser }) => {
+		const song = await createSong(page, testUser.id, { title: 'Drum Track' });
+		try {
+			await attachTab(song.id, fixture('drums_handmade.tg'), 'drums_handmade.tg');
+			await openTab(page, song.id);
+			// The guitar track is tab, so its frets are there as numbers
+			await expect(page.locator('.at-surface text', { hasText: /^3$/ }).first()).toBeVisible();
+
+			await page.getByLabel('Track').selectOption({ label: 'Drums' });
+			// The percussion clef, in the music font. Waiting for it also means the redraw is done.
+			await expect(page.locator('.at-surface text', { hasText: '\ue069' })).toHaveCount(1);
+			await expect(page.locator('.at-surface text', { hasText: /^3$/ })).toHaveCount(0);
+			// A drum's MIDI key must not be drawn as if it were a fret
+			await expect(page.locator('.at-surface text', { hasText: /^(36|38|42)$/ })).toHaveCount(0);
+
+			await page.getByRole('button', { name: 'Play tab' }).click();
+			await expect(page.getByText(/^0:0[1-9] \/ 0:04$/)).toBeVisible({ timeout: 5000 });
+		} finally {
+			await safeDelete('songs', song.id);
+		}
+	});
+
+	test('can be uploaded from the song, and opens from there', async ({ page, testUser }) => {
+		const song = await createSong(page, testUser.id, { title: 'Upload A Tab' });
+		try {
+			await page.goto('/songs');
+			await page.getByText('Upload A Tab').click();
+			const panel = page.getByRole('dialog');
+			await panel
+				.locator('input[type="file"][accept*=".tg"]')
+				.setInputFiles(fixture('reference_20.tg'));
+			await panel.getByRole('button', { name: 'Upload chart' }).click();
+			// The name shows as soon as it's picked. This only shows once it's saved.
+			await expect(panel.getByText('1 chart')).toBeVisible({ timeout: 15_000 });
+
+			await openTab(page, song.id);
+			await expect(
+				page.locator('.at-surface text', { hasText: 'testMarker' }).first()
+			).toBeVisible();
+		} finally {
+			await safeDelete('songs', song.id);
+		}
+	});
+
+	const unreadable: [string, Buffer][] = [
+		['garbage', Buffer.from('this is not a tab at all')],
+		// The binary layout from before TuxGuitar 1.3
+		[
+			'an older format',
+			Buffer.concat([
+				Buffer.from([27]),
+				Buffer.from(Array.from('TuxGuitar File Format - 1.2').flatMap((c) => [0, c.charCodeAt(0)])),
+				Buffer.alloc(64)
+			])
+		],
+		// A zip, but a Guitar Pro one with the wrong extension
+		['a zip of something else', fs.readFileSync('tests/fixtures/sample.gp')]
+	];
+	for (const [description, bytes] of unreadable) {
+		test(`${description} offers the download instead`, async ({ page, testUser }) => {
+			const song = await createSong(page, testUser.id, { title: 'Broken Tab' });
+			try {
+				await attachTab(song.id, bytes, 'broken.tg');
+				await page.goto(`/songs/${song.id}/practice`);
+				await expect(page.getByRole('alert')).toContainText("Couldn't open this file");
+				await expect(page.getByRole('link', { name: 'Download it instead' })).toBeVisible();
+			} finally {
+				await safeDelete('songs', song.id);
+			}
+		});
+	}
 });

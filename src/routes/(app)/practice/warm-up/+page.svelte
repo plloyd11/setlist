@@ -126,7 +126,7 @@
 	<p class="font-display text-xl text-surface-900 dark:text-surface-100">No warm-up yet</p>
 	<p class="mt-1 max-w-prose text-sm text-surface-500 dark:text-surface-300">
 		Add the exercises you warm up with, then run them in order with a timer. Each one can have its
-		own chart, Guitar Pro file or backing track.
+		own chart, tab or backing track.
 	</p>
 {/if}
 

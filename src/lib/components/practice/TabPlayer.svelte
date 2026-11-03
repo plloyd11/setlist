@@ -7,10 +7,13 @@
 
 	let {
 		url,
+		tuxGuitar = false,
 		downloadHref,
 		keyboard = false
 	}: {
 		url: string;
+		/** A .tg file, which alphaTab can't read: it gets converted here first */
+		tuxGuitar?: boolean;
 		downloadHref: string | null;
 		/** Answer to Space and L: for when no audio mix on the page is using them */
 		keyboard?: boolean;
@@ -63,7 +66,8 @@
 	function applyStaffVisibility() {
 		for (const track of score?.tracks ?? []) {
 			for (const staff of track.staves) {
-				if (staff.tuning.length > 0) {
+				// Drum tracks can carry a tuning too, which means nothing for them
+				if (staff.tuning.length > 0 && !staff.isPercussion) {
 					staff.showTablature = true;
 					staff.showStandardNotation = showNotation;
 				}
@@ -82,6 +86,9 @@
 				const response = await fetch(url);
 				if (!response.ok) throw new Error(`HTTP ${response.status}`);
 				const data = await response.arrayBuffer();
+				// Only for this format, so a Guitar Pro file never loads the converter
+				const tg = tuxGuitar ? await import('#lib/utils/tuxguitar/load.js') : null;
+				const tgSong = tg ? await tg.readTuxGuitar(data) : null;
 				if (cancelled || !sheet) return;
 
 				api = new alphaTab.AlphaTabApi(sheet, {
@@ -130,7 +137,11 @@
 				});
 				api.error.on(() => (status = 'failed'));
 
-				api.load(data);
+				if (tg && tgSong) {
+					api.renderScore(tg.tgToScore(tgSong, alphaTab.model, api.settings), [0]);
+				} else {
+					api.load(data);
+				}
 			} catch {
 				if (!cancelled) status = 'failed';
 			}

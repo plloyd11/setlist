@@ -21,13 +21,14 @@
 	} = $props();
 
 	const isPdf = (c: Chart) => c.mime_type === 'application/pdf';
-	const isTab = (c: Chart) => /\.(gp|gp3|gp4|gp5|gpx)$/i.test(c.file_name);
+	const isTuxGuitar = (c: Chart) => /\.tg$/i.test(c.file_name);
+	const isTab = (c: Chart) => /\.(gp|gp3|gp4|gp5|gpx|tg)$/i.test(c.file_name);
 	const opensInline = (c: Chart) => (isPdf(c) || isTab(c)) && !!c.signedUrl;
 
 	const reduceMotion =
 		typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-	// PDFs and Guitar Pro files toggle an inline viewer; one open at a time
+	// PDFs and tabs toggle an inline viewer; one open at a time
 	// svelte-ignore state_referenced_locally
 	let viewingChartId = $state<string | null>(
 		autoOpen ? (charts.find(opensInline)?.id ?? null) : null
@@ -95,6 +96,7 @@
 				{#key viewingChart.id}
 					<TabPlayer
 						url={viewingChart.signedUrl}
+						tuxGuitar={isTuxGuitar(viewingChart)}
 						downloadHref={downloadHref(viewingChart)}
 						keyboard={tabKeyboard}
 					/>
