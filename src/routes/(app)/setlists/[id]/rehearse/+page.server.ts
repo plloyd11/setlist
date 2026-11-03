@@ -1,12 +1,14 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import type { SongAudio, SongFile } from '#lib/types/database.js';
+import type { SongAudio } from '#lib/types/database.js';
 import type {
-	RehearseChart,
 	RehearseSourceRow,
 	RehearseVariant
 } from '#lib/components/rehearse/rehearseState.svelte.js';
-import { signAll } from '#lib/server/songMedia.js';
+
+// 6h — outlives any realistic rehearsal session; WaveformPlayer's onloaderror
+// path covers the rare mid-session expiry.
+const SIGNED_URL_TTL = 21600;
 
 export const load: PageServerLoad = async ({ params, locals: { supabase, safeGetSession } }) => {
 	const { session } = await safeGetSession();
@@ -38,15 +40,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 	// excluded — at ~10KB per variant they'd dominate the payload; the page
 	// fetches them lazily per variant from ./rehearse/peaks/[audioId].
 	let audio: Omit<SongAudio, 'waveform_peaks'>[] = [];
-	let files: SongFile[] = [];
 	if (songIds.length > 0) {
-		const { data: fileRows } = await supabase
-			.from('song_files')
-			.select('*')
-			.in('song_id', songIds)
-			.order('created_at', { ascending: true });
-		files = (fileRows ?? []) as SongFile[];
-
 		const { data } = await supabase
 			.from('song_audio')
 			.select(
@@ -57,32 +51,24 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 		audio = (data ?? []) as Omit<SongAudio, 'waveform_peaks'>[];
 	}
 
-	const [urlByPath, chartUrlByPath] = await Promise.all([
-		signAll(
-			supabase,
-			'song-audio',
-			audio.map((v) => v.storage_path)
-		),
-		signAll(
-			supabase,
-			'song-files',
-			files.map((f) => f.storage_path)
-		)
-	]);
+	// One round-trip signs every variant; per-path failures (deleted object,
+	// revoked access) come back as null and render as unavailable.
+	const urlByPath = new Map<string, string | null>();
+	if (audio.length > 0) {
+		const { data: signed } = await supabase.storage.from('song-audio').createSignedUrls(
+			audio.map((v) => v.storage_path),
+			SIGNED_URL_TTL
+		);
+		for (const entry of signed ?? []) {
+			if (entry.path) urlByPath.set(entry.path, entry.error ? null : entry.signedUrl);
+		}
+	}
 
 	const variantsBySong: Record<string, RehearseVariant[]> = {};
 	for (const v of audio) {
 		(variantsBySong[v.song_id] ??= []).push({
 			...v,
 			signedUrl: urlByPath.get(v.storage_path) ?? null
-		});
-	}
-
-	const chartsBySong: Record<string, RehearseChart[]> = {};
-	for (const f of files) {
-		(chartsBySong[f.song_id] ??= []).push({
-			...f,
-			signedUrl: chartUrlByPath.get(f.storage_path) ?? null
 		});
 	}
 
@@ -100,8 +86,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 			gap_seconds: row.gap_seconds,
 			gap_label: row.gap_label,
 			song,
-			variants: row.song_id ? (variantsBySong[row.song_id] ?? []) : [],
-			charts: row.song_id ? (chartsBySong[row.song_id] ?? []) : []
+			variants: row.song_id ? (variantsBySong[row.song_id] ?? []) : []
 		};
 	});
 

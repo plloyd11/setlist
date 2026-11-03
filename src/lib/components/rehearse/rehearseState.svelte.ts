@@ -1,12 +1,11 @@
 import { browser } from '$app/env';
-import type { SongAudio, SongFile } from '#lib/types/database.js';
+import type { SongAudio } from '#lib/types/database.js';
 import { isTransitionPair } from '#lib/utils/setlistTiming.js';
 import { loadVariantChoices, saveVariantChoices } from '#lib/utils/variantChoice.js';
 
 // Peaks are deliberately absent: they're heavy (~10KB/variant) and fetched
 // lazily per-variant by the rehearse page, not shipped in the load payload.
 export type RehearseVariant = Omit<SongAudio, 'waveform_peaks'> & { signedUrl: string | null };
-export type RehearseChart = SongFile & { signedUrl: string | null };
 
 export type RehearseItem =
 	| {
@@ -17,7 +16,6 @@ export type RehearseItem =
 			notes: string | null;
 			durationSeconds: number;
 			variants: RehearseVariant[];
-			charts: RehearseChart[];
 	  }
 	| {
 			kind: 'gap';
@@ -34,13 +32,13 @@ export interface RehearseSourceRow {
 	gap_label: string | null;
 	song: { id: string; title: string; duration_seconds: number; notes: string | null } | null;
 	variants: RehearseVariant[];
-	charts: RehearseChart[];
 }
 
 /**
  * Build the rehearse timeline from ordered setlist rows. Transitions are
- * synthesized only between consecutive song-song pairs: same rule as TimingBar
- * ("an explicit gap IS the break"), so the totals here agree with the builder's.
+ * synthesized only between consecutive song-song pairs — same rule as
+ * TimingBar ("an explicit gap IS the break"), so the totals here agree with
+ * the builder's.
  */
 export function buildRehearseItems(
 	rows: RehearseSourceRow[],
@@ -58,80 +56,88 @@ export function buildRehearseItems(
 				kind: 'song',
 				key: row.id,
 				// row.songs join can be null when the song is no longer visible via
-				// RLS: keep the slot so the set timing survives, just without audio
+				// RLS — keep the slot so the set timing survives, just without audio
 				songId: row.song?.id ?? row.song_id,
 				title: row.song?.title ?? 'Unavailable song',
 				notes: row.song?.notes ?? null,
 				durationSeconds: row.song?.duration_seconds ?? 0,
-				variants: row.variants,
-				charts: row.charts
+				variants: row.variants
 			});
 		}
 	});
 	return items;
 }
 
-/** Drop remembered mix choices that point at deleted variants (only judgeable for
- * songs in this set; other songs' entries are kept) and cap the map's size. */
-function pruneVariantChoices(items: RehearseItem[]) {
-	const choices = loadVariantChoices();
-	const entries = Object.entries(choices);
-	if (entries.length === 0) return;
-
-	const variantsBySong = new Map<string, Set<string>>();
-	for (const item of items) {
-		if (item.kind === 'song' && item.songId) {
-			variantsBySong.set(item.songId, new Set(item.variants.map((v) => v.id)));
-		}
-	}
-
-	let kept = entries.filter(([songId, variantId]) => {
-		const known = variantsBySong.get(songId);
-		return known === undefined || known.has(variantId);
-	});
-	// Insertion order ≈ age; keep the most recent choices
-	if (kept.length > 300) kept = kept.slice(kept.length - 300);
-
-	if (kept.length !== entries.length) saveVariantChoices(Object.fromEntries(kept));
-}
-
-export type RehearseStatus = 'idle' | 'running' | 'paused' | 'finished';
+export type RehearseStatus = 'idle' | 'running' | 'paused' | 'waiting' | 'finished';
 
 /**
- * A solo practice session's logical state. The page owns the actual audio
- * (SongPracticePanel) and the wall-clock interval; this class owns the position in
- * the set and what should be happening at it:
+ * The rehearse player's logical state. The page owns the actual audio
+ * element (WaveformPlayer) and the wall-clock interval; this class owns the
+ * timeline position and what should be happening at it:
  *
- * - song with audio    -> played by the panel; its events call setAudioPlaying()
- *                         and onAudioFinished()
- * - song without audio -> a stopwatch the musician starts: they're playing it live
- * - gap/transition     -> countdown, only reached while running the set
- *
- * "Running" a song with audio is intent: the page autoplays when the player is
- * ready and downgrades to paused if the browser blocks it.
+ * - song with playable audio  -> running/paused, advanced by onAudioFinished()
+ * - song without audio        -> 'waiting' (pause-and-wait: the band plays it
+ *                                live), advanced only by next()
+ * - gap/transition            -> countdown driven by tick(now) on wall-clock
+ *                                deltas (self-corrects after tab throttling)
  */
 export class RehearseState {
 	readonly items: RehearseItem[] = [];
 
 	index = $state(0);
 	status = $state<RehearseStatus>('idle');
-	/** On: tracks autoplay and advance, and breaks count down. Off: stay on one song. */
-	runSet = $state(true);
 	countdownRemaining = $state(0);
-	stopwatchSeconds = $state(0);
-	/** Real time spent playing, as opposed to the set's library durations */
-	practicedSeconds = $state(0);
-	/** The track reached its end with runSet off: offer Again or Next */
-	trackEnded = $state(false);
+	songElapsed = $state(0);
 
+	#variantChoice = $state<Record<string, string>>({});
 	#lastTickMs: number | null = null;
 
 	constructor(items: RehearseItem[]) {
 		this.items = items;
-		if (browser) pruneVariantChoices(items);
+		if (browser) {
+			this.#variantChoice = loadVariantChoices();
+			this.#pruneChoices();
+		}
+	}
+
+	/** Drop remembered choices that point at deleted variants (only judgeable
+	 * for songs present in this session — other songs' entries are kept) and
+	 * cap the map so it can't grow forever. */
+	#pruneChoices() {
+		const entries = Object.entries(this.#variantChoice);
+		if (entries.length === 0) return;
+
+		const variantsBySong = new Map<string, Set<string>>();
+		for (const item of this.items) {
+			if (item.kind === 'song' && item.songId) {
+				variantsBySong.set(item.songId, new Set(item.variants.map((v) => v.id)));
+			}
+		}
+
+		let kept = entries.filter(([songId, variantId]) => {
+			const known = variantsBySong.get(songId);
+			return known === undefined || known.has(variantId);
+		});
+		// Insertion order ≈ age; keep the most recent choices
+		if (kept.length > 300) kept = kept.slice(kept.length - 300);
+
+		if (kept.length !== entries.length) {
+			this.#variantChoice = Object.fromEntries(kept);
+			this.#persistChoices();
+		}
+	}
+
+	#persistChoices() {
+		saveVariantChoices(this.#variantChoice);
 	}
 
 	current = $derived(this.status === 'idle' ? null : (this.items[this.index] ?? null));
+
+	currentVariant = $derived.by(() => {
+		const item = this.current;
+		if (!item || item.kind !== 'song') return null;
+		return this.variantFor(item);
+	});
 
 	totalSeconds = $derived(
 		this.items.reduce(
@@ -139,63 +145,70 @@ export class RehearseState {
 			0
 		)
 	);
+	#elapsedBefore = $derived(
+		this.items
+			.slice(0, this.status === 'finished' ? this.items.length : this.index)
+			.reduce((sum, item) => sum + (item.kind === 'song' ? item.durationSeconds : item.seconds), 0)
+	);
+
+	elapsedSeconds = $derived.by(() => {
+		if (this.status === 'finished') return this.totalSeconds;
+		const item = this.current;
+		if (!item) return 0;
+		// Nominal progress: clamp song audio time to the library duration so the
+		// total never overshoots when the recording runs long
+		const within =
+			item.kind === 'song'
+				? Math.min(this.songElapsed, item.durationSeconds)
+				: Math.max(item.seconds - this.countdownRemaining, 0);
+		return this.#elapsedBefore + within;
+	});
 
 	upNext = $derived.by(() => {
 		for (let i = this.index + 1; i < this.items.length; i++) {
 			const item = this.items[i];
 			if (item.kind === 'song') return item.title;
-			if (item.kind === 'gap' && this.runSet) return item.label ?? 'Break';
+			if (item.kind === 'gap') return item.label ?? 'Break';
 		}
 		return null;
 	});
 
-	hasPrevious = $derived(this.#neighbor(-1) !== null);
+	/** The variant that should play for a song: remembered choice if it still
+	 * exists and is playable, else the first playable one. Null = no audio. */
+	variantFor(item: Extract<RehearseItem, { kind: 'song' }>): RehearseVariant | null {
+		const playable = item.variants.filter((v) => v.signedUrl);
+		if (playable.length === 0) return null;
+		const remembered = item.songId ? this.#variantChoice[item.songId] : undefined;
+		return playable.find((v) => v.id === remembered) ?? playable[0];
+	}
 
-	/** The next index in a direction: breaks only exist while running the set */
-	#neighbor(direction: 1 | -1): number | null {
-		let i = this.index + direction;
-		while (i >= 0 && i < this.items.length) {
-			if (this.runSet || this.items[i].kind === 'song') return i;
-			i += direction;
-		}
-		return null;
+	selectVariant(songId: string, variantId: string) {
+		this.#variantChoice = { ...this.#variantChoice, [songId]: variantId };
+		if (browser) this.#persistChoices();
 	}
 
 	start() {
-		this.practicedSeconds = 0;
-		const first = this.runSet ? 0 : this.items.findIndex((item) => item.kind === 'song');
-		if (first < 0 || this.items.length === 0) {
-			this.status = 'finished';
-			return;
-		}
-		this.#enter(first);
+		if (this.items.length === 0) return;
+		this.#enter(0);
 	}
 
 	next() {
-		const i = this.#neighbor(1);
-		if (i === null) {
+		if (this.index + 1 >= this.items.length) {
 			this.status = 'finished';
 			return;
 		}
-		this.#enter(i);
+		this.#enter(this.index + 1);
 	}
 
-	previous() {
-		const i = this.#neighbor(-1);
-		if (i !== null) this.#enter(i);
+	prev() {
+		this.#enter(Math.max(0, this.index - 1));
 	}
 
-	goTo(index: number) {
-		if (index >= 0 && index < this.items.length) this.#enter(index);
-	}
-
-	end() {
-		this.status = 'finished';
-	}
-
-	/** Start/stop for what the page drives itself: breaks and the stopwatch. Songs
-	 * with audio are paused through the player; its events call setAudioPlaying(). */
+	/** Pause/resume the countdown for gap/transition items. Song items are
+	 * paused through the audio player; its events call setAudioPlaying(). */
 	togglePause() {
+		const item = this.current;
+		if (!item || item.kind === 'song') return;
 		if (this.status === 'running') {
 			this.status = 'paused';
 		} else if (this.status === 'paused') {
@@ -203,49 +216,40 @@ export class RehearseState {
 		}
 	}
 
-	/** Mirror of the real audio element's play/pause state */
+	/** Mirror of the real audio element's play/pause state (covers both our
+	 * own controls and the player's built-in transport). */
 	setAudioPlaying(playing: boolean) {
 		const item = this.current;
-		if (!item || item.kind !== 'song' || item.variants.length === 0) return;
+		if (!item || item.kind !== 'song') return;
 		if (this.status !== 'running' && this.status !== 'paused') return;
 		this.status = playing ? 'running' : 'paused';
-		if (playing) this.trackEnded = false;
 	}
 
 	onAudioFinished() {
-		if (this.current?.kind !== 'song') return;
-		if (this.runSet) {
-			this.next();
-		} else {
-			this.status = 'paused';
-			this.trackEnded = true;
-		}
+		if (this.current?.kind === 'song') this.next();
 	}
 
-	/** Drive time. Call on an interval with Date.now(); deltas come from the clock,
-	 * not tick counts, so throttled background tabs self-correct on wake. */
+	/** Drive gap/transition countdowns. Call on an interval with Date.now();
+	 * deltas come from the clock, not tick counts, so throttled background
+	 * tabs self-correct on wake. */
 	tick(nowMs: number) {
 		const dt = this.#lastTickMs === null ? 0 : (nowMs - this.#lastTickMs) / 1000;
 		this.#lastTickMs = nowMs;
 		const item = this.current;
-		if (this.status !== 'running' || !item) return;
-		if (item.kind === 'song') {
-			this.practicedSeconds += dt;
-			if (item.variants.length === 0) this.stopwatchSeconds += dt;
-			return;
-		}
+		if (this.status !== 'running' || !item || item.kind === 'song') return;
 		this.countdownRemaining = Math.max(this.countdownRemaining - dt, 0);
 		if (this.countdownRemaining <= 0) this.next();
 	}
 
 	#enter(index: number) {
 		this.index = index;
-		this.stopwatchSeconds = 0;
-		this.trackEnded = false;
+		this.songElapsed = 0;
 		const item = this.items[index];
 		if (item.kind === 'song') {
 			this.countdownRemaining = 0;
-			this.status = this.runSet && item.variants.length > 0 ? 'running' : 'paused';
+			// 'running' is intent — the page autoplays when the player is ready
+			// and downgrades to 'paused' if the browser blocks it
+			this.status = this.variantFor(item) ? 'running' : 'waiting';
 		} else {
 			this.countdownRemaining = item.seconds;
 			this.status = 'running';
