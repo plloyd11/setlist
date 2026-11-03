@@ -300,4 +300,98 @@ test.describe("Today's session", () => {
 			await user.cleanup();
 		}
 	});
+
+	test('fits the session to the time you have, and remembers it', async ({ browser }) => {
+		const user = await createSecondUser(browser);
+		const { page } = user;
+		try {
+			await adminClient.from('exercises').insert([
+				{ user_id: user.user.id, title: 'Warm one', target_seconds: 180, routine_position: 0 },
+				{ user_id: user.user.id, title: 'Warm two', target_seconds: 180, routine_position: 1 }
+			]);
+			await adminClient.from('skills').insert([
+				{ user_id: user.user.id, title: 'Sweeping' },
+				{ user_id: user.user.id, title: 'Legato' }
+			]);
+			for (const title of ['Song A', 'Song B', 'Song C', 'Song D']) {
+				const song = await createSong(page, user.user.id, { title });
+				await adminClient
+					.from('song_practice')
+					.insert({ user_id: user.user.id, song_id: song.id, status: 'learning' });
+			}
+
+			await page.goto('/practice');
+			const today = page.getByRole('region', { name: "Today's session" });
+			const steps = today.getByRole('listitem');
+			const length = (minutes: number) =>
+				today.getByRole('button', { name: `${minutes} minutes`, exact: true });
+			const total = async () => {
+				const rows = await steps.evaluateAll((items) =>
+					items.map((item) => Number(/(\d+)m\s*$/.exec(item.textContent ?? '')?.[1] ?? 0))
+				);
+				return rows.reduce((sum, row) => sum + row, 0);
+			};
+
+			// 30 by default: both warm-ups, a technique, one song, in that order
+			await expect(length(30)).toHaveAttribute('aria-pressed', 'true');
+			await expect(steps).toHaveCount(4);
+			await expect(steps.nth(0)).toContainText('Warm one');
+			await expect(steps.nth(1)).toContainText('Warm two');
+			await expect(steps.nth(2)).toContainText('Technique');
+			await expect(steps.nth(3)).toContainText('Song');
+			expect(await total()).toBe(30);
+
+			// Short on time: the routine is cut at its slice, and it still all adds up
+			await length(15).click();
+			await expect(steps).toHaveCount(3);
+			await expect(today).not.toContainText('Warm two');
+			expect(await total()).toBe(15);
+
+			// A long session spreads across more songs and techniques
+			await length(90).click();
+			await expect(steps).toHaveCount(7);
+			await expect(steps.filter({ hasText: 'Song' })).toHaveCount(3);
+			expect(await total()).toBe(90);
+
+			// Start runs what you see, and the choice sticks for next time
+			await length(15).click();
+			await today.getByRole('button', { name: 'Start session' }).click();
+			await expect(page.getByRole('heading', { name: 'Warm one' })).toBeVisible();
+			await expect(page.getByRole('navigation', { name: 'Practice session' })).toContainText(
+				'1 of 3'
+			);
+			await page.goto('/practice');
+			await expect(length(15)).toHaveAttribute('aria-pressed', 'true');
+
+			// Nothing on this page gets cut off on the smallest phones
+			await page.setViewportSize({ width: 320, height: 640 });
+			const overflow = await page
+				.locator('main')
+				.evaluate((main) => main.scrollWidth - main.clientWidth);
+			expect(overflow).toBeLessThanOrEqual(0);
+		} finally {
+			await user.cleanup();
+		}
+	});
+
+	test('says so when there is not enough lined up to fill the time', async ({ browser }) => {
+		const user = await createSecondUser(browser);
+		const { page } = user;
+		try {
+			await adminClient.from('exercises').insert({
+				user_id: user.user.id,
+				title: 'Only one',
+				target_seconds: 180,
+				routine_position: 0
+			});
+
+			await page.goto('/practice');
+			const today = page.getByRole('region', { name: "Today's session" });
+			await expect(today.getByRole('listitem')).toHaveCount(1);
+			await expect(today.getByRole('listitem')).toContainText('3m');
+			await expect(today).toContainText("That's everything you have lined up");
+		} finally {
+			await user.cleanup();
+		}
+	});
 });

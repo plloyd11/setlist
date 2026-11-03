@@ -1,10 +1,9 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import type { SessionItem } from '#lib/utils/sessionPlan.js';
 
-/** How long Today assumes for steps with no set length */
-const TECHNIQUE_MINUTES = 10;
-const SONG_MINUTES = 10;
-const SONGS_PER_SESSION = 3;
+/** More than any session uses, so a long list doesn't load for nothing */
+const MAX_PER_POOL = 10;
 
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
 	const { session } = await safeGetSession();
@@ -91,50 +90,40 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 			lastPracticed.set(item.skill_id, item.created_at);
 		}
 	}
-	const technique =
-		[...(skills ?? [])].sort((a, b) =>
-			(lastPracticed.get(a.id) ?? '').localeCompare(lastPracticed.get(b.id) ?? '')
-		)[0] ?? null;
+	const techniques = [...(skills ?? [])]
+		.sort((a, b) => (lastPracticed.get(a.id) ?? '').localeCompare(lastPracticed.get(b.id) ?? ''))
+		.slice(0, MAX_PER_POOL);
 
-	const steps = [
-		...(routine ?? []).map((exercise) => ({
-			kind: 'warm-up' as const,
-			key: `exercise-${exercise.id}`,
-			href: `/exercises/${exercise.id}?from=/practice`,
-			label: exercise.title,
-			seconds: exercise.target_seconds as number,
-			status: null,
-			hasAudio: false,
-			hasChart: false
-		})),
-		...(technique
-			? [
-					{
-						kind: 'technique' as const,
-						key: `skill-${technique.id}`,
-						href: `/practice/techniques/${technique.id}`,
-						label: technique.title as string,
-						seconds: TECHNIQUE_MINUTES * 60,
-						status: null,
-						hasAudio: false,
-						hasChart: false
-					}
-				]
-			: []),
-		...[...songs.values()].slice(0, SONGS_PER_SESSION).map(({ song, status }) => ({
-			kind: 'song' as const,
-			key: `song-${song.id}`,
-			href: `/songs/${song.id}/practice?from=/practice`,
-			label: song.title,
-			seconds: SONG_MINUTES * 60,
-			status,
-			hasAudio: (song.song_audio[0]?.count ?? 0) > 0,
-			hasChart: (song.song_files[0]?.count ?? 0) > 0
-		}))
-	];
-
+	const plain = { status: null, hasAudio: false, hasChart: false };
 	return {
-		steps,
+		pools: {
+			warmUps: (routine ?? []).map((exercise): SessionItem => ({
+				...plain,
+				kind: 'warm-up',
+				key: `exercise-${exercise.id}`,
+				href: `/exercises/${exercise.id}?from=/practice`,
+				label: exercise.title,
+				seconds: exercise.target_seconds
+			})),
+			techniques: techniques.map((skill): SessionItem => ({
+				...plain,
+				kind: 'technique',
+				key: `skill-${skill.id}`,
+				href: `/practice/techniques/${skill.id}`,
+				label: skill.title,
+				seconds: null
+			})),
+			songs: [...songs.values()].slice(0, MAX_PER_POOL).map(({ song, status }): SessionItem => ({
+				kind: 'song',
+				key: `song-${song.id}`,
+				href: `/songs/${song.id}/practice?from=/practice`,
+				label: song.title,
+				seconds: null,
+				status,
+				hasAudio: (song.song_audio[0]?.count ?? 0) > 0,
+				hasChart: (song.song_files[0]?.count ?? 0) > 0
+			}))
+		},
 		gig: gig
 			? {
 					id: gig.id,

@@ -1,8 +1,15 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import Metronome from '#lib/components/practice/Metronome.svelte';
 	import { daysUntil, formatGigDate } from '#lib/utils/gigDate.js';
 	import { startPlan } from '#lib/utils/practicePlan.js';
+	import {
+		SESSION_LENGTHS,
+		buildSession,
+		loadSessionMinutes,
+		saveSessionMinutes
+	} from '#lib/utils/sessionPlan.js';
 	import { formatPracticeTime } from '#lib/utils/practiceTime.js';
 
 	let { data } = $props();
@@ -13,7 +20,19 @@
 		needs_work: 'Needs work'
 	};
 
-	let totalSeconds = $derived(data.steps.reduce((sum, step) => sum + step.seconds, 0));
+	let minutes = $state(30);
+	// The choice lives in this browser, so it can only be applied after hydration
+	onMount(() => (minutes = loadSessionMinutes()));
+
+	let steps = $derived(buildSession(data.pools, minutes));
+	let totalSeconds = $derived(steps.reduce((sum, step) => sum + step.seconds, 0));
+	/** Worth saying when what's planned can't fill the time you've got */
+	let comesUpShort = $derived(totalSeconds < minutes * 60 * 0.75);
+
+	function chooseMinutes(value: number) {
+		minutes = value;
+		saveSessionMinutes(value);
+	}
 
 	function countdown(date: string): string {
 		const days = daysUntil(date);
@@ -22,8 +41,8 @@
 	}
 
 	function start() {
-		startPlan(data.steps.map((step) => ({ href: step.href, label: step.label })));
-		goto(data.steps[0].href);
+		startPlan(steps.map((step) => ({ href: step.href, label: step.label })));
+		goto(steps[0].href);
 	}
 </script>
 
@@ -31,7 +50,7 @@
 	<title>Practice — Setlist</title>
 </svelte:head>
 
-<div class="grid gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:items-start">
+<div class="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:items-start">
 	<div class="min-w-0">
 		{#if data.gig}
 			<p
@@ -54,7 +73,7 @@
 			</p>
 		{/if}
 
-		{#if data.steps.length > 0}
+		{#if steps.length > 0}
 			<section aria-label="Today's session" class={data.gig ? 'mt-6' : ''}>
 				<div class="flex flex-wrap items-center justify-between gap-3">
 					<h3 class="font-display text-lg font-semibold text-surface-900 dark:text-surface-100">
@@ -74,10 +93,35 @@
 						Start session
 					</button>
 				</div>
+				<div
+					role="group"
+					aria-labelledby="session-length"
+					class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2"
+				>
+					<span id="session-length" class="text-sm text-surface-500 dark:text-surface-300">
+						How long do you have?
+					</span>
+					<div class="flex gap-1">
+						{#each SESSION_LENGTHS as length (length)}
+							<button
+								type="button"
+								aria-pressed={minutes === length}
+								aria-label="{length} minutes"
+								onclick={() => chooseMinutes(length)}
+								class="focus-live h-11 w-11 rounded-lg border text-sm font-medium tabular-nums {minutes ===
+								length
+									? 'border-accent-500 bg-accent-500 text-white'
+									: 'border-surface-300 text-surface-700 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-800'}"
+							>
+								{length}
+							</button>
+						{/each}
+					</div>
+				</div>
 				<ol
 					class="mt-3 divide-y divide-surface-200 overflow-hidden rounded-xl border border-surface-200 bg-surface-50 dark:divide-surface-700 dark:border-surface-700 dark:bg-surface-800/50"
 				>
-					{#each data.steps as step (step.key)}
+					{#each steps as step (step.key)}
 						<li>
 							<a
 								href={step.href}
@@ -115,6 +159,21 @@
 						</li>
 					{/each}
 				</ol>
+				{#if comesUpShort}
+					<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
+						That's everything you have lined up. Add a <a
+							href="/practice/techniques"
+							class="focus-live underline hover:text-surface-700 dark:hover:text-surface-100"
+							>technique</a
+						>
+						or flag a song in
+						<a
+							href="/practice/shed"
+							class="focus-live underline hover:text-surface-700 dark:hover:text-surface-100"
+							>Shed</a
+						> to fill the rest.
+					</p>
+				{/if}
 			</section>
 		{:else}
 			<div class={data.gig ? 'mt-6' : ''}>
