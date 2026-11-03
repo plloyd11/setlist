@@ -37,5 +37,8 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Server build loads as it will on Netlify
+        run: pnpm verify:server
+
   # NOTE: the Playwright suite is intentionally NOT run in CI -- it requires
   # production Supabase credentials (.env.test) and mutates live data.

@@ -15,6 +15,7 @@ Uses **pnpm** (pinned via `packageManager`), Node >= 22.17 (`.nvmrc` pins 24 for
 ```sh
 pnpm dev                 # Vite dev server
 pnpm build               # Production build (Netlify adapter)
+pnpm verify:server       # After a build: load every server chunk as strictly as Netlify does
 pnpm check               # svelte-kit sync + svelte-check type checking
 pnpm lint                # Prettier check (no ESLint in this project)
 pnpm format              # Prettier write
@@ -28,7 +29,7 @@ npx playwright test -g "creates a setlist"     # single test by title
 
 ### E2E test requirements
 
-Tests run against a **real Supabase instance** (no mocks) and mutate live data. They require a `.env.test` file with `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Playwright auto-starts the dev server on port 5173. CI (`.github/workflows/ci.yml`) intentionally runs only check/lint/build with placeholder env vars — the test suite is local-only.
+Tests run against a **real Supabase instance** (no mocks) and mutate live data. They require a `.env.test` file with `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Playwright auto-starts the dev server on port 5173. CI (`.github/workflows/ci.yml`) intentionally runs only check/lint/build/verify:server with placeholder env vars — the test suite is local-only.
 
 ## Architecture
 
