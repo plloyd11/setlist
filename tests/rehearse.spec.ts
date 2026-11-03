@@ -1,7 +1,7 @@
 /**
  * Rehearse mode E2E tests (REHEARSE-01..04).
  *
- * REQUIRES migration 20260611220000_create_song_audio.sql to be applied
+ * REQUIRES migration 20260611230456_create_song_audio.sql to be applied
  * (song_audio table + the private 'song-audio' storage bucket).
  *
  * Audio playback assertions stay shallow (player chrome renders, countdowns

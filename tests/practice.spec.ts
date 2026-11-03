@@ -1,8 +1,8 @@
 /**
  * Per-song practice player E2E tests (PRACTICE-01..02).
  *
- * REQUIRES migrations 20260611220000_create_song_audio.sql and
- * 20260612000000_create_song_files.sql to be applied.
+ * REQUIRES migrations 20260611230456_create_song_audio.sql and
+ * 20260612023803_create_song_files.sql to be applied.
  *
  * Audio playback assertions stay shallow (player chrome renders, transport
  * enables) — headless Chromium audio output is not asserted.
