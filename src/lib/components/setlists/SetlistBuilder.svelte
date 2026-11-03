@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { dndzone, SHADOW_ITEM_MARKER_PROPERTY_NAME } from 'svelte-dnd-action';
+	import { dndzone, SHADOW_ITEM_MARKER_PROPERTY_NAME, TRIGGERS } from 'svelte-dnd-action';
 	import { refreshAll } from '$app/navigation';
 	import { deserialize } from '$app/forms';
 	import SetlistSongRow from '#lib/components/setlists/SetlistSongRow.svelte';
@@ -64,21 +64,39 @@
 		};
 	}
 
-	// Mutation epoch guard: prevents the $effect sync (and stale async responses)
-	// from overwriting newer optimistic state. Each mutation start bumps the epoch;
-	// a response is only applied if its captured epoch is still current.
-	let mutationEpoch = $state(0);
-	let inFlightEpoch = $state(0); // 0 = no mutation in flight
+	// Mutations run one at a time, in the order they were made. Without this a save
+	// can reach the server before an add it knows nothing about has come back, and
+	// save_setlist_order deletes rows missing from its payload. Optimistic changes
+	// still apply immediately; only the server calls wait their turn.
+	let pendingMutations = 0;
+	let resyncNeeded = false;
+	let queueTail: Promise<void> = Promise.resolve();
 
-	function beginMutation(): number {
-		mutationEpoch += 1;
-		inFlightEpoch = mutationEpoch;
-		return mutationEpoch;
+	function enqueue(task: () => Promise<void>): Promise<void> {
+		pendingMutations += 1;
+		queueTail = queueTail
+			.then(task)
+			.catch(() => {
+				resyncNeeded = true;
+			})
+			.finally(() => {
+				pendingMutations -= 1;
+				if (pendingMutations === 0 && resyncNeeded) {
+					resyncNeeded = false;
+					void refreshAll();
+				}
+			});
+		return queueTail;
 	}
 
-	function endMutation(epoch: number) {
-		// Only release the guard if no newer mutation started since
-		if (epoch === mutationEpoch) inFlightEpoch = 0;
+	// Form actions answer in devalue's format, not plain JSON
+	function actionData(text: string): Record<string, any> | null {
+		try {
+			const result = deserialize(text);
+			return result.type === 'success' ? (result.data ?? null) : null;
+		} catch {
+			return null;
+		}
 	}
 
 	// State for DnD zones — initialized inline so SSR renders the setlist
@@ -106,16 +124,20 @@
 	});
 
 	$effect(() => {
-		// Track only data.setlistSongs — NOT the mutation guard (untracked read-time guard)
+		// Track only data.setlistSongs. Server data must not overwrite optimistic
+		// state while mutations are queued or a drag holds a placeholder in the list.
 		const serverItems = data.setlistSongs;
-		// Don't overwrite during optimistic mutations (untracked so guard changes won't re-trigger)
-		if (untrack(() => inFlightEpoch !== 0)) return;
+		if (pendingMutations > 0 || untrack(() => dragActive)) return;
 		setlistItems = serverItems.map(toSetlistItem);
 	});
 
 	// Library zone handlers (copy-on-drag: songs stay in library)
-	function handleLibraryConsider(e: CustomEvent<{ items: LibraryItem[] }>) {
-		dragActive = true;
+	// A keyboard drop ends with this consider event and no finalize, so it has to
+	// end the drag here too: queued saves wait for dragActive to clear
+	function handleLibraryConsider(
+		e: CustomEvent<{ items: LibraryItem[]; info: { trigger: string } }>
+	) {
+		dragActive = e.detail.info.trigger !== TRIGGERS.DRAG_STOPPED;
 		libraryItems = e.detail.items;
 	}
 
@@ -126,8 +148,10 @@
 	}
 
 	// Setlist zone handlers
-	function handleSetlistConsider(e: CustomEvent<{ items: SetlistItem[] }>) {
-		dragActive = true;
+	function handleSetlistConsider(
+		e: CustomEvent<{ items: SetlistItem[]; info: { trigger: string } }>
+	) {
+		dragActive = e.detail.info.trigger !== TRIGGERS.DRAG_STOPPED;
 		setlistItems = e.detail.items;
 	}
 
@@ -160,218 +184,190 @@
 		});
 
 		setlistItems = processed;
-		persistOrder(processed);
+		persistOrder();
 	}
 
-	// Persist order to DB
-	async function persistOrder(items: SetlistItem[]) {
-		const epoch = beginMutation();
-		const formData = new FormData();
-		formData.set(
-			'items',
-			JSON.stringify(
-				items.map((item, index) => ({
-					id: item.isNew ? undefined : item.id,
-					song_id: item.song_id,
-					gap_seconds: item.gap_seconds,
-					gap_label: item.gap_label,
-					position: index
-				}))
-			)
-		);
+	// Row ids the server assigned to items that were new when sent, so a removal
+	// queued before its row's id came back still targets the right row
+	const savedRowIds = new Map<string, string>();
+	let saveQueued = false;
 
-		try {
-			const response = await fetch('?/saveOrder', {
-				method: 'POST',
-				body: formData
-			});
-			if (!response.ok) {
-				toast?.show('Failed to save order', { variant: 'error' });
-			} else {
-				// Parse the response to get server-generated IDs
-				// SvelteKit form actions use devalue serialization, not plain JSON
-				const text = await response.text();
-				try {
-					const result = deserialize(text);
-					if (result.type === 'success' && result.data) {
-						const savedItems = (result.data as any).items;
-						// Only apply if no newer mutation started while we awaited
-						if (Array.isArray(savedItems) && savedItems.length > 0 && epoch === mutationEpoch) {
-							// Saved rows are raw setlist_songs rows (no joined songs) —
-							// merge title/duration from the current optimistic items
-							// (existing row IDs are stable) and the library (new rows).
-							const byRowId = new Map(setlistItems.map((item) => [item.id, item]));
-							const bySongId = new Map(data.songs.map((s: Song) => [s.id, s]));
-							setlistItems = savedItems.map((ss: any) => {
-								const existing = byRowId.get(ss.id);
-								const song = ss.song_id ? bySongId.get(ss.song_id) : undefined;
-								return {
-									id: ss.id,
-									song_id: ss.song_id,
-									title: ss.song_id ? (existing?.title ?? song?.title ?? 'Unknown') : '',
-									duration_seconds: ss.song_id
-										? (existing?.duration_seconds ?? song?.duration_seconds ?? 0)
-										: (ss.gap_seconds ?? 0),
-									gap_seconds: ss.gap_seconds ?? null,
-									gap_label: ss.gap_label ?? null,
-									notes: ss.song_id ? (existing?.notes ?? song?.notes ?? null) : null,
-									position: ss.position
-								};
-							});
-						}
-					}
-				} catch {
-					// Response parsing failed — not critical, optimistic state remains
+	// Persist order to DB
+	function persistOrder() {
+		// The queued save reads the latest order when it runs, so one is enough
+		if (saveQueued) return;
+		saveQueued = true;
+		enqueue(async () => {
+			saveQueued = false;
+			// Mid-drag the list holds a placeholder; that drag's finalize queues a save
+			if (dragActive) return;
+
+			const sent = setlistItems;
+			const formData = new FormData();
+			formData.set(
+				'items',
+				JSON.stringify(
+					sent.map((item, index) => ({
+						id: item.isNew ? undefined : item.id,
+						song_id: item.song_id,
+						gap_seconds: item.gap_seconds,
+						gap_label: item.gap_label,
+						position: index
+					}))
+				)
+			);
+
+			try {
+				const response = await fetch('?/saveOrder', {
+					method: 'POST',
+					body: formData
+				});
+				if (!response.ok) {
+					toast?.show('Failed to save order', { variant: 'error' });
+					resyncNeeded = true;
+					return;
 				}
+				const saved = actionData(await response.text())?.items;
+				if (Array.isArray(saved)) {
+					adoptSavedIds(sent, saved);
+				} else {
+					resyncNeeded = true;
+				}
+			} catch {
+				toast?.show('Failed to save order', { variant: 'error' });
+				resyncNeeded = true;
 			}
-		} catch {
-			toast?.show('Failed to save order', { variant: 'error' });
-		} finally {
-			endMutation(epoch);
-		}
+		});
+	}
+
+	// Swap temporary ids for real ones and leave everything else alone: the user may
+	// have reordered or edited rows since this save was sent.
+	function adoptSavedIds(sent: SetlistItem[], saved: any[]) {
+		const savedByPosition = new Map(saved.map((row) => [row.position, row]));
+		const realIds = new Map<string, string>();
+		sent.forEach((item, position) => {
+			const row = savedByPosition.get(position);
+			if (item.isNew && row?.song_id === item.song_id) {
+				realIds.set(item.id, row.id);
+				savedRowIds.set(item.id, row.id);
+			}
+		});
+		// Rekeying a row mid-drag would drop the grab. Left alone, the row stays isNew
+		// and the drag's save replaces it: save_setlist_order prunes the earlier insert.
+		if (realIds.size === 0 || dragActive) return;
+		setlistItems = setlistItems.map((item) => {
+			const id = realIds.get(item.id);
+			return id ? { ...item, id, isNew: false } : item;
+		});
 	}
 
 	// Add song via tap (mobile)
-	async function handleAddSong(song: Song) {
-		const epoch = beginMutation();
-		const formData = new FormData();
-		formData.set('song_id', song.id);
+	function handleAddSong(song: Song) {
+		return enqueue(async () => {
+			const formData = new FormData();
+			formData.set('song_id', song.id);
 
-		try {
-			const response = await fetch('?/addSong', {
-				method: 'POST',
-				body: formData
-			});
-			if (!response.ok) {
-				toast?.show('Failed to add song', { variant: 'error' });
-				return;
-			}
-			// Append the returned row directly — no refreshAll needed
-			const text = await response.text();
-			let appended = false;
 			try {
-				const result = deserialize(text);
-				if (result.type === 'success' && result.data) {
-					const ss = (result.data as any).setlistSong;
-					// Only apply if no newer mutation started while we awaited
-					if (ss && epoch === mutationEpoch) {
-						setlistItems = [
-							...setlistItems,
-							{
-								id: ss.id,
-								song_id: ss.song_id ?? song.id,
-								title: ss.songs?.title ?? song.title,
-								duration_seconds: ss.songs?.duration_seconds ?? song.duration_seconds,
-								gap_seconds: null,
-								gap_label: null,
-								notes: ss.songs?.notes ?? song.notes ?? null,
-								position: ss.position ?? setlistItems.length
-							}
-						];
-						appended = true;
-					}
+				const response = await fetch('?/addSong', {
+					method: 'POST',
+					body: formData
+				});
+				if (!response.ok) {
+					toast?.show('Failed to add song', { variant: 'error' });
+					return;
 				}
+				const ss = actionData(await response.text())?.setlistSong;
+				if (ss) {
+					setlistItems = [
+						...setlistItems,
+						{
+							id: ss.id,
+							song_id: ss.song_id ?? song.id,
+							title: ss.songs?.title ?? song.title,
+							duration_seconds: ss.songs?.duration_seconds ?? song.duration_seconds,
+							gap_seconds: null,
+							gap_label: null,
+							notes: ss.songs?.notes ?? song.notes ?? null,
+							position: ss.position ?? setlistItems.length
+						}
+					];
+				} else {
+					resyncNeeded = true;
+				}
+				toast?.show(`Added "${song.title}"`, { variant: 'success' });
 			} catch {
-				// Response parsing failed — fall back to a server resync below
+				toast?.show('Failed to add song', { variant: 'error' });
+				// The insert may have committed even though the response was lost
+				resyncNeeded = true;
 			}
-			toast?.show(`Added "${song.title}"`, { variant: 'success' });
-			if (!appended && epoch === mutationEpoch) {
-				endMutation(epoch);
-				await refreshAll();
-			}
-		} catch {
-			toast?.show('Failed to add song', { variant: 'error' });
-		} finally {
-			endMutation(epoch);
-		}
+		});
 	}
 
 	// Remove song from setlist
-	async function handleRemoveSong(setlistSongId: string) {
-		const epoch = beginMutation();
+	function handleRemoveSong(setlistSongId: string) {
 		// Optimistic removal
 		setlistItems = setlistItems.filter((s) => s.id !== setlistSongId);
 
-		const formData = new FormData();
-		formData.set('setlist_song_id', setlistSongId);
+		return enqueue(async () => {
+			const formData = new FormData();
+			formData.set('setlist_song_id', savedRowIds.get(setlistSongId) ?? setlistSongId);
 
-		try {
-			const response = await fetch('?/removeSong', {
-				method: 'POST',
-				body: formData
-			});
-			if (!response.ok) {
-				// Revert (e.g. 404 row didn't exist): release guard then
-				// invalidate so $effect resyncs from the server
-				endMutation(epoch);
-				await refreshAll();
-				return;
+			try {
+				const response = await fetch('?/removeSong', {
+					method: 'POST',
+					body: formData
+				});
+				// e.g. 404 when the row is already gone: resync from the server
+				if (!response.ok) resyncNeeded = true;
+			} catch {
+				toast?.show('Failed to remove song', { variant: 'error' });
+				resyncNeeded = true;
 			}
-			// Server confirmed the removal — optimistic state is already correct
-		} catch {
-			toast?.show('Failed to remove song', { variant: 'error' });
-			endMutation(epoch);
-			await refreshAll();
-			return;
-		}
-		endMutation(epoch);
+		});
 	}
 
 	// Add a 30s gap block at the end of the setlist
-	async function handleAddGap() {
-		const epoch = beginMutation();
-		const formData = new FormData();
-		formData.set('gap_seconds', '30');
+	function handleAddGap() {
+		return enqueue(async () => {
+			const formData = new FormData();
+			formData.set('gap_seconds', '30');
 
-		try {
-			const response = await fetch('?/addGap', {
-				method: 'POST',
-				body: formData
-			});
-			if (!response.ok) {
-				toast?.show('Failed to add gap', { variant: 'error' });
-				return;
-			}
-			const text = await response.text();
-			let appended = false;
 			try {
-				const result = deserialize(text);
-				if (result.type === 'success' && result.data) {
-					const ss = (result.data as any).setlistSong;
-					if (ss && epoch === mutationEpoch) {
-						setlistItems = [
-							...setlistItems,
-							{
-								id: ss.id,
-								song_id: null,
-								title: '',
-								duration_seconds: ss.gap_seconds ?? 30,
-								gap_seconds: ss.gap_seconds ?? 30,
-								gap_label: ss.gap_label ?? null,
-								notes: null,
-								position: ss.position ?? setlistItems.length
-							}
-						];
-						appended = true;
-					}
+				const response = await fetch('?/addGap', {
+					method: 'POST',
+					body: formData
+				});
+				if (!response.ok) {
+					toast?.show('Failed to add gap', { variant: 'error' });
+					return;
+				}
+				const ss = actionData(await response.text())?.setlistSong;
+				if (ss) {
+					setlistItems = [
+						...setlistItems,
+						{
+							id: ss.id,
+							song_id: null,
+							title: '',
+							duration_seconds: ss.gap_seconds ?? 30,
+							gap_seconds: ss.gap_seconds ?? 30,
+							gap_label: ss.gap_label ?? null,
+							notes: null,
+							position: ss.position ?? setlistItems.length
+						}
+					];
+				} else {
+					resyncNeeded = true;
 				}
 			} catch {
-				// Response parsing failed — fall back to a server resync below
+				toast?.show('Failed to add gap', { variant: 'error' });
+				resyncNeeded = true;
 			}
-			if (!appended && epoch === mutationEpoch) {
-				endMutation(epoch);
-				await refreshAll();
-			}
-		} catch {
-			toast?.show('Failed to add gap', { variant: 'error' });
-		} finally {
-			endMutation(epoch);
-		}
+		});
 	}
 
 	// Change a gap's duration (optimistic, synced via updateGap action)
-	async function handleGapDurationChange(id: string, seconds: number) {
-		const epoch = beginMutation();
+	function handleGapDurationChange(id: string, seconds: number) {
 		setlistItems = setlistItems.map((item) =>
 			item.id === id ? { ...item, gap_seconds: seconds, duration_seconds: seconds } : item
 		);
@@ -379,12 +375,11 @@
 		const formData = new FormData();
 		formData.set('setlist_song_id', id);
 		formData.set('gap_seconds', String(seconds));
-		await syncGapUpdate(formData, epoch);
+		return syncGapUpdate(formData);
 	}
 
 	// Rename a gap (optimistic; empty label clears the name)
-	async function handleGapLabelChange(id: string, label: string) {
-		const epoch = beginMutation();
+	function handleGapLabelChange(id: string, label: string) {
 		setlistItems = setlistItems.map((item) =>
 			item.id === id ? { ...item, gap_label: label || null } : item
 		);
@@ -392,27 +387,22 @@
 		const formData = new FormData();
 		formData.set('setlist_song_id', id);
 		formData.set('gap_label', label);
-		await syncGapUpdate(formData, epoch);
+		return syncGapUpdate(formData);
 	}
 
-	async function syncGapUpdate(formData: FormData, epoch: number) {
-		try {
-			const response = await fetch('?/updateGap', {
-				method: 'POST',
-				body: formData
-			});
-			if (!response.ok) {
-				endMutation(epoch);
-				await refreshAll();
-				return;
+	function syncGapUpdate(formData: FormData) {
+		return enqueue(async () => {
+			try {
+				const response = await fetch('?/updateGap', {
+					method: 'POST',
+					body: formData
+				});
+				if (!response.ok) resyncNeeded = true;
+			} catch {
+				toast?.show('Failed to update gap', { variant: 'error' });
+				resyncNeeded = true;
 			}
-		} catch {
-			toast?.show('Failed to update gap', { variant: 'error' });
-			endMutation(epoch);
-			await refreshAll();
-			return;
-		}
-		endMutation(epoch);
+		});
 	}
 
 	// Update target time

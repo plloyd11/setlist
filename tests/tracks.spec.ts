@@ -11,7 +11,7 @@
 import { test, expect } from './fixtures';
 import { createClient } from '@supabase/supabase-js';
 import { createSecondUser } from './helpers/multi-user';
-import { createBand, createTrack, createTrackComment } from './helpers/factories';
+import { createBand, createTrack, createTrackComment, createTrackData } from './helpers/factories';
 import { safeDelete, cleanupTrackAudio } from './helpers/cleanup';
 import { adminClient } from './helpers/supabase-admin';
 import { createTestUser, deleteTestUser } from './helpers/auth';
@@ -181,6 +181,58 @@ test.describe('Track comments (TRACK-03)', () => {
 			await expect(userB.page.getByText(replyBody)).not.toBeVisible();
 		} finally {
 			await userB.cleanup();
+			await cleanupTrackAudio(band.id);
+			await safeDelete('bands', band.id);
+		}
+	});
+});
+
+test.describe('Demo player stability', () => {
+	test('posting a comment keeps the player and its position', async ({ page, testUser }) => {
+		const band = await createBand(page, testUser.id);
+		const track = await createTrack(page, band.id, testUser.id);
+
+		try {
+			const seek = page.getByRole('slider', { name: 'Seek' });
+			await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 15_000 });
+			await seek.focus();
+			await page.keyboard.press('ArrowRight');
+			await expect(seek).toHaveAttribute('aria-valuenow', '1');
+
+			// Reloading after the comment mints a new signed URL for the same file.
+			// The player must not treat that as a new source and restart at 0:00.
+			const body = `keep playing ${faker.string.alphanumeric(6)}`;
+			await page.getByPlaceholder('Leave feedback...').fill(body);
+			await page.getByRole('button', { name: 'Comment', exact: true }).click();
+			await expect(page.getByText(body)).toBeVisible();
+			await expect(seek).toHaveAttribute('aria-valuenow', '1');
+		} finally {
+			await cleanupTrackAudio(band.id);
+			await safeDelete('bands', band.id);
+		}
+	});
+});
+
+test.describe('Demo player recovery', () => {
+	test('a dead audio link is replaced once and the player recovers', async ({ page, testUser }) => {
+		const band = await createBand(page, testUser.id);
+		const track = await createTrackData(band.id, testUser.id);
+
+		try {
+			// Fail only the first request, as an expired signed URL would. Unrouted at
+			// once because media requests abort under interception (see CLAUDE.md).
+			const audioLink = /\/object\/sign\/tracks\//;
+			await page.route(audioLink, async (route) => {
+				await route.abort();
+				await page.unroute(audioLink);
+			});
+
+			await page.goto(`/bands/${band.id}/demos/${track.id}`);
+			await expect(page.getByText(/Playback session expired/)).toBeVisible({ timeout: 15_000 });
+
+			await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 15_000 });
+			await expect(page.getByText('Could not load audio')).toHaveCount(0);
+		} finally {
 			await cleanupTrackAudio(band.id);
 			await safeDelete('bands', band.id);
 		}
