@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Digits from '#lib/components/ui/Digits.svelte';
 	import { formatDuration } from '#lib/utils/duration.js';
 
 	let {
@@ -74,7 +75,7 @@
 		placeholder="Gap"
 		maxlength="60"
 		aria-label="Gap label"
-		class="focus-live min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-medium text-surface-600 placeholder-surface-400 hover:border-surface-300 dark:text-surface-300 dark:placeholder-surface-500 dark:hover:border-surface-600"
+		class="focus-live min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-medium text-surface-600 placeholder-surface-500 hover:border-surface-300 dark:text-surface-300 dark:placeholder-surface-300 dark:hover:border-surface-600"
 	/>
 
 	<!-- Duration stepper: ±15s keeps input unambiguous -->
@@ -82,16 +83,16 @@
 		<button
 			onclick={decrement}
 			disabled={seconds <= 15}
-			class="rounded px-1.5 py-0.5 text-xs text-surface-500 hover:bg-surface-200 disabled:opacity-30 dark:text-surface-300 dark:hover:bg-surface-700"
-			aria-label="Decrease gap duration">-</button
+			class="flex h-7 w-7 items-center justify-center rounded text-base leading-none text-surface-500 hover:bg-surface-200 disabled:opacity-30 dark:text-surface-300 dark:hover:bg-surface-700 pointer-coarse:h-9 pointer-coarse:w-9"
+			aria-label="Decrease gap duration">−</button
 		>
-		<span class="w-12 text-center text-sm text-surface-700 tabular-nums dark:text-surface-300">
-			{formatDuration(seconds)}
+		<span class="w-12 text-center text-sm text-surface-700 dark:text-surface-300">
+			<Digits value={formatDuration(seconds)} />
 		</span>
 		<button
 			onclick={increment}
 			disabled={seconds >= 1800}
-			class="rounded px-1.5 py-0.5 text-xs text-surface-500 hover:bg-surface-200 disabled:opacity-30 dark:text-surface-300 dark:hover:bg-surface-700"
+			class="flex h-7 w-7 items-center justify-center rounded text-base leading-none text-surface-500 hover:bg-surface-200 disabled:opacity-30 dark:text-surface-300 dark:hover:bg-surface-700 pointer-coarse:h-9 pointer-coarse:w-9"
 			aria-label="Increase gap duration">+</button
 		>
 	</div>

@@ -101,7 +101,7 @@
 		selectFile(f);
 		// Never silently discard the rest of a multi-file drop
 		if (!error && files.length > 1) {
-			notice = `One file at a time — using "${f.name}".`;
+			notice = `One file at a time. Using "${f.name}".`;
 		}
 	}
 
@@ -257,7 +257,7 @@
 {/if}
 
 {#if error}
-	<p role="alert" class="mt-3 text-sm text-danger-600 dark:text-danger-400">{error}</p>
+	<p role="alert" class="mt-3 text-sm text-danger-600 dark:text-danger-300">{error}</p>
 {:else if notice}
 	<p role="status" class="mt-3 text-sm text-surface-600 dark:text-surface-300">{notice}</p>
 {/if}

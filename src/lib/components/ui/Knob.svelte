@@ -156,13 +156,11 @@
 			></span>
 		</div>
 	</div>
-	<span
-		class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-	>
+	<span class="text-label text-surface-500 uppercase dark:text-surface-300">
 		{label}
 	</span>
 	{#if showValue}
-		<span class="-mt-1 text-xs font-medium text-surface-700 tabular-nums dark:text-surface-300">
+		<span class="-mt-1 text-xs font-medium text-surface-700 dark:text-surface-300">
 			{format(value)}
 		</span>
 	{/if}

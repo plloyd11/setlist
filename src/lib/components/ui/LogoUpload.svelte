@@ -9,7 +9,7 @@
 		table = 'profiles',
 		storagePath,
 		column = 'logo_url',
-		label = 'Profile Photo / Band Logo',
+		label = 'Profile photo or band logo',
 		previewOnLight = false
 
 		// bands only: which column the URL is saved to (logo_url | logo_dark_url)
@@ -221,7 +221,7 @@
 							removeLogo();
 						}}
 						disabled={uploading}
-						class="rounded px-3 py-1 text-xs font-medium text-danger-600 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/20"
+						class="rounded px-3 py-1 text-xs font-medium text-danger-600 hover:bg-danger-50 dark:text-danger-300 dark:hover:bg-danger-900/20"
 					>
 						Remove
 					</button>
@@ -269,6 +269,6 @@
 	</div>
 
 	{#if error}
-		<p class="text-sm text-danger-600 dark:text-danger-400">{error}</p>
+		<p class="text-sm text-danger-600 dark:text-danger-300">{error}</p>
 	{/if}
 </div>

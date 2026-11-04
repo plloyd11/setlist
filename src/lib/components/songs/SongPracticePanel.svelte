@@ -345,7 +345,7 @@
 {#snippet stripBlock()}
 	{#if compactStrip}
 		<div class="flex items-center gap-3">
-			<span class="text-sm font-medium text-surface-600 tabular-nums dark:text-surface-300">
+			<span class="text-sm font-medium text-surface-600 dark:text-surface-300">
 				<span class="sr-only">Length</span>
 				{formatDuration(shownLength)}
 			</span>
@@ -379,12 +379,8 @@
 			class="flex items-start gap-6 rounded-xl border border-surface-200 bg-surface-50 px-4 py-3 dark:border-surface-700 dark:bg-surface-800"
 		>
 			<div class="shrink-0">
-				<p
-					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-				>
-					Length
-				</p>
-				<p class="font-display text-xl font-bold text-accent-600 tabular-nums dark:text-accent-hot">
+				<p class="text-label text-surface-500 uppercase dark:text-surface-300">Length</p>
+				<p class="font-display text-xl font-bold text-accent-600 dark:text-accent-hot">
 					{formatDuration(shownLength)}
 				</p>
 			</div>
@@ -392,7 +388,7 @@
 				<div class="min-w-0">
 					<label
 						for="practice-variant"
-						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+						class="text-label text-surface-500 uppercase dark:text-surface-300"
 					>
 						Mix
 					</label>
@@ -409,11 +405,7 @@
 				</div>
 			{:else if currentVariant}
 				<div class="min-w-0">
-					<p
-						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-					>
-						Mix
-					</p>
+					<p class="text-label text-surface-500 uppercase dark:text-surface-300">Mix</p>
 					<p class="truncate text-sm font-medium text-surface-700 dark:text-surface-300">
 						{currentVariant.label ?? currentVariant.file_name}
 					</p>
@@ -473,7 +465,7 @@
 		>
 			<p class="text-sm text-surface-700 dark:text-surface-300">
 				{audioFailed && playable.length > 1
-					? "Couldn't load this mix — try another, or retry."
+					? "Couldn't load this mix. Try another, or retry."
 					: "Couldn't load the audio for this song."}
 			</p>
 			<button

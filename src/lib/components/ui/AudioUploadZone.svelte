@@ -118,7 +118,7 @@
 		selectFile(f);
 		// Never silently discard the rest of a multi-file drop
 		if (!error && files.length > 1) {
-			notice = `One file at a time — using "${f.name}".`;
+			notice = `One file at a time. Using "${f.name}".`;
 		}
 	}
 
@@ -141,7 +141,7 @@
 		// to 192kbps MP3 in a worker so they fit the bucket's 50MB cap
 		if (needsCompression(file)) {
 			if (!meta.buffer) {
-				error = "Couldn't decode this file to compress it — try an MP3 or M4A instead.";
+				error = "Couldn't decode this file to compress it. Try an MP3 or M4A instead.";
 				phase = 'idle';
 				return;
 			}
@@ -168,7 +168,7 @@
 			}
 			if (uploadFile.size > MAX_AUDIO_FILE_SIZE) {
 				// ~36 min at 192kbps — only very long recordings land here
-				error = 'Still over 50MB after compressing — trim the recording and try again.';
+				error = 'Still over 50MB after compressing. Trim the recording and try again.';
 				phase = 'idle';
 				return;
 			}
@@ -300,7 +300,7 @@
 				Click or drag to choose an audio file
 			</span>
 			<span class="text-xs text-surface-500 dark:text-surface-300">
-				MP3, M4A, WAV, FLAC, OGG, AAC, or AIFF (up to 250MB — big files compress to MP3)
+				MP3, M4A, WAV, FLAC, OGG, AAC, or AIFF (up to 250MB; big files compress to MP3)
 			</span>
 		{/if}
 	</div>
@@ -341,7 +341,7 @@
 {/if}
 
 {#if error}
-	<p role="alert" class="mt-3 text-sm text-danger-600 dark:text-danger-400">{error}</p>
+	<p role="alert" class="mt-3 text-sm text-danger-600 dark:text-danger-300">{error}</p>
 {:else if notice}
 	<p role="status" class="mt-3 text-sm text-surface-600 dark:text-surface-300">{notice}</p>
 {/if}

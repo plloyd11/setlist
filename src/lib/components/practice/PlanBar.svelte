@@ -17,7 +17,7 @@
 		aria-label="Practice session"
 		class="flex min-w-0 items-center gap-2 text-sm text-surface-600 dark:text-surface-300"
 	>
-		<span class="shrink-0 tabular-nums">{plan.index + 1} of {plan.steps.length}</span>
+		<span class="shrink-0">{plan.index + 1} of {plan.steps.length}</span>
 		{#if next}
 			<a
 				href={next.href}

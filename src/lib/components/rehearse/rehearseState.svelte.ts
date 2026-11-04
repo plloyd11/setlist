@@ -165,7 +165,9 @@ export class RehearseState {
 	});
 
 	upNext = $derived.by(() => {
-		for (let i = this.index + 1; i < this.items.length; i++) {
+		// Nothing is playing before the start, so the first item is what's next
+		const from = this.status === 'idle' ? this.index : this.index + 1;
+		for (let i = from; i < this.items.length; i++) {
 			const item = this.items[i];
 			if (item.kind === 'song') return item.title;
 			if (item.kind === 'gap') return item.label ?? 'Break';

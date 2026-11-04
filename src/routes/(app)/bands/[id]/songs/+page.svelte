@@ -1,9 +1,11 @@
 <script lang="ts">
+	import Digits from '#lib/components/ui/Digits.svelte';
 	import { enhance } from '$app/forms';
 	import { formatDuration } from '#lib/utils/duration.js';
 	import Toast from '#lib/components/ui/Toast.svelte';
 	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
 	import SongSearch from '#lib/components/songs/SongSearch.svelte';
+	import SongSort from '#lib/components/songs/SongSort.svelte';
 	import SongDetailPanel from '#lib/components/songs/SongDetailPanel.svelte';
 	import AudioCountChip from '#lib/components/songs/AudioCountChip.svelte';
 
@@ -36,7 +38,7 @@
 
 	async function handleRemoveSong(song: { bandSongId: string; title: string }) {
 		const confirmed = await confirmDialog.confirm(
-			'Remove Song',
+			'Remove song',
 			`Are you sure you want to remove "${song.title}" from the band library?`
 		);
 		if (confirmed) {
@@ -129,18 +131,14 @@
 		newNotes = '';
 	}
 
-	function toggleSort(field: typeof sortBy) {
-		if (sortBy === field) {
-			sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-		} else {
-			sortBy = field;
-			sortDir = 'asc';
-		}
-	}
+	let search: SongSearch | undefined = $state();
+	let searchToggle: HTMLButtonElement | undefined = $state();
 
 	function clearSearch() {
 		searchQuery = '';
 		durationFilter = 'all';
+		// The button that called this is about to disappear
+		search?.focusInput();
 	}
 
 	const sortOptions: { label: string; value: typeof sortBy }[] = [
@@ -149,16 +147,22 @@
 	];
 </script>
 
-<div class="p-6 md:p-8">
+<svelte:head>
+	<title>Songs · {data.band.name}</title>
+</svelte:head>
+
+<div class="page-frame">
 	<!-- Header -->
-	<div class="flex items-center justify-between">
+	<div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
 		<h2 class="font-display text-2xl text-surface-900 dark:text-surface-100">Songs</h2>
-		<div class="flex items-center gap-2">
+		<div class="flex flex-wrap items-center gap-2">
 			{#if hasSongs}
 				<button
+					bind:this={searchToggle}
 					onclick={() => (searchExpanded = !searchExpanded)}
-					class="rounded-lg p-2 text-surface-500 hover:bg-surface-200 dark:text-surface-300 dark:hover:bg-surface-700"
-					aria-label="Toggle search"
+					class="flex items-center justify-center rounded-lg p-2 text-surface-500 hover:bg-surface-200 aria-expanded:bg-surface-200 aria-expanded:text-surface-900 dark:text-surface-300 dark:hover:bg-surface-700 dark:aria-expanded:bg-surface-700 dark:aria-expanded:text-surface-100 pointer-coarse:h-11 pointer-coarse:w-11"
+					aria-label="Search songs"
+					aria-expanded={searchExpanded}
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -181,7 +185,7 @@
 					showSharePicker = !showSharePicker;
 					showAddForm = false;
 				}}
-				class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors
+				class="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors md:min-h-0
 					{showSharePicker
 					? 'bg-accent-100 text-accent-700 dark:bg-accent-900/30 dark:text-accent-400'
 					: 'text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-700'}"
@@ -201,14 +205,14 @@
 					<polyline points="16 6 12 2 8 6" />
 					<line x1="12" y1="2" x2="12" y2="15" />
 				</svg>
-				Share from Library
+				Share from library
 			</button>
 			<button
 				onclick={() => {
 					showAddForm = !showAddForm;
 					showSharePicker = false;
 				}}
-				class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors
+				class="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors md:min-h-0
 					{showAddForm
 					? 'bg-accent-100 text-accent-700 dark:bg-accent-900/30 dark:text-accent-400'
 					: 'bg-accent-500 text-white hover:bg-accent-600'}"
@@ -226,7 +230,7 @@
 				>
 					<path d="M12 5v14M5 12h14" />
 				</svg>
-				Add New
+				Add song
 			</button>
 		</div>
 	</div>
@@ -238,7 +242,7 @@
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<h3 class="text-sm font-semibold text-surface-700 dark:text-surface-300">
-					Share from Your Library
+					Share from your library
 				</h3>
 				<button
 					onclick={() => (showSharePicker = false)}
@@ -297,7 +301,7 @@
 											>{song.title}</span
 										>
 										<span class="text-xs text-surface-500 dark:text-surface-300"
-											>{formatDuration(song.duration_seconds)}</span
+											><Digits value={formatDuration(song.duration_seconds)} /></span
 										>
 									</div>
 									<button
@@ -413,27 +417,17 @@
 
 	<!-- Search (collapsible) -->
 	{#if hasSongs}
-		<SongSearch bind:searchQuery bind:durationFilter bind:expanded={searchExpanded} />
+		<SongSearch
+			bind:this={search}
+			bind:searchQuery
+			bind:durationFilter
+			bind:expanded={searchExpanded}
+			onclose={() => searchToggle?.focus()}
+		/>
 	{/if}
 
 	{#if hasSongs}
-		<!-- Sort controls -->
-		<div class="mt-4 flex items-center gap-1">
-			<span class="mr-1 text-xs text-surface-500 dark:text-surface-300">Sort:</span>
-			{#each sortOptions as opt}
-				<button
-					class="rounded px-2 py-0.5 text-xs font-medium transition-colors {sortBy === opt.value
-						? 'bg-surface-800 text-surface-100 dark:bg-surface-200 dark:text-surface-800'
-						: 'text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100'}"
-					onclick={() => toggleSort(opt.value)}
-				>
-					{opt.label}
-					{#if sortBy === opt.value}
-						<span class="ml-0.5">{sortDir === 'asc' ? '\u2191' : '\u2193'}</span>
-					{/if}
-				</button>
-			{/each}
-		</div>
+		<SongSort options={sortOptions} bind:sortBy bind:sortDir />
 		{#if hasResults}
 			<!-- Song list -->
 			<div
@@ -454,7 +448,7 @@
 									<AudioCountChip count={song.audio.length} />
 								</span>
 								<span class="ml-4 shrink-0 text-sm text-surface-500 dark:text-surface-300"
-									>{formatDuration(song.durationSeconds)}</span
+									><Digits value={formatDuration(song.durationSeconds)} /></span
 								>
 							</div>
 						</button>
@@ -533,7 +527,7 @@
 					}}
 					class="rounded-lg bg-surface-200 px-4 py-2 text-sm font-medium text-surface-700 hover:bg-surface-300 dark:bg-surface-700 dark:text-surface-300 dark:hover:bg-surface-600"
 				>
-					Share from Library
+					Share from library
 				</button>
 				<button
 					onclick={() => {

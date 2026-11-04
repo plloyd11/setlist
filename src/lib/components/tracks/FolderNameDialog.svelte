@@ -45,7 +45,7 @@
 
 <dialog
 	bind:this={dialogEl}
-	class="m-auto w-full max-w-md rounded-xl border border-surface-200 bg-surface-50 p-0 shadow-xl backdrop:bg-black/50 backdrop:backdrop-blur-sm dark:border-surface-700 dark:bg-surface-800"
+	class="m-auto w-full max-w-md rounded-xl border border-surface-200 bg-surface-50 p-0 shadow-xl backdrop:bg-black/50 dark:border-surface-700 dark:bg-surface-800"
 	onclose={() => (onsubmit = null)}
 >
 	<form class="p-6" onsubmit={handleSubmit}>
@@ -61,7 +61,7 @@
 			class="focus-live mt-4 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
 		/>
 		{#if error}
-			<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-400">{error}</p>
+			<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-300">{error}</p>
 		{/if}
 		<div class="mt-6 flex justify-end gap-3">
 			<button

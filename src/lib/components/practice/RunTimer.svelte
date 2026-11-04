@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Digits from '#lib/components/ui/Digits.svelte';
 	import { onDestroy } from 'svelte';
 	import { deserialize } from '$app/forms';
 	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
@@ -88,15 +89,21 @@
 	<div class="flex items-center justify-between gap-3">
 		<div>
 			<h2
-				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+				class="flex items-center gap-1.5 text-label text-surface-500 uppercase dark:text-surface-300"
 			>
 				Time a run
+				{#if running}
+					<span
+						class="h-1.5 w-1.5 rounded-full bg-neon-600 shadow-glow-neon dark:bg-neon-400"
+						aria-hidden="true"
+					></span>
+				{/if}
 			</h2>
 			<p
 				role="timer"
-				class="font-display text-2xl font-bold text-surface-900 tabular-nums dark:text-surface-100"
+				class="font-display text-2xl font-bold text-surface-900 dark:text-surface-100"
 			>
-				{formatDuration(Math.floor(elapsed))}
+				<Digits value={formatDuration(Math.floor(elapsed))} />
 			</p>
 		</div>
 		<button
@@ -123,7 +130,7 @@
 		</div>
 	{/if}
 	{#if error}
-		<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-400">{error}</p>
+		<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-300">{error}</p>
 	{/if}
 </section>
 

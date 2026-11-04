@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { memberName } from '#lib/utils/memberName.js';
 	import { formatDuration } from '#lib/utils/duration.js';
 	import { longpress } from '#lib/actions/longpress.js';
 	import { TRACK_DRAG_TYPE } from '#lib/utils/trackDrag.js';
@@ -26,7 +27,6 @@
 	let {
 		track,
 		basePath,
-		bandName,
 		draggable = false,
 		oncontextmenu,
 		ondragstartcard,
@@ -34,8 +34,7 @@
 	}: {
 		track: TrackListItem;
 		basePath: string;
-		bandName?: string;
-		/** Opt-in (tracks list only — the dashboard renders plain cards) */
+		/** Opt-in: the demos list moves cards between folders; the band page doesn't */
 		draggable?: boolean;
 		oncontextmenu?: (pos: { x: number; y: number }) => void;
 		ondragstartcard?: () => void;
@@ -82,13 +81,6 @@
 >
 	<div class="flex items-start justify-between gap-3">
 		<div class="min-w-0">
-			{#if bandName}
-				<p
-					class="truncate text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-				>
-					{bandName}
-				</p>
-			{/if}
 			<h3 class="truncate font-display text-lg text-surface-900 dark:text-surface-100">
 				{track.title}
 			</h3>
@@ -123,7 +115,7 @@
 				</div>
 			{/if}
 			<span class="text-xs text-surface-500 dark:text-surface-300">
-				{track.uploaderProfile?.display_name ?? 'Former member'}
+				{memberName(track.uploaderProfile)}
 			</span>
 		</div>
 		<div class="flex items-center gap-2 text-xs text-surface-500 dark:text-surface-300">

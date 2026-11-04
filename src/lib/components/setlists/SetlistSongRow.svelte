@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Digits from '#lib/components/ui/Digits.svelte';
 	import { formatDuration } from '#lib/utils/duration.js';
 
 	let {
@@ -42,7 +43,7 @@
 	<!-- Set position: renumbers live while a drag is in flight -->
 	{#if position != null}
 		<span
-			class="w-5 shrink-0 text-right text-xs font-medium text-surface-400 tabular-nums dark:text-surface-400"
+			class="w-5 shrink-0 text-right text-xs font-medium text-surface-400 dark:text-surface-400"
 			aria-hidden="true"
 		>
 			{position}
@@ -52,15 +53,13 @@
 	<!-- Song title (+ inline notes, e.g. count-ins) -->
 	<span class="min-w-0 flex-1 truncate font-medium text-surface-900 dark:text-surface-100">
 		{song.title}{#if song.notes}<span
-				class="ml-2 text-sm font-normal text-surface-500 dark:text-surface-400">{song.notes}</span
+				class="ml-2 text-sm font-normal text-surface-500 dark:text-surface-300">{song.notes}</span
 			>{/if}
 	</span>
 
 	<!-- Duration: fixed slot so times stack into a scannable column -->
-	<span
-		class="w-12 shrink-0 text-right text-sm text-surface-500 tabular-nums dark:text-surface-300"
-	>
-		{formatDuration(song.duration_seconds)}
+	<span class="w-12 shrink-0 text-right text-sm text-surface-500 dark:text-surface-300">
+		<Digits value={formatDuration(song.duration_seconds)} />
 	</span>
 
 	<!-- Remove button -->

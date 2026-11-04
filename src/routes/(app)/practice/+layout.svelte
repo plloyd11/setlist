@@ -12,11 +12,14 @@
 	];
 </script>
 
-<div class="mx-auto w-full max-w-4xl p-4 md:p-8">
+<div class="page-frame">
 	<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Practice</h1>
+	<!-- The divider is an inset shadow, so the tabs' underlines can sit on it from inside.
+	     Overlapping a border with a negative margin overflows this scroller by 1px, and
+	     overflow-x: auto turns vertical scrolling on too: a stray scrollbar. -->
 	<nav
 		aria-label="Practice"
-		class="mt-4 flex gap-1 overflow-x-auto border-b border-surface-200 dark:border-surface-700"
+		class="mt-4 flex overflow-x-auto shadow-[inset_0_-1px_0_var(--color-surface-200)] dark:shadow-[inset_0_-1px_0_var(--color-surface-700)]"
 	>
 		{#each tabs as tab (tab.href)}
 			{@const active =
@@ -26,7 +29,7 @@
 			<a
 				href={tab.href}
 				aria-current={active ? 'page' : undefined}
-				class="focus-live -mb-px flex min-h-11 shrink-0 items-center border-b-2 px-3 text-sm font-medium whitespace-nowrap {active
+				class="focus-live flex min-h-11 min-w-11 shrink-0 items-center justify-center border-b-2 px-1.5 text-sm font-medium whitespace-nowrap transition-colors duration-150 min-[360px]:px-2.5 md:px-3 {active
 					? 'border-accent-500 text-accent-700 dark:border-accent-400 dark:text-accent-300'
 					: 'border-transparent text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100'}"
 			>

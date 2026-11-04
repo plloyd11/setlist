@@ -8,7 +8,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.setlist.name} — Setlist</title>
+	<title>{data.setlist.name} · Setlist</title>
 	<!-- Share links are unlisted: keep them out of search indexes -->
 	<meta name="robots" content="noindex" />
 </svelte:head>
@@ -24,7 +24,7 @@
 	/>
 
 	<!-- Footer -->
-	<p class="mt-12 text-center text-xs text-gray-400 print:hidden">Powered by Setlist</p>
+	<p class="mt-12 text-center text-xs text-gray-500 print:hidden">Powered by Setlist</p>
 </div>
 
 <style>
@@ -32,6 +32,9 @@
 	:global(html:has(.share-page)),
 	:global(body:has(.share-page)) {
 		background: white !important;
+		color-scheme: light;
+		-webkit-font-smoothing: auto;
+		-moz-osx-font-smoothing: auto;
 	}
 
 	@media print {

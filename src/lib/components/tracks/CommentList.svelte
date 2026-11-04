@@ -11,6 +11,7 @@
 </script>
 
 <script lang="ts">
+	import { memberName } from '#lib/utils/memberName.js';
 	import CommentItem from './CommentItem.svelte';
 
 	let {
@@ -42,7 +43,7 @@
 		const resolver = comment.resolved_by ? profiles[comment.resolved_by] : null;
 		return {
 			...comment,
-			author_name: author?.display_name ?? 'Former member',
+			author_name: memberName(author),
 			author_logo_url: author?.logo_url ?? null,
 			resolver_name: resolver?.display_name ?? null
 		};

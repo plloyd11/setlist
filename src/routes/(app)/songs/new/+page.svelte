@@ -6,11 +6,15 @@
 	let toast: Toast;
 </script>
 
-<div class="p-6 md:p-8">
+<svelte:head>
+	<title>Add song · Setlist</title>
+</svelte:head>
+
+<div class="page-frame">
 	<div class="mb-8 flex items-center gap-4">
 		<a
 			href="/songs"
-			class="flex items-center text-sm text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-200"
+			class="hit-44 focus-live flex items-center rounded text-sm text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-200"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -30,7 +34,7 @@
 		</a>
 	</div>
 
-	<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Add Song</h1>
+	<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Add song</h1>
 
 	<form
 		method="POST"
@@ -40,6 +44,8 @@
 				if (result.type === 'success') {
 					toast.show('Song added', { variant: 'success' });
 					await update({ reset: true });
+					// Entering a whole library is the common case: straight onto the next song
+					document.getElementById('title')?.focus();
 				} else {
 					await update();
 				}
@@ -65,7 +71,7 @@
 				for="duration"
 				class="block text-sm font-medium text-surface-700 dark:text-surface-300"
 			>
-				Duration
+				Length
 			</label>
 			<input
 				id="duration"
@@ -73,7 +79,6 @@
 				type="text"
 				required
 				placeholder="3:45"
-				inputmode="numeric"
 				pattern={'\\d{1,3}:[0-5]\\d'}
 				value={form?.durationRaw ?? ''}
 				class="focus-live mt-1 block w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
@@ -82,7 +87,7 @@
 
 		<div>
 			<label for="notes" class="block text-sm font-medium text-surface-700 dark:text-surface-300">
-				Notes <span class="text-surface-400 dark:text-surface-300">(optional)</span>
+				Notes <span class="text-surface-500 dark:text-surface-300">(optional)</span>
 			</label>
 			<textarea
 				id="notes"
@@ -94,14 +99,14 @@
 		</div>
 
 		{#if form?.error}
-			<p class="text-sm text-danger-500">{form.error}</p>
+			<p role="alert" class="text-sm text-danger-600 dark:text-danger-300">{form.error}</p>
 		{/if}
 
 		<button
 			type="submit"
 			class="focus-live w-full rounded-lg bg-accent-500 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-accent-600"
 		>
-			Add Song
+			Add song
 		</button>
 	</form>
 </div>

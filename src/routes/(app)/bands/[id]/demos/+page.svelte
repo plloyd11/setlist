@@ -27,7 +27,7 @@
 	let menuVisible = $state(false);
 	let menuX = $state(0);
 	let menuY = $state(0);
-	let menuItems = $state<{ label: string; action: () => void }[]>([]);
+	let menuItems = $state<{ label: string; action: () => void; danger?: boolean }[]>([]);
 
 	const FOLDER_VIEW_KEY = 'tracks:folderView';
 	let folderView = $state<'list' | 'grid'>('list');
@@ -101,7 +101,10 @@
 		goto(`${basePath}/${result.trackId}`);
 	}
 
-	function openMenu(items: { label: string; action: () => void }[], pos: { x: number; y: number }) {
+	function openMenu(
+		items: { label: string; action: () => void; danger?: boolean }[],
+		pos: { x: number; y: number }
+	) {
 		menuItems = items;
 		menuX = pos.x;
 		menuY = pos.y;
@@ -200,7 +203,11 @@
 	}
 </script>
 
-<div class="p-6 md:p-8">
+<svelte:head>
+	<title>Demos · {data.band.name}</title>
+</svelte:head>
+
+<div class="page-frame">
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div class="flex items-baseline gap-3">
@@ -234,7 +241,7 @@
 			</button>
 			<button
 				onclick={() => (showUploadForm = !showUploadForm)}
-				class="flex items-center justify-center rounded-lg bg-accent-500 p-2 text-white shadow-sm hover:bg-accent-600"
+				class="flex items-center justify-center rounded-lg bg-accent-500 p-2 text-white shadow-sm hover:bg-accent-600 pointer-coarse:h-11 pointer-coarse:w-11"
 				aria-label="New demo"
 			>
 				<svg
@@ -279,11 +286,7 @@
 
 	{#if hasFolders}
 		<div class="mt-6 flex items-center justify-between">
-			<span
-				class="text-xs font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-			>
-				Folders
-			</span>
+			<span class="text-sm font-medium text-surface-700 dark:text-surface-300"> Folders </span>
 			<div
 				class="flex overflow-hidden rounded-lg border border-surface-300 dark:border-surface-600"
 				role="group"
@@ -293,7 +296,7 @@
 					type="button"
 					aria-label="List view"
 					aria-pressed={folderView === 'list'}
-					class="p-1.5 {folderView === 'list'
+					class="p-1.5 pointer-coarse:p-3.5 {folderView === 'list'
 						? 'bg-surface-200 text-surface-900 dark:bg-surface-700 dark:text-surface-100'
 						: 'text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100'}"
 					onclick={() => setFolderView('list')}
@@ -314,7 +317,7 @@
 					type="button"
 					aria-label="Grid view"
 					aria-pressed={folderView === 'grid'}
-					class="p-1.5 {folderView === 'grid'
+					class="p-1.5 pointer-coarse:p-3.5 {folderView === 'grid'
 						? 'bg-surface-200 text-surface-900 dark:bg-surface-700 dark:text-surface-100'
 						: 'text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100'}"
 					onclick={() => setFolderView('grid')}
@@ -353,7 +356,7 @@
 							[
 								{ label: 'Rename', action: () => renameFolder(folder) },
 								{ label: 'Move to…', action: () => moveFolderViaDialog(folder) },
-								{ label: 'Delete', action: () => deleteFolder(folder) }
+								{ label: 'Delete', danger: true, action: () => deleteFolder(folder) }
 							],
 							pos
 						)}

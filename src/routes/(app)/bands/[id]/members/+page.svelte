@@ -24,7 +24,11 @@
 	}
 </script>
 
-<div class="p-6 md:p-8">
+<svelte:head>
+	<title>Members · {data.band.name}</title>
+</svelte:head>
+
+<div class="page-frame">
 	<div class="flex items-center justify-between">
 		<h2 class="font-display text-2xl text-surface-900 dark:text-surface-100">Members</h2>
 
@@ -62,7 +66,7 @@
 						<path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
 						<path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
 					</svg>
-					Generate Invite Link
+					Generate invite link
 				</button>
 			</form>
 		{/if}
@@ -70,7 +74,7 @@
 
 	{#if form?.error}
 		<div
-			class="mt-4 rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-800 dark:bg-danger-900/20 dark:text-danger-400"
+			class="mt-4 rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-800 dark:bg-danger-900/20 dark:text-danger-300"
 		>
 			{form.error}
 		</div>

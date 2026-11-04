@@ -20,7 +20,7 @@
 			month: 'short',
 			day: 'numeric'
 		});
-		return `v${v.version_number} — ${v.file_name} — ${date}`;
+		return `v${v.version_number} · ${v.file_name} · ${date}`;
 	}
 
 	function handleChange(e: Event) {

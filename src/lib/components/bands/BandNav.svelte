@@ -21,6 +21,16 @@
 		if (exact) return pathname === href;
 		return pathname.startsWith(href);
 	}
+
+	// Six tabs don't fit a phone: scroll the current one into the strip, or
+	// Members and Settings land clipped at the edge with nothing marked active.
+	let mobileNav: HTMLElement | undefined = $state();
+	$effect(() => {
+		page.url.pathname;
+		const active = mobileNav?.querySelector<HTMLElement>('[aria-current="page"]');
+		if (!mobileNav || !active) return;
+		mobileNav.scrollLeft = active.offsetLeft - (mobileNav.clientWidth - active.offsetWidth) / 2;
+	});
 </script>
 
 <!-- Desktop: secondary sidebar to the right of the icon rail -->
@@ -42,6 +52,7 @@
 		{#each tabs as tab}
 			<a
 				href={tab.href}
+				aria-current={isActive(page.url.pathname, tab.href, tab.exact) ? 'page' : undefined}
 				class="focus-live flex items-center rounded-lg px-3 py-2 text-sm transition-colors
 					{isActive(page.url.pathname, tab.href, tab.exact)
 					? 'bg-surface-200/70 font-semibold text-surface-950 dark:bg-surface-800 dark:text-surface-50'
@@ -56,7 +67,7 @@
 <!-- Mobile: band header + horizontal tabs -->
 <div class="md:hidden">
 	<div
-		class="flex items-center gap-3 border-b border-surface-200 px-6 py-4 dark:border-surface-700"
+		class="flex items-center gap-3 border-b border-surface-200 px-4 py-4 dark:border-surface-700"
 	>
 		{#if band.logo_url || band.logo_dark_url}
 			<BandLogo logoUrl={band.logo_url} logoDarkUrl={band.logo_dark_url} name={band.name} />
@@ -65,11 +76,15 @@
 			{band.name}
 		</h1>
 	</div>
-	<nav class="flex overflow-x-auto border-b border-surface-200 px-6 dark:border-surface-700">
+	<nav
+		bind:this={mobileNav}
+		class="relative flex overflow-x-auto border-b border-surface-200 px-4 dark:border-surface-700"
+	>
 		{#each tabs as tab}
 			<a
 				href={tab.href}
-				class="border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors
+				aria-current={isActive(page.url.pathname, tab.href, tab.exact) ? 'page' : undefined}
+				class="focus-live flex min-h-11 items-center border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors
 					{isActive(page.url.pathname, tab.href, tab.exact)
 					? 'border-accent-500 text-accent-600 dark:text-accent-400'
 					: 'border-transparent text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-200'}"

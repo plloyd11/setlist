@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.track.title} — Practice</title>
+	<title>{data.track.title} · Practice</title>
 </svelte:head>
 
 {#snippet noAudio()}

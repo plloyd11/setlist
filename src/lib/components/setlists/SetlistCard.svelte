@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Setlist } from '#lib/types/database.js';
+	import { goto } from '$app/navigation';
 	import { formatDuration } from '#lib/utils/duration.js';
 
 	let {
@@ -27,8 +28,21 @@
 	function startEdit(e: MouseEvent) {
 		e.preventDefault();
 		e.stopPropagation();
+		menuOpen = false;
 		editName = setlist.name;
 		editing = true;
+	}
+
+	// The title is the biggest thing on the card, so on touch it opens the set.
+	// Renaming stays one tap away in the menu.
+	function handleTitleClick(e: MouseEvent) {
+		if (window.matchMedia('(pointer: coarse)').matches) {
+			e.preventDefault();
+			e.stopPropagation();
+			goto(`${basePath}/${setlist.id}`);
+			return;
+		}
+		startEdit(e);
 	}
 
 	function saveEdit() {
@@ -90,7 +104,7 @@
 	}
 
 	let songLabel = $derived(songCount === 1 ? '1 song' : `${songCount} songs`);
-	let timeLabel = $derived(totalSeconds > 0 ? formatDuration(totalSeconds) : '--:--');
+	let timeLabel = $derived(formatDuration(totalSeconds));
 </script>
 
 <svelte:window onkeydown={handleWindowKeydown} />
@@ -118,7 +132,7 @@
 			{:else}
 				<button
 					class="min-w-0 flex-1 truncate text-left font-display text-lg font-semibold text-surface-900 hover:text-accent-600 dark:text-surface-100 dark:hover:text-accent-300"
-					onclick={startEdit}
+					onclick={handleTitleClick}
 					title="Click to rename"
 				>
 					{setlist.name}
@@ -155,6 +169,26 @@
 					>
 						<button
 							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-surface-700 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-700"
+							onclick={startEdit}
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M12 20h9" />
+								<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+							</svg>
+							Rename
+						</button>
+						<button
+							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-surface-700 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-700"
 							onclick={handleDuplicate}
 						>
 							<svg
@@ -174,7 +208,7 @@
 							Duplicate
 						</button>
 						<button
-							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-danger-600 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/20"
+							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-danger-600 hover:bg-danger-50 dark:text-danger-300 dark:hover:bg-danger-900/20"
 							onclick={handleDelete}
 						>
 							<svg
@@ -204,7 +238,7 @@
 			<p class="mt-1.5 truncate text-sm text-surface-500 dark:text-surface-300">
 				{#if setlist.venue}{setlist.venue}{/if}
 				{#if setlist.venue && setlist.gig_date}
-					&mdash;
+					&middot;
 				{/if}
 				{#if setlist.gig_date}{formatDate(setlist.gig_date)}{/if}
 			</p>

@@ -22,12 +22,11 @@
 
 	const fieldClass =
 		'focus-live mt-1 block min-h-11 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 text-sm text-surface-900 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100';
-	const labelClass =
-		'text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300';
+	const labelClass = 'text-sm font-medium text-surface-700 dark:text-surface-300';
 </script>
 
 <svelte:head>
-	<title>{data.exercise.title} — Practice</title>
+	<title>{data.exercise.title} · Practice</title>
 </svelte:head>
 
 {#snippet noAudio()}
@@ -81,7 +80,7 @@
 							value={data.exercise.notes ?? ''}></textarea>
 					</label>
 					{#if form?.error}
-						<p role="alert" class="text-sm text-danger-600 dark:text-danger-400">{form.error}</p>
+						<p role="alert" class="text-sm text-danger-600 dark:text-danger-300">{form.error}</p>
 					{/if}
 					<button
 						type="submit"
@@ -176,7 +175,7 @@
 				<button
 					type="button"
 					onclick={handleDelete}
-					class="focus-live min-h-11 rounded-lg text-sm font-medium text-danger-600 hover:bg-surface-100 dark:text-danger-400 dark:hover:bg-surface-800"
+					class="focus-live min-h-11 rounded-lg text-sm font-medium text-danger-600 hover:bg-surface-100 dark:text-danger-300 dark:hover:bg-surface-800"
 				>
 					Delete exercise
 				</button>

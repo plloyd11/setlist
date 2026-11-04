@@ -15,23 +15,21 @@
 </script>
 
 <svelte:head>
-	<title>Help — Setlist</title>
+	<title>Help · Setlist</title>
 </svelte:head>
 
-<div class="mx-auto max-w-2xl p-6 md:p-8">
+<div class="page-frame">
 	<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Help</h1>
 	<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
 		Everything you need to get from first song to first gig.
 	</p>
 
-	<div class="mt-8 space-y-8">
+	<div
+		class="mt-8 gap-8 lg:columns-2 2xl:columns-3 [&>section]:mb-8 [&>section]:break-inside-avoid"
+	>
 		<!-- Quick start -->
 		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
-				Quick start
-			</h2>
+			<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Quick start</h2>
 			<div
 				class="mt-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300"
 			>
@@ -39,7 +37,7 @@
 					<li class="flex gap-3">
 						<div class="flex flex-col items-center self-stretch">
 							<span
-								class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-accent-300 font-display text-[13px] leading-none text-accent-600 dark:border-accent-700 dark:text-accent-300"
+								class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-accent-300 font-display text-[0.8125rem] leading-none text-accent-600 dark:border-accent-700 dark:text-accent-300"
 								>1</span
 							>
 							<span class="w-px flex-1 bg-surface-200 dark:bg-surface-700" aria-hidden="true"
@@ -50,13 +48,13 @@
 								href="/songs"
 								class="focus-live rounded font-medium text-accent-600 hover:underline dark:text-accent-300"
 								>songs</a
-							> — just a name and a length.
+							>: just a name and a length.
 						</span>
 					</li>
 					<li class="flex gap-3">
 						<div class="flex flex-col items-center self-stretch">
 							<span
-								class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-accent-300 font-display text-[13px] leading-none text-accent-600 dark:border-accent-700 dark:text-accent-300"
+								class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-accent-300 font-display text-[0.8125rem] leading-none text-accent-600 dark:border-accent-700 dark:text-accent-300"
 								>2</span
 							>
 							<span class="w-px flex-1 bg-surface-200 dark:bg-surface-700" aria-hidden="true"
@@ -67,28 +65,28 @@
 								href="/setlists"
 								class="focus-live rounded font-medium text-accent-600 hover:underline dark:text-accent-300"
 								>setlist</a
-							> — drag songs in, set a target time, watch the clock.
+							>: drag songs in, set a target time, watch the clock.
 						</span>
 					</li>
 					<li class="flex gap-3">
 						<div class="flex flex-col items-center self-stretch">
 							<span
-								class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-accent-300 font-display text-[13px] leading-none text-accent-600 dark:border-accent-700 dark:text-accent-300"
+								class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-accent-300 font-display text-[0.8125rem] leading-none text-accent-600 dark:border-accent-700 dark:text-accent-300"
 								>3</span
 							>
 							<span class="w-px flex-1 bg-surface-200 dark:bg-surface-700" aria-hidden="true"
 							></span>
 						</div>
-						<span class="pb-5">Share it — one link, no accounts, always current.</span>
+						<span class="pb-5">Share it: one link, no accounts, always current.</span>
 					</li>
 					<li class="flex gap-3">
 						<div class="flex flex-col items-center self-stretch">
 							<span
-								class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-accent-300 font-display text-[13px] leading-none text-accent-600 dark:border-accent-700 dark:text-accent-300"
+								class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-accent-300 font-display text-[0.8125rem] leading-none text-accent-600 dark:border-accent-700 dark:text-accent-300"
 								>4</span
 							>
 						</div>
-						<span>Rehearse it — run the set top to bottom before you hit the stage.</span>
+						<span>Rehearse it: run the set top to bottom before you hit the stage.</span>
 					</li>
 				</ol>
 			</div>
@@ -96,16 +94,12 @@
 
 		<!-- Songs -->
 		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
-				Songs
-			</h2>
+			<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Songs</h2>
 			<div
-				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300"
+				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300 [&>p]:max-w-[30rem]"
 			>
 				<p>
-					A song is a name and a length — that's all a set needs to keep time. Build yours in
+					A song is a name and a length. That's all a set needs to keep time. Build yours in
 					<a
 						href="/songs"
 						class="focus-live rounded font-medium text-accent-600 hover:underline dark:text-accent-300"
@@ -113,7 +107,7 @@
 					>.
 				</p>
 				<p>
-					Attach rehearsal audio as variants — "Full mix", "No guitar" — so everyone plays along
+					Attach rehearsal audio as variants ("Full mix", "No guitar") so everyone plays along
 					against the mix they need. Charts and tabs (PDF, Word, Guitar Pro, TuxGuitar) live on the
 					song too.
 				</p>
@@ -131,13 +125,13 @@
 							<span class="text-xs font-medium text-surface-900 dark:text-surface-100"
 								>Midnight Drive</span
 							>
-							<span class="ml-auto text-[11px] text-surface-500 tabular-nums dark:text-surface-300"
+							<span class="ml-auto text-[0.6875rem] text-surface-500 dark:text-surface-300"
 								>3:42</span
 							>
 						</div>
 						<div class="mt-1.5 flex flex-wrap items-center gap-1.5">
 							<span
-								class="inline-flex items-center gap-1 rounded-full bg-accent-50 px-1.5 py-0.5 text-[10px] font-medium text-accent-700 dark:bg-accent-900/40 dark:text-accent-300"
+								class="inline-flex items-center gap-1 rounded-full bg-accent-50 px-1.5 py-0.5 text-label font-medium text-accent-700 dark:bg-accent-900/40 dark:text-accent-300"
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -157,7 +151,7 @@
 								Full mix
 							</span>
 							<span
-								class="inline-flex items-center gap-1 rounded-full bg-accent-50 px-1.5 py-0.5 text-[10px] font-medium text-accent-700 dark:bg-accent-900/40 dark:text-accent-300"
+								class="inline-flex items-center gap-1 rounded-full bg-accent-50 px-1.5 py-0.5 text-label font-medium text-accent-700 dark:bg-accent-900/40 dark:text-accent-300"
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -177,7 +171,7 @@
 								No guitar
 							</span>
 							<span
-								class="inline-flex items-center gap-1 rounded-full bg-surface-100 px-1.5 py-0.5 text-[10px] font-medium text-surface-600 dark:bg-surface-700/60 dark:text-surface-200"
+								class="inline-flex items-center gap-1 rounded-full bg-surface-100 px-1.5 py-0.5 text-label font-medium text-surface-600 dark:bg-surface-700/60 dark:text-surface-200"
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -195,12 +189,13 @@
 								</svg>
 								chords.pdf
 							</span>
-							<span class="ml-auto text-[11px] font-medium text-accent-600 dark:text-accent-300"
+							<span
+								class="ml-auto text-[0.6875rem] font-medium text-accent-600 dark:text-accent-300"
 								>▸ Practice</span
 							>
 						</div>
 					</div>
-					<figcaption class="mt-2 text-[11px] text-surface-500 dark:text-surface-300">
+					<figcaption class="mt-2 text-xs text-surface-500 dark:text-surface-300">
 						One song, two rehearsal mixes, and the chart along for the ride.
 					</figcaption>
 				</figure>
@@ -209,13 +204,9 @@
 
 		<!-- Practice -->
 		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
-				Practice
-			</h2>
+			<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Practice</h2>
 			<div
-				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300"
+				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300 [&>p]:max-w-[30rem]"
 			>
 				<p>
 					Practice is where you shed: the recording up top, DAW-style controls under it, the chart
@@ -223,15 +214,15 @@
 				</p>
 				<p>
 					Drag across the waveform to highlight the hard part and hit
-					<span class="font-medium text-surface-700 dark:text-surface-200">Loop</span> — it cycles
+					<span class="font-medium text-surface-700 dark:text-surface-200">Loop</span> and it cycles
 					until you've got it.
 					<span class="font-medium text-surface-700 dark:text-surface-200">Pre-roll 2s</span> backs up
 					before every pass, so your hands are ready when the section lands.
 				</p>
 				<p>
 					The <span class="font-medium text-surface-700 dark:text-surface-200">Speed</span> knob slows
-					the track to half speed without dropping the pitch. Save the loop as a named section — "solo",
-					"bridge" — and it's waiting next session. Knobs, loop, and sections are all remembered per song.
+					the track to half speed without dropping the pitch. Save the loop as a named section ("solo",
+					"bridge") and it's waiting next session. Knobs, loop, and sections are all remembered per song.
 				</p>
 				<figure class="rounded-lg bg-surface-100/70 p-3 dark:bg-surface-950/40">
 					<div aria-hidden="true">
@@ -266,10 +257,7 @@
 										></span>
 									</span>
 								</span>
-								<span
-									class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-									>Vol</span
-								>
+								<span class="text-label text-surface-500 uppercase dark:text-surface-300">Vol</span>
 							</span>
 							<span class="flex items-center gap-1.5">
 								<span
@@ -281,13 +269,12 @@
 										></span>
 									</span>
 								</span>
-								<span
-									class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+								<span class="text-label text-surface-500 uppercase dark:text-surface-300"
 									>Speed 70%</span
 								>
 							</span>
 							<span
-								class="inline-flex items-center gap-1 rounded-md bg-accent-500 px-1.5 py-0.5 text-[10px] font-medium text-white"
+								class="inline-flex items-center gap-1 rounded-md bg-accent-500 px-1.5 py-0.5 text-label font-medium text-white"
 							>
 								<svg
 									width="9"
@@ -307,48 +294,48 @@
 								Loop 1:12–1:38
 							</span>
 							<span
-								class="inline-flex items-center rounded-md border border-surface-300 px-1.5 py-0.5 text-[10px] font-medium text-surface-600 dark:border-surface-600 dark:text-surface-300"
+								class="inline-flex items-center rounded-md border border-surface-300 px-1.5 py-0.5 text-label font-medium text-surface-600 dark:border-surface-600 dark:text-surface-300"
 							>
 								Pre-roll 2s
 							</span>
 						</div>
 					</div>
-					<figcaption class="mt-2 text-[11px] text-surface-500 dark:text-surface-300">
-						Chartreuse brackets mean the loop is live — playback is trapped inside them.
+					<figcaption class="mt-2 text-xs text-surface-500 dark:text-surface-300">
+						Chartreuse brackets mean the loop is live: playback is trapped inside them.
 					</figcaption>
 				</figure>
 				<p
-					class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-surface-500 dark:text-surface-300"
+					class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[0.6875rem] text-surface-500 dark:text-surface-300"
 				>
 					<span class="flex items-center gap-1">
 						<kbd
-							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-[10px] font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
 							>Space</kbd
 						> play
 					</span>
 					<span class="flex items-center gap-1">
 						<kbd
-							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-[10px] font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
 							>L</kbd
 						> loop
 					</span>
 					<span class="flex items-center gap-1">
 						<kbd
-							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-[10px] font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
 							>[</kbd
 						>
 						<kbd
-							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-[10px] font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
 							>]</kbd
 						> loop points
 					</span>
 					<span class="flex items-center gap-1">
 						<kbd
-							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-[10px] font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
 							>←</kbd
 						>
 						<kbd
-							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-[10px] font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
 							>→</kbd
 						> skip 5s
 					</span>
@@ -358,13 +345,9 @@
 
 		<!-- Setlists -->
 		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
-				Setlists
-			</h2>
+			<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Setlists</h2>
 			<div
-				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300"
+				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300 [&>p]:max-w-[30rem]"
 			>
 				<p>
 					Start a <a
@@ -374,15 +357,15 @@
 					> and give it a name, a venue, and a gig date.
 				</p>
 				<p>
-					Drag songs in from the library panel; drag rows to reorder. Add gaps for the in-between —
+					Drag songs in from the library panel; drag rows to reorder. Add gaps for the in-between:
 					tuning, banter, the encore walk-off. Gaps are labeled, timed, and count toward the total.
 				</p>
 				<p>
 					Set a target time and the timing bar keeps score:
 					<span class="font-medium text-surface-700 dark:text-surface-200">Total</span>,
 					<span class="font-medium text-surface-700 dark:text-surface-200">Target</span>, and the
-					<span class="font-medium text-surface-700 dark:text-surface-200">Diff</span> — olive when the
-					set fits, red when you're over.
+					<span class="font-medium text-surface-700 dark:text-surface-200">Diff</span>: olive when
+					the set fits, red when you're over.
 				</p>
 				<figure class="rounded-lg bg-surface-100/70 p-3 dark:bg-surface-950/40">
 					<div aria-hidden="true">
@@ -404,14 +387,12 @@
 									<circle cx="9" cy="19" r="1.5" />
 									<circle cx="15" cy="19" r="1.5" />
 								</svg>
-								<span class="w-3 text-right text-[10px] text-surface-400 tabular-nums">1</span>
+								<span class="w-3 text-right text-label text-surface-400">1</span>
 								<span
 									class="flex-1 truncate text-xs font-medium text-surface-900 dark:text-surface-100"
 									>Midnight Drive</span
 								>
-								<span class="text-[11px] text-surface-500 tabular-nums dark:text-surface-300"
-									>3:42</span
-								>
+								<span class="text-[0.6875rem] text-surface-500 dark:text-surface-300">3:42</span>
 							</div>
 							<div
 								class="flex items-center gap-2 rounded-lg border border-surface-200 bg-surface-50 px-2.5 py-1.5 dark:border-surface-700 dark:bg-surface-800"
@@ -430,14 +411,12 @@
 									<circle cx="9" cy="19" r="1.5" />
 									<circle cx="15" cy="19" r="1.5" />
 								</svg>
-								<span class="w-3 text-right text-[10px] text-surface-400 tabular-nums">2</span>
+								<span class="w-3 text-right text-label text-surface-400">2</span>
 								<span
 									class="flex-1 truncate text-xs font-medium text-surface-900 dark:text-surface-100"
 									>Gasoline Heart</span
 								>
-								<span class="text-[11px] text-surface-500 tabular-nums dark:text-surface-300"
-									>4:05</span
-								>
+								<span class="text-[0.6875rem] text-surface-500 dark:text-surface-300">4:05</span>
 							</div>
 							<div
 								class="flex items-center gap-2 rounded-lg border border-dashed border-surface-300 bg-surface-100/60 px-2.5 py-1.5 dark:border-surface-600 dark:bg-surface-900/60"
@@ -447,9 +426,7 @@
 								<span class="flex-1 truncate text-xs text-surface-500 italic dark:text-surface-300"
 									>Tuning + banter</span
 								>
-								<span class="text-[11px] text-surface-500 tabular-nums dark:text-surface-300"
-									>1:30</span
-								>
+								<span class="text-[0.6875rem] text-surface-500 dark:text-surface-300">1:30</span>
 							</div>
 							<div
 								class="flex items-center gap-2 rounded-lg border border-surface-200 bg-surface-50 px-2.5 py-1.5 shadow-glow-neon ring-2 ring-neon-600 dark:border-surface-700 dark:bg-surface-800 dark:ring-neon-400"
@@ -468,14 +445,12 @@
 									<circle cx="9" cy="19" r="1.5" />
 									<circle cx="15" cy="19" r="1.5" />
 								</svg>
-								<span class="w-3 text-right text-[10px] text-surface-400 tabular-nums">3</span>
+								<span class="w-3 text-right text-label text-surface-400">3</span>
 								<span
 									class="flex-1 truncate text-xs font-medium text-surface-900 dark:text-surface-100"
 									>Last Call</span
 								>
-								<span class="text-[11px] text-surface-500 tabular-nums dark:text-surface-300"
-									>3:58</span
-								>
+								<span class="text-[0.6875rem] text-surface-500 dark:text-surface-300">3:58</span>
 							</div>
 						</div>
 						<div
@@ -483,7 +458,7 @@
 						>
 							<div>
 								<p
-									class="text-[9px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+									class="text-[0.5625rem] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
 								>
 									Total
 								</p>
@@ -493,21 +468,19 @@
 							</div>
 							<div>
 								<p
-									class="text-[9px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+									class="text-[0.5625rem] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
 								>
 									Target
 								</p>
-								<p class="text-xs text-surface-700 tabular-nums dark:text-surface-300">14:00</p>
+								<p class="text-xs text-surface-700 dark:text-surface-300">14:00</p>
 							</div>
 							<div>
 								<p
-									class="text-[9px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+									class="text-[0.5625rem] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
 								>
 									Diff
 								</p>
-								<p class="text-xs font-bold text-success-600 tabular-nums dark:text-success-300">
-									-0:45
-								</p>
+								<p class="text-xs font-bold text-success-600 dark:text-success-300">-0:45</p>
 							</div>
 							<div class="flex-1">
 								<div class="h-1.5 overflow-hidden rounded-full bg-surface-200 dark:bg-surface-700">
@@ -516,7 +489,7 @@
 							</div>
 						</div>
 					</div>
-					<figcaption class="mt-2 text-[11px] text-surface-500 dark:text-surface-300">
+					<figcaption class="mt-2 text-xs text-surface-500 dark:text-surface-300">
 						A row mid-drag wears the chartreuse ring; the bar below keeps score. Olive means the set
 						fits.
 					</figcaption>
@@ -526,17 +499,15 @@
 
 		<!-- Sharing & printing -->
 		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
+			<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">
 				Sharing &amp; printing
 			</h2>
 			<div
-				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300"
+				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300 [&>p]:max-w-[30rem]"
 			>
 				<p>
 					Flip sharing on and your setlist gets a public link. Anyone who has it sees the current
-					set — always up to date, no account needed.
+					set, always up to date, no account needed.
 				</p>
 				<p>The shared page prints clean, ready to tape to the stage floor.</p>
 				<figure class="rounded-lg bg-surface-100/70 p-3 dark:bg-surface-950/40">
@@ -545,11 +516,11 @@
 						<span class="text-xs font-medium text-surface-700 dark:text-surface-200"
 							>Sharing on</span
 						>
-						<span class="truncate text-[11px] text-surface-500 dark:text-surface-300"
+						<span class="truncate text-[0.6875rem] text-surface-500 dark:text-surface-300"
 							>/share/k2f9x3a1</span
 						>
 					</div>
-					<figcaption class="mt-2 text-[11px] text-surface-500 dark:text-surface-300">
+					<figcaption class="mt-2 text-xs text-surface-500 dark:text-surface-300">
 						When the copper lamp is lit, the link is live.
 					</figcaption>
 				</figure>
@@ -558,19 +529,15 @@
 
 		<!-- Rehearse mode -->
 		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
-				Rehearse mode
-			</h2>
+			<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Rehearse mode</h2>
 			<div
-				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300"
+				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300 [&>p]:max-w-[30rem]"
 			>
 				<p>
 					From a setlist, hit <span class="font-medium text-surface-700 dark:text-surface-200"
 						>Rehearse</span
 					> to run the whole set like the gig: each song's audio in order, with a countdown through every
-					gap. Pick which variant plays per song — Setlist remembers your choice.
+					gap. Pick which variant plays per song and Setlist remembers your choice.
 				</p>
 				<figure class="rounded-lg bg-surface-100/70 p-3 dark:bg-surface-950/40">
 					<div aria-hidden="true" class="space-y-1.5">
@@ -596,9 +563,7 @@
 									></span>
 								</span>
 							</span>
-							<span class="text-[11px] text-surface-500 tabular-nums dark:text-surface-300"
-								>-1:38</span
-							>
+							<span class="text-[0.6875rem] text-surface-500 dark:text-surface-300">-1:38</span>
 						</div>
 						<div
 							class="flex items-center gap-2 rounded-lg border border-dashed border-surface-300 bg-surface-100/60 px-2.5 py-1.5 dark:border-surface-600 dark:bg-surface-900/60"
@@ -607,22 +572,19 @@
 							<span class="flex-1 truncate text-xs text-surface-500 italic dark:text-surface-300"
 								>Gap · tuning</span
 							>
-							<span
-								class="text-[11px] font-medium text-surface-600 tabular-nums dark:text-surface-200"
+							<span class="text-[0.6875rem] font-medium text-surface-600 dark:text-surface-200"
 								>0:30</span
 							>
 						</div>
-						<div class="flex items-center gap-2 px-2.5 py-1 opacity-60">
+						<div class="flex items-center gap-2 px-2.5 py-1 opacity-90">
 							<span class="w-5"></span>
 							<span class="flex-1 truncate text-xs text-surface-600 dark:text-surface-300"
 								>Up next · Last Call</span
 							>
-							<span class="text-[11px] text-surface-500 tabular-nums dark:text-surface-300"
-								>3:58</span
-							>
+							<span class="text-[0.6875rem] text-surface-500 dark:text-surface-300">3:58</span>
 						</div>
 					</div>
-					<figcaption class="mt-2 text-[11px] text-surface-500 dark:text-surface-300">
+					<figcaption class="mt-2 text-xs text-surface-500 dark:text-surface-300">
 						The set runs itself: audio plays, the gap counts down, the next song is queued.
 					</figcaption>
 				</figure>
@@ -631,20 +593,16 @@
 
 		<!-- Bands -->
 		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
-				Bands
-			</h2>
+			<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Bands</h2>
 			<div
-				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300"
+				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300 [&>p]:max-w-[30rem]"
 			>
 				<p>
 					Create a band from <a
 						href="/bands"
 						class="focus-live rounded font-medium text-accent-600 hover:underline dark:text-accent-300"
 						>Bands</a
-					> and send the invite link — anyone who opens it joins.
+					> and send the invite link. Anyone who opens it joins.
 				</p>
 				<p>
 					Members share a song library and band setlists, so the whole crew works off the same set.
@@ -652,7 +610,7 @@
 				<div class="rounded-lg border border-surface-200 p-3 dark:border-surface-700">
 					<p>
 						<span class="font-medium text-surface-700 dark:text-surface-200">Good to know:</span>
-						songs you share with a band are referenced, not copied — fix a duration in your library and
+						songs you share with a band are referenced, not copied: fix a duration in your library and
 						every band set updates with it.
 					</p>
 				</div>
@@ -661,20 +619,16 @@
 
 		<!-- Demos -->
 		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
-				Demos
-			</h2>
+			<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Demos</h2>
 			<div
-				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300"
+				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300 [&>p]:max-w-[30rem]"
 			>
 				<p>
 					Every band gets a Demos workspace for works in progress. Upload a take, stack new versions
 					on the same demo as it evolves, and keep it all sorted in folders.
 				</p>
 				<p>
-					Click anywhere on the waveform to leave a comment pinned to that exact moment — "chorus
+					Click anywhere on the waveform to leave a comment pinned to that exact moment: "chorus
 					drags here" lands at 1:42, not in a text thread.
 				</p>
 				<figure class="rounded-lg bg-surface-100/70 p-3 dark:bg-surface-950/40">
@@ -700,16 +654,15 @@
 							></span>
 						</div>
 						<div class="mt-2 flex items-baseline gap-1.5">
-							<span
-								class="text-[11px] font-medium text-accent-600 tabular-nums dark:text-accent-300"
+							<span class="text-[0.6875rem] font-medium text-accent-600 dark:text-accent-300"
 								>1:42</span
 							>
-							<span class="text-[11px] text-surface-600 dark:text-surface-300"
+							<span class="text-[0.6875rem] text-surface-600 dark:text-surface-300"
 								>"chorus drags here"</span
 							>
 						</div>
 					</div>
-					<figcaption class="mt-2 text-[11px] text-surface-500 dark:text-surface-300">
+					<figcaption class="mt-2 text-xs text-surface-500 dark:text-surface-300">
 						Comments pin to the waveform at the exact moment they're about.
 					</figcaption>
 				</figure>
@@ -718,13 +671,9 @@
 
 		<!-- Settings -->
 		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
-				Settings
-			</h2>
+			<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Settings</h2>
 			<div
-				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300"
+				class="mt-3 space-y-3 rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900 dark:text-surface-300 [&>p]:max-w-[30rem]"
 			>
 				<p>
 					Set a display name (it appears on your shared setlists), upload a logo, and flip dark mode

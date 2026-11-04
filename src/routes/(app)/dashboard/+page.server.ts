@@ -1,147 +1,256 @@
+import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import type { Setlist } from '#lib/types/database.js';
+import {
+	DASHBOARD_DATA,
+	type BandSummary,
+	type DashboardSet,
+	type DemoActivity,
+	type GigPrep,
+	type ShedSong,
+	type StatusCounts
+} from '#lib/components/dashboard/shared.js';
+import { TIME_ZONE_COOKIE, isTimeZone, todayInZone } from '#lib/utils/gigDate.js';
+import { memberName } from '#lib/utils/memberName.js';
+import { summarizeSetlistRows } from '#lib/utils/setlistTiming.js';
 
-// gig_date is a date-only string; parse as local midnight so countdown
-// math doesn't drift across timezones
-function parseGigDate(d: string): Date {
-	const [y, m, day] = d.split('-').map(Number);
-	return new Date(y, m - 1, day);
+const MAX_COMING_UP = 3;
+const MAX_RECENT = 4;
+const MAX_DEMOS = 5;
+const MAX_SHED_SONGS = 3;
+
+const SET_COLUMNS =
+	'id, name, gig_date, venue, target_seconds, transition_seconds, share_token, band_id';
+
+type SetRow = Omit<DashboardSet, 'songCount' | 'totalSeconds'>;
+
+const STATUS_ORDER: Record<string, number> = { needs_work: 0, learning: 1 };
+const shedOrder = (status: string | null) => STATUS_ORDER[status ?? ''] ?? 2;
+
+function capShedList(songs: ShedSong[]): Pick<GigPrep, 'songs' | 'moreSongs'> {
+	const sorted = [...songs].sort((a, b) => shedOrder(a.status) - shedOrder(b.status));
+	return {
+		songs: sorted.slice(0, MAX_SHED_SONGS),
+		moreSongs: Math.max(0, sorted.length - MAX_SHED_SONGS)
+	};
 }
 
-interface DashboardTrack {
-	id: string;
-	band_id: string;
-	title: string;
-	description: string | null;
-	updated_at: string;
-	versionCount: number;
-	latestVersion: {
-		version_number: number;
-		duration_seconds: number | null;
-		created_at: string;
-	} | null;
-	uploaderProfile: { id: string; display_name: string | null; logo_url: string | null } | null;
-}
+export const load: PageServerLoad = async ({
+	cookies,
+	depends,
+	locals: { supabase, safeGetSession }
+}) => {
+	depends(DASHBOARD_DATA);
 
-export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
 	const { session } = await safeGetSession();
-	if (!session) {
-		return {
-			songCount: 0,
-			librarySeconds: 0,
-			hero: null as (Setlist & { songCount: number; totalSeconds: number }) | null,
-			heroIsUpcoming: false,
-			recent: [] as Array<Setlist & { songCount: number; totalSeconds: number }>,
-			bands: [] as Array<{ id: string; name: string }>,
-			tracks: [] as DashboardTrack[]
-		};
-	}
+	if (!session) throw redirect(303, '/auth');
+	const userId = session.user.id;
 
-	// RLS scopes these to the user's own rows plus band rows they can access,
-	// so the board covers personal and band gigs alike
-	const [songsRes, setlistsRes, bandsRes, tracksRes] = await Promise.all([
-		supabase.from('songs').select('duration_seconds').eq('user_id', session.user.id),
-		supabase.from('setlists').select('*').order('updated_at', { ascending: false }),
-		supabase.from('bands').select('id, name').order('name'),
-		// RLS scopes tracks to bands the user belongs to — no explicit band filter needed
-		supabase
-			.from('tracks')
-			.select(
-				'id, band_id, title, description, updated_at, track_versions(version_number, duration_seconds, uploaded_by, created_at)'
-			)
-			.order('updated_at', { ascending: false })
-			.limit(6)
-	]);
+	// Gig dates mean the day where the musician is, not where this server runs. The page
+	// sends its zone on first load, so only that first load can be a day out.
+	const zoneCookie = cookies.get(TIME_ZONE_COOKIE);
+	const timeZone = isTimeZone(zoneCookie) ? zoneCookie : null;
+	const today = todayInZone(timeZone);
+
+	// RLS scopes these to the user's own rows plus band rows they can access, so the board
+	// covers personal and band gigs alike. Practice rows are only ever the user's own.
+	const [songsRes, setlistsRes, bandsRes, statusesRes, sessionsRes, tracksRes, commentsRes] =
+		await Promise.all([
+			supabase.from('songs').select('duration_seconds').eq('user_id', userId),
+			supabase.from('setlists').select(SET_COLUMNS).order('updated_at', { ascending: false }),
+			supabase.from('bands').select('id, name, band_members(count)').order('name'),
+			supabase
+				.from('song_practice')
+				.select('status, songs(id, title)')
+				.order('updated_at', { ascending: false }),
+			// Eight days covers this week in any time zone; WeekStrip works out which days count
+			supabase
+				.from('practice_sessions')
+				.select('started_at, practice_session_items(practice_seconds)')
+				.gte('started_at', new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()),
+			supabase
+				.from('tracks')
+				.select('id, band_id, title, track_versions(version_number, uploaded_by, created_at)')
+				.order('updated_at', { ascending: false })
+				.limit(MAX_DEMOS * 2),
+			// Comments don't touch a track's updated_at, so they need their own look.
+			// Resolved ones are settled, so they aren't news.
+			supabase
+				.from('track_comments')
+				.select(
+					'id, body, timestamp_seconds, author_id, created_at, track_versions!inner(version_number, tracks!inner(id, band_id, title))'
+				)
+				.is('resolved_at', null)
+				.order('created_at', { ascending: false })
+				.limit(MAX_DEMOS * 2)
+		]);
+
+	// An empty board here would tell a working band they've never built a set
+	if (setlistsRes.error) throw error(500, 'Could not load your setlists. Please try again.');
 
 	const songs = songsRes.data ?? [];
-	const setlists = (setlistsRes.data ?? []) as Setlist[];
-	const bands = bandsRes.data ?? [];
+	const setlists = (setlistsRes.data ?? []) as SetRow[];
+	const bandRows = bandsRes.data ?? [];
+	const bandNames = new Map(bandRows.map((band) => [band.id, band.name]));
 
-	const trackRows = (tracksRes.data ?? []).map((t) => {
-		const versions = [...(t.track_versions ?? [])].sort(
-			(a, b) => b.version_number - a.version_number
-		);
-		const latest = versions[0] ?? null;
-		return {
-			id: t.id,
-			band_id: t.band_id,
-			title: t.title,
-			description: t.description,
-			updated_at: t.updated_at,
-			versionCount: versions.length,
-			latestVersion: latest
-		};
-	});
-
-	// Hero: nearest upcoming gig, else the most recently updated setlist
-	const todayStart = new Date();
-	todayStart.setHours(0, 0, 0, 0);
+	// Gig dates sort as plain YYYY-MM-DD strings
 	const upcoming = setlists
-		.filter((s) => s.gig_date && parseGigDate(s.gig_date) >= todayStart)
-		.sort((a, b) => parseGigDate(a.gig_date!).getTime() - parseGigDate(b.gig_date!).getTime());
+		.filter((set) => set.gig_date && set.gig_date >= today)
+		.sort((a, b) => a.gig_date!.localeCompare(b.gig_date!));
+	const upcomingIds = new Set(upcoming.map((set) => set.id));
+
+	// Hero: the nearest gig, else the most recently updated set
 	const hero = upcoming[0] ?? setlists[0] ?? null;
-	const recent = setlists.filter((s) => s.id !== hero?.id).slice(0, 4);
+	const comingUp = upcoming.slice(1, MAX_COMING_UP + 1);
+	const recent = setlists
+		.filter((set) => set.id !== hero?.id && !upcomingIds.has(set.id))
+		.slice(0, MAX_RECENT);
 
-	// Profiles can't be embedded (FKs point at auth.users) — two-step fetch
-	const uploaderIds = [
-		...new Set(
-			trackRows.map((t) => t.latestVersion?.uploaded_by).filter((id): id is string => !!id)
-		)
-	];
+	// One query covers counts and durations for every displayed set, and the hero's songs
+	const shown = [hero, ...comingUp, ...recent].filter((set): set is SetRow => !!set);
+	const { data: setSongRows } = shown.length
+		? await supabase
+				.from('setlist_songs')
+				.select('setlist_id, gap_seconds, songs(id, title, duration_seconds)')
+				.in(
+					'setlist_id',
+					shown.map((set) => set.id)
+				)
+				.order('position')
+		: { data: [] };
 
-	// One query covers song counts + durations for every displayed setlist
-	const ids = [hero, ...recent].filter((s): s is Setlist => !!s).map((s) => s.id);
-	const [setlistSongsRes, profilesRes] = await Promise.all([
-		ids.length > 0
-			? supabase
-					.from('setlist_songs')
-					.select('setlist_id, gap_seconds, songs(duration_seconds)')
-					.in('setlist_id', ids)
-			: Promise.resolve({ data: [] }),
-		uploaderIds.length > 0
-			? supabase.from('profiles').select('id, display_name, logo_url').in('id', uploaderIds)
-			: Promise.resolve({ data: [] })
-	]);
+	const stats = summarizeSetlistRows(setSongRows ?? [], shown);
+	const withTotals = (set: SetRow): DashboardSet => ({ ...set, ...stats[set.id] });
 
-	const totals = new Map<string, { count: number; seconds: number }>();
-	{
-		const rows = setlistSongsRes.data;
-		for (const row of rows ?? []) {
-			const t = totals.get(row.setlist_id) ?? { count: 0, seconds: 0 };
-			const song = row.songs as unknown as { duration_seconds: number } | null;
-			if (song) {
-				// Gap rows have no song: they add time but don't count as songs
-				t.count += 1;
-				t.seconds += song.duration_seconds;
-			} else if (row.gap_seconds) {
-				t.seconds += row.gap_seconds;
-			}
-			totals.set(row.setlist_id, t);
+	// What's left to shed. supabase-js types many-to-one joins as arrays; at runtime they're objects
+	const statusRows = (statusesRes.data ?? [])
+		.map((row) => ({
+			status: row.status as string,
+			song: row.songs as unknown as { id: string; title: string } | null
+		}))
+		.filter((row): row is { status: string; song: { id: string; title: string } } => !!row.song);
+	const statusBySong = new Map(statusRows.map((row) => [row.song.id, row.status]));
+
+	let prep: GigPrep;
+	if (upcoming[0]) {
+		// A song played twice in a set only needs shedding once
+		const gigSongs = new Map<string, ShedSong>();
+		for (const row of setSongRows ?? []) {
+			const song = row.songs as unknown as { id: string; title: string } | null;
+			if (row.setlist_id !== upcoming[0].id || !song) continue;
+			gigSongs.set(song.id, {
+				id: song.id,
+				title: song.title,
+				status: statusBySong.get(song.id) ?? null
+			});
 		}
+		const counts: StatusCounts = { solid: 0, learning: 0, needs_work: 0, unmarked: 0 };
+		for (const { status } of gigSongs.values()) {
+			if (status === 'solid' || status === 'learning' || status === 'needs_work') counts[status]++;
+			else counts.unmarked++;
+		}
+		prep = {
+			counts,
+			...capShedList([...gigSongs.values()].filter((song) => song.status !== 'solid'))
+		};
+	} else {
+		prep = {
+			counts: null,
+			...capShedList(
+				statusRows
+					.filter((row) => row.status !== 'solid')
+					.map((row) => ({ id: row.song.id, title: row.song.title, status: row.status }))
+			)
+		};
 	}
 
-	// Same arithmetic as the TimingBar: song time + inter-song transitions
-	const withTotals = (s: Setlist) => {
-		const t = totals.get(s.id) ?? { count: 0, seconds: 0 };
-		const transitions = t.count > 1 ? (t.count - 1) * s.transition_seconds : 0;
-		return { ...s, songCount: t.count, totalSeconds: t.seconds + transitions };
-	};
+	// Demos: each track's newest event, whether that's an upload or a comment
+	type Event = Omit<DemoActivity, 'actor'> & { trackId: string; actorId: string | null };
+	const demoHref = (bandId: string, trackId: string) => `/bands/${bandId}/demos/${trackId}`;
+	const events: Event[] = [];
+	for (const track of tracksRes.data ?? []) {
+		const latest = [...(track.track_versions ?? [])].sort(
+			(a, b) => b.version_number - a.version_number
+		)[0];
+		if (!latest) continue;
+		events.push({
+			key: `version-${track.id}-${latest.version_number}`,
+			trackId: track.id,
+			href: demoHref(track.band_id, track.id),
+			title: track.title,
+			bandName: bandNames.get(track.band_id) ?? null,
+			kind: 'version',
+			actorId: latest.uploaded_by,
+			at: latest.created_at,
+			versionNumber: latest.version_number,
+			body: null,
+			timestampSeconds: null
+		});
+	}
+	for (const comment of commentsRes.data ?? []) {
+		const version = comment.track_versions as unknown as {
+			version_number: number;
+			tracks: { id: string; band_id: string; title: string };
+		};
+		events.push({
+			key: `comment-${comment.id}`,
+			trackId: version.tracks.id,
+			href: demoHref(version.tracks.band_id, version.tracks.id),
+			title: version.tracks.title,
+			bandName: bandNames.get(version.tracks.band_id) ?? null,
+			kind: 'comment',
+			actorId: comment.author_id,
+			at: comment.created_at,
+			versionNumber: version.version_number,
+			body: comment.body,
+			timestampSeconds: comment.timestamp_seconds
+		});
+	}
+	const seenTracks = new Set<string>();
+	const newestEvents = events
+		.sort((a, b) => b.at.localeCompare(a.at))
+		.filter((event) => {
+			if (seenTracks.has(event.trackId)) return false;
+			seenTracks.add(event.trackId);
+			return true;
+		})
+		.slice(0, MAX_DEMOS);
 
-	const profileMap = new Map((profilesRes.data ?? []).map((p) => [p.id, p]));
-	const tracks: DashboardTrack[] = trackRows.map((t) => ({
-		...t,
-		uploaderProfile: t.latestVersion?.uploaded_by
-			? (profileMap.get(t.latestVersion.uploaded_by) ?? null)
-			: null
+	// Profiles can't be embedded (FKs point at auth.users), so this is a second fetch
+	const actorIds = [
+		...new Set(newestEvents.map((event) => event.actorId).filter((id) => id && id !== userId))
+	] as string[];
+	const { data: profiles } = actorIds.length
+		? await supabase.from('profiles').select('id, display_name').in('id', actorIds)
+		: { data: [] };
+	const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+
+	const demos: DemoActivity[] = newestEvents.map(({ trackId: _, actorId, ...event }) => ({
+		...event,
+		actor: actorId === userId ? 'You' : memberName(actorId ? profileMap.get(actorId) : null)
+	}));
+
+	const bands: BandSummary[] = bandRows.map((band) => ({
+		id: band.id,
+		name: band.name,
+		memberCount: band.band_members?.[0]?.count ?? 0,
+		nextGigDate: upcoming.find((set) => set.band_id === band.id)?.gig_date ?? null
 	}));
 
 	return {
-		songCount: songs.length,
-		librarySeconds: songs.reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0),
+		today,
+		timeZone,
 		hero: hero ? withTotals(hero) : null,
 		heroIsUpcoming: !!upcoming[0],
+		comingUp: comingUp.map(withTotals),
 		recent: recent.map(withTotals),
+		prep,
+		week: (sessionsRes.data ?? []).map((row) => ({
+			startedAt: row.started_at,
+			seconds: row.practice_session_items.reduce((sum, item) => sum + item.practice_seconds, 0)
+		})),
+		demos,
 		bands,
-		tracks
+		songCount: songs.length,
+		librarySeconds: songs.reduce((sum, song) => sum + (song.duration_seconds ?? 0), 0)
 	};
 };

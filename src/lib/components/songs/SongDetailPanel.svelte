@@ -24,6 +24,7 @@
 		uploadFileAction = '?/uploadFile',
 		deleteFileAction = '?/deleteFile',
 		practiceHref,
+		ondelete,
 		onclose
 	}: {
 		song: { id: string; title: string; duration_seconds: number; notes: string | null };
@@ -38,6 +39,8 @@
 		deleteFileAction?: string;
 		/** When set, renders a Practice link in the header */
 		practiceHref?: string;
+		/** When set, renders a Delete song action at the end of the panel */
+		ondelete?: () => void;
 		onclose: () => void;
 	} = $props();
 
@@ -46,6 +49,8 @@
 		typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 	let panelEl: HTMLElement | undefined = $state();
+	// Whatever had focus when the panel opened gets it back when the panel closes
+	const opener = typeof document !== 'undefined' ? (document.activeElement as HTMLElement) : null;
 	let confirmDialog: ConfirmDialog;
 	let deleteForm: HTMLFormElement;
 	let deleteInput: HTMLInputElement;
@@ -98,6 +103,7 @@
 	function requestClose() {
 		// Closing mid-upload would silently kill the transfer
 		if (uploadBusy || fileUploadBusy) return;
+		if (opener?.isConnected) opener.focus();
 		onclose();
 	}
 
@@ -173,7 +179,7 @@
 
 	async function handleDeleteVariant(v: Variant) {
 		const confirmed = await confirmDialog.confirm(
-			'Delete Audio',
+			'Delete audio',
 			`Delete "${v.label ?? v.file_name}" from "${song.title}"? This can't be undone.`
 		);
 		if (confirmed) {
@@ -184,7 +190,7 @@
 
 	async function handleDeleteFile(f: SongFile) {
 		const confirmed = await confirmDialog.confirm(
-			'Delete File',
+			'Delete file',
 			`Delete "${f.label ?? f.file_name}" from "${song.title}"? This can't be undone.`
 		);
 		if (confirmed) {
@@ -233,7 +239,7 @@
 <!-- Backdrop -->
 <button
 	type="button"
-	class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+	class="fixed inset-0 z-55 bg-black/50"
 	aria-label="Close panel"
 	onclick={requestClose}
 	transition:fade={{ duration: reduceMotion ? 0 : 150 }}
@@ -246,7 +252,7 @@
 	aria-modal="true"
 	aria-label="Song details: {song.title}"
 	tabindex="-1"
-	class="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col overflow-y-auto border-l border-surface-200 bg-surface-50 shadow-xl focus:outline-none dark:border-surface-700 dark:bg-surface-800"
+	class="fixed inset-y-0 right-0 z-60 flex w-full max-w-lg scroll-pt-24 flex-col overflow-y-auto border-l border-surface-200 bg-surface-50 shadow-xl focus:outline-none dark:border-surface-700 dark:bg-surface-800"
 	transition:fly={{ x: 512, duration: reduceMotion ? 0 : 200, opacity: 1 }}
 	onkeydown={handlePanelKeydown}
 >
@@ -255,11 +261,11 @@
 		class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-surface-200 bg-surface-50 px-6 py-4 dark:border-surface-700 dark:bg-surface-800"
 	>
 		<div class="min-w-0">
-			<h3
+			<h2
 				class="truncate font-display text-lg font-semibold text-surface-900 dark:text-surface-100"
 			>
 				{song.title}
-			</h3>
+			</h2>
 			<p class="text-xs text-surface-500 dark:text-surface-300">
 				{formatDuration(song.duration_seconds)}
 				{#if variants.length > 0}
@@ -332,11 +338,7 @@
 			<input type="hidden" name="song_id" value={song.id} />
 			<div class="flex gap-3">
 				<label class="min-w-0 flex-1">
-					<span
-						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-					>
-						Title
-					</span>
+					<span class="text-sm font-medium text-surface-700 dark:text-surface-300"> Title </span>
 					<input
 						type="text"
 						name="title"
@@ -346,28 +348,19 @@
 					/>
 				</label>
 				<label class="w-20 shrink-0">
-					<span
-						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-					>
-						Length
-					</span>
+					<span class="text-sm font-medium text-surface-700 dark:text-surface-300"> Length </span>
 					<input
 						type="text"
 						name="duration"
 						bind:value={editDuration}
 						placeholder="3:45"
-						inputmode="numeric"
 						required
-						class="focus-live mt-1 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-center text-surface-900 tabular-nums dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
+						class="focus-live mt-1 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-center text-surface-900 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100"
 					/>
 				</label>
 			</div>
 			<label class="mt-3 block">
-				<span
-					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-				>
-					Notes
-				</span>
+				<span class="text-sm font-medium text-surface-700 dark:text-surface-300"> Notes </span>
 				<textarea
 					name="notes"
 					bind:value={editNotes}
@@ -377,7 +370,7 @@
 				></textarea>
 			</label>
 			{#if detailsError}
-				<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-400">
+				<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-300">
 					{detailsError}
 				</p>
 			{/if}
@@ -397,11 +390,11 @@
 
 		<!-- Rehearsal audio -->
 		<div class="mt-6 border-t border-surface-200 pt-5 dark:border-surface-700">
-			<h4 class="font-display text-sm font-semibold text-surface-900 dark:text-surface-100">
+			<h3 class="font-display text-base font-semibold text-surface-900 dark:text-surface-100">
 				Rehearsal audio
-			</h4>
+			</h3>
 			<p class="mt-0.5 text-xs text-surface-500 dark:text-surface-300">
-				Plays in rehearse mode — upload variants like a mix without your instrument.
+				Plays in rehearse mode. Upload variants, like a mix without your instrument.
 			</p>
 
 			{#if variants.length > 0}
@@ -414,7 +407,7 @@
 								<input
 									type="text"
 									bind:value={renameValue}
-									placeholder={'Label — e.g. "No guitar"'}
+									placeholder={'Label, e.g. "No guitar"'}
 									maxlength={MAX_LABEL_LENGTH}
 									disabled={renameSaving}
 									onkeydown={handleRenameKeydown}
@@ -531,13 +524,13 @@
 			{:else}
 				<p class="mt-3 text-sm text-surface-500 dark:text-surface-300">
 					No audio yet{canManage
-						? ' — upload a mix to rehearse with.'
+						? '. Upload a mix to rehearse with.'
 						: ". Only the song's owner can upload rehearsal audio."}
 				</p>
 			{/if}
 
 			{#if audioError}
-				<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-400">{audioError}</p>
+				<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-300">{audioError}</p>
 			{/if}
 
 			{#if canManage}
@@ -545,7 +538,7 @@
 					<input
 						type="text"
 						bind:value={label}
-						placeholder={'Label — e.g. "No guitar" (optional)'}
+						placeholder={'Label, e.g. "No guitar" (optional)'}
 						maxlength={MAX_LABEL_LENGTH}
 						disabled={uploadBusy}
 						class="focus-live mb-3 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
@@ -575,9 +568,9 @@
 
 		<!-- Charts & tabs -->
 		<div class="mt-6 border-t border-surface-200 pt-5 dark:border-surface-700">
-			<h4 class="font-display text-sm font-semibold text-surface-900 dark:text-surface-100">
+			<h3 class="font-display text-base font-semibold text-surface-900 dark:text-surface-100">
 				Charts & tabs
-			</h4>
+			</h3>
 			<p class="mt-0.5 text-xs text-surface-500 dark:text-surface-300">
 				PDFs, Word docs, Guitar Pro and TuxGuitar files: chord charts, tabs, lyric sheets.
 			</p>
@@ -592,7 +585,7 @@
 								<input
 									type="text"
 									bind:value={renameValue}
-									placeholder={'Label — e.g. "Rhythm tab"'}
+									placeholder={'Label, e.g. "Rhythm tab"'}
 									maxlength={MAX_LABEL_LENGTH}
 									disabled={renameSaving}
 									onkeydown={handleRenameKeydown}
@@ -736,13 +729,13 @@
 			{:else}
 				<p class="mt-3 text-sm text-surface-500 dark:text-surface-300">
 					No charts yet{canManage
-						? ' — add a tab or chord chart to practice with.'
+						? '. Add a tab or chord chart to practice with.'
 						: ". Only the song's owner can upload charts."}
 				</p>
 			{/if}
 
 			{#if fileError}
-				<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-400">{fileError}</p>
+				<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-300">{fileError}</p>
 			{/if}
 
 			{#if canManage}
@@ -750,7 +743,7 @@
 					<input
 						type="text"
 						bind:value={fileLabel}
-						placeholder={'Label — e.g. "Rhythm tab" (optional)'}
+						placeholder={'Label, e.g. "Rhythm tab" (optional)'}
 						maxlength={MAX_LABEL_LENGTH}
 						disabled={fileUploadBusy}
 						class="focus-live mb-3 w-full rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
@@ -777,6 +770,19 @@
 				</div>
 			{/if}
 		</div>
+
+		{#if ondelete}
+			<div class="mt-6 border-t border-surface-200 pt-5 dark:border-surface-700">
+				<button
+					type="button"
+					onclick={ondelete}
+					disabled={uploadBusy || fileUploadBusy}
+					class="focus-live min-h-11 rounded-lg border border-surface-300 px-4 text-sm font-medium text-danger-600 hover:bg-danger-50 disabled:opacity-50 md:min-h-9 dark:border-surface-600 dark:text-danger-300 dark:hover:bg-danger-900/20"
+				>
+					Delete song
+				</button>
+			</div>
+		{/if}
 	</div>
 </div>
 

@@ -4,4 +4,8 @@
 	let { data } = $props();
 </script>
 
+<svelte:head>
+	<title>{data.setlist.name} · Setlist</title>
+</svelte:head>
+
 <SetlistBuilder {data} />

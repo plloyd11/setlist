@@ -24,7 +24,7 @@ export const actions: Actions = {
 				title,
 				durationRaw,
 				notes,
-				error: 'Duration must be in mm:ss format (e.g., 3:45)'
+				error: 'Length needs minutes and seconds, like 3:45'
 			});
 		}
 
@@ -41,7 +41,7 @@ export const actions: Actions = {
 				title,
 				durationRaw,
 				notes,
-				error: `Failed to save song: ${error.message}`
+				error: "Couldn't save that song. Check your connection and try again."
 			});
 		}
 

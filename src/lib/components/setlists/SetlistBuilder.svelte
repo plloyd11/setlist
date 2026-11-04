@@ -522,7 +522,7 @@
 	<div class="flex min-h-0 flex-1 md:grid md:grid-cols-[320px_1fr] md:grid-rows-[minmax(0,1fr)]">
 		<!-- Library panel -->
 		<div
-			class="flex flex-col border-r border-surface-200 bg-surface-50 md:flex dark:border-surface-700 dark:bg-surface-900/50 {activeTab ===
+			class="min-w-0 flex-1 flex-col border-r border-surface-200 bg-surface-50 md:flex dark:border-surface-700 dark:bg-surface-900/50 {activeTab ===
 			'library'
 				? 'flex'
 				: 'hidden'}"
@@ -556,8 +556,8 @@
 					onfinalize={handleLibraryFinalize}
 				>
 					{#each filteredLibraryItems as song (song.id)}
-						<div class="mb-1.5 {songsInSetlist.has(song.id) ? 'opacity-50' : ''}">
-							<LibrarySongRow {song} onTap={handleAddSong} />
+						<div class="mb-1.5">
+							<LibrarySongRow {song} inSet={songsInSetlist.has(song.id)} onTap={handleAddSong} />
 						</div>
 					{/each}
 				</div>
@@ -577,9 +577,10 @@
 			</div>
 		</div>
 
-		<!-- Setlist panel -->
-		<div class="flex flex-col md:flex {activeTab === 'setlist' ? 'flex' : 'hidden'}">
-			<div class="flex-1 overflow-y-auto p-4 md:p-6">
+		<!-- Setlist panel. min-w-0: a flex child otherwise grows to its widest unwrapped
+		     text, and one long title or note pushes the whole builder off a phone. -->
+		<div class="min-w-0 flex-1 flex-col md:flex {activeTab === 'setlist' ? 'flex' : 'hidden'}">
+			<div class="flex-1 overflow-y-auto page-frame">
 				<!-- Setlist header -->
 				<SetlistHeader
 					setlist={data.setlist}
@@ -589,11 +590,11 @@
 
 				<!-- Share toggle -->
 				<div class="mb-4 flex flex-col items-center gap-2">
-					<div class="flex items-center gap-2">
+					<div class="flex flex-wrap items-center justify-center gap-2">
 						<button
 							onclick={toggleShare}
 							disabled={shareLoading}
-							class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {isShared
+							class="flex min-h-11 items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors md:min-h-0 {isShared
 								? 'bg-accent-100 text-accent-800 shadow-glow-accent hover:bg-accent-200 dark:bg-accent-900/40 dark:text-accent-300 dark:hover:bg-accent-900/60'
 								: 'bg-surface-100 text-surface-600 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700'}"
 						>
@@ -628,12 +629,12 @@
 									/>
 								</svg>
 							{/if}
-							{isShared ? 'Sharing On' : 'Share'}
+							{isShared ? 'Sharing on' : 'Share'}
 						</button>
 
 						<a
 							href="/setlists/{data.setlist.id}/print"
-							class="flex items-center gap-2 rounded-lg bg-surface-100 px-3 py-1.5 text-sm font-medium text-surface-600 transition-colors hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+							class="flex min-h-11 items-center gap-2 rounded-lg bg-surface-100 px-3 py-1.5 text-sm font-medium text-surface-600 transition-colors hover:bg-surface-200 md:min-h-0 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
 						>
 							<svg
 								class="h-4 w-4"
@@ -653,7 +654,7 @@
 
 						<a
 							href="/setlists/{data.setlist.id}/rehearse"
-							class="flex items-center gap-2 rounded-lg bg-surface-100 px-3 py-1.5 text-sm font-medium text-surface-600 transition-colors hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+							class="flex min-h-11 items-center gap-2 rounded-lg bg-surface-100 px-3 py-1.5 text-sm font-medium text-surface-600 transition-colors hover:bg-surface-200 md:min-h-0 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
 						>
 							<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
 								<path
@@ -720,10 +721,11 @@
 							class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center"
 						>
 							<p class="text-sm text-surface-500 dark:text-surface-300">
-								Drag songs here to build your setlist
+								<span class="hidden md:inline">Drag songs here to build your setlist</span>
+								<span class="md:hidden">Nothing in this set yet</span>
 							</p>
-							<p class="mt-1 text-xs text-surface-500 dark:text-surface-300">
-								or tap + on mobile to add songs
+							<p class="mt-1 text-xs text-surface-500 md:hidden dark:text-surface-300">
+								Open the Library tab and tap + to add songs
 							</p>
 						</div>
 					{/if}
