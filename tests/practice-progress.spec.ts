@@ -136,7 +136,12 @@ test.describe('Song status', () => {
 			const rows = page.getByRole('listitem').getByRole('link');
 			await expect(rows.first()).toContainText('Zulu Hard Tune');
 			await expect(rows.first()).toContainText('Needs work');
+			await expect(rows.first()).toContainText('Bridge is shaky');
 			await expect(rows.last()).toContainText(first.title);
+			await expect(page.getByRole('region', { name: 'Working on' })).toContainText(
+				'Zulu Hard Tune'
+			);
+			await expect(page.getByRole('region', { name: 'Working on' })).not.toContainText(first.title);
 
 			await page.goto('/practice/log');
 			const todo = page.getByRole('region', { name: 'To work on' });
@@ -271,6 +276,15 @@ test.describe('Practice log', () => {
 			await expect(page.getByText('This week')).toBeVisible();
 			const sessions = page.getByRole('region', { name: 'Sessions' });
 			await expect(sessions.getByRole('link', { name: 'Logged Tune' })).toBeVisible();
+
+			// Today's time lands on today's bar, here and on Today
+			const practicedToday = new RegExp(
+				`${new Date().toLocaleDateString('en-US', { weekday: 'long' })} [1-9]\\d*[ms]`
+			);
+			const week = page.getByRole('region', { name: 'Your week' }).getByRole('img');
+			await expect(week).toHaveAttribute('aria-label', practicedToday);
+			await page.goto('/practice');
+			await expect(week).toHaveAttribute('aria-label', practicedToday);
 		} finally {
 			await user.cleanup();
 		}

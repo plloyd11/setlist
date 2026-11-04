@@ -4,7 +4,7 @@
 
 	const errorMessages: Record<string, string> = {
 		auth_exchange_failed: 'Sign in failed. Please try again.',
-		confirm_failed: 'Email confirmation failed. The link may have expired — try signing up again.'
+		confirm_failed: 'Email confirmation failed. The link may have expired. Try signing up again.'
 	};
 	let error = $state(errorMessages[page.url.searchParams.get('error') ?? ''] ?? '');
 
@@ -94,6 +94,10 @@
 	};
 </script>
 
+<svelte:head>
+	<title>Sign in · Setlist</title>
+</svelte:head>
+
 <div class="flex min-h-screen items-center justify-center bg-surface-50 dark:bg-surface-950">
 	<div class="w-full max-w-sm px-6">
 		<div
@@ -101,7 +105,9 @@
 		>
 			<!-- Logo / App Name -->
 			<div class="mb-8 text-center">
-				<h1 class="text-4xl font-bold tracking-tight text-accent-500">Setlist</h1>
+				<h1 class="text-4xl font-bold tracking-tight text-accent-600 dark:text-accent-hot">
+					Setlist
+				</h1>
 				<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">Build your perfect set</p>
 			</div>
 
@@ -214,7 +220,7 @@
 					<button
 						type="button"
 						onclick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-						class="focus-live cursor-pointer font-semibold text-accent-500 hover:text-accent-600"
+						class="focus-live cursor-pointer font-semibold text-accent-600 hover:text-accent-700 dark:text-accent-300 dark:hover:text-accent-200"
 					>
 						{mode === 'signin' ? 'Sign up' : 'Sign in'}
 					</button>
@@ -223,14 +229,14 @@
 
 			<!-- Error Display -->
 			{#if error}
-				<p class="mt-4 text-center text-sm text-danger-500 dark:text-danger-400">
+				<p class="mt-4 text-center text-sm text-danger-500 dark:text-danger-300">
 					{error}
 				</p>
 			{/if}
 		</div>
 
 		<!-- Footer -->
-		<p class="mt-6 text-center text-xs text-surface-500 dark:text-surface-600">
+		<p class="mt-6 text-center text-xs text-surface-500 dark:text-surface-300">
 			Built for musicians
 		</p>
 	</div>

@@ -1,21 +1,25 @@
 <script lang="ts">
+	import { tick } from 'svelte';
+	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
 	import SongRow from '#lib/components/songs/SongRow.svelte';
 	import SongDetailPanel from '#lib/components/songs/SongDetailPanel.svelte';
-	import SongSearch from '#lib/components/songs/SongSearch.svelte';
+	import { SONG_GRID } from '#lib/components/songs/songGrid.js';
 	import ContextMenu from '#lib/components/ui/ContextMenu.svelte';
 	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
 	import Toast from '#lib/components/ui/Toast.svelte';
-	import { enhance } from '$app/forms';
+	import { formatRunTime } from '#lib/utils/duration.js';
+
+	type SortField = 'title' | 'duration' | 'date';
 
 	let { data } = $props();
 
 	// Search and filter state
 	let searchQuery = $state('');
 	let durationFilter = $state<'all' | 'under3' | '3to5' | 'over5'>('all');
-	let searchExpanded = $state(false);
 
 	// Sort state
-	let sortBy = $state<'title' | 'duration' | 'date'>('title');
+	let sortBy = $state<SortField>('title');
 	let sortDir = $state<'asc' | 'desc'>('asc');
 
 	// Context menu state
@@ -35,6 +39,9 @@
 	let toast: Toast;
 	let deleteForm: HTMLFormElement;
 	let deleteInput: HTMLInputElement;
+	let searchInput: HTMLInputElement | undefined = $state();
+	let addLink: HTMLAnchorElement | undefined = $state();
+	let rowAfterDelete: string | null = null;
 
 	// Filter and sort songs
 	let filteredSongs = $derived.by(() => {
@@ -84,14 +91,23 @@
 
 	let hasSongs = $derived(data.songs.length > 0);
 	let hasResults = $derived(filteredSongs.length > 0);
-	let songCountLabel = $derived(data.songs.length === 1 ? '1 song' : `${data.songs.length} songs`);
+	let isFiltered = $derived(searchQuery !== '' || durationFilter !== 'all');
+	let totalSeconds = $derived(data.songs.reduce((sum, s) => sum + s.duration_seconds, 0));
+	let songCountLabel = $derived.by(() => {
+		const total = data.songs.length;
+		const noun = total === 1 ? 'song' : 'songs';
+		return isFiltered
+			? `${filteredSongs.length} of ${total} ${noun}`
+			: `${total} ${noun} · ${formatRunTime(totalSeconds)} of music`;
+	});
 
-	function toggleSort(field: typeof sortBy) {
+	function chooseSort(field: SortField) {
 		if (sortBy === field) {
 			sortDir = sortDir === 'asc' ? 'desc' : 'asc';
 		} else {
 			sortBy = field;
-			sortDir = 'asc';
+			// Recently added is the useful end of a date sort
+			sortDir = field === 'date' ? 'desc' : 'asc';
 		}
 	}
 
@@ -103,133 +119,218 @@
 		contextVisible = true;
 	}
 
-	function handleEdit() {
-		if (contextSongId) {
-			selectedSongId = contextSongId;
-		}
-	}
-
-	async function handleDelete() {
-		if (!contextSongId) return;
+	async function requestDelete(id: string, title: string) {
 		const confirmed = await confirmDialog.confirm(
-			'Delete Song',
-			`Are you sure you want to delete "${contextSongTitle}"? It will also be removed from every setlist that uses it, including band setlists.`
+			'Delete song',
+			`Delete "${title}"? It also comes off every setlist that uses it, including band setlists. This can't be undone.`
 		);
-		if (confirmed) {
-			deleteInput.value = contextSongId;
-			deleteForm.requestSubmit();
-		}
+		if (!confirmed) return;
+		const i = filteredSongs.findIndex((s) => s.id === id);
+		rowAfterDelete = filteredSongs[i + 1]?.id ?? filteredSongs[i - 1]?.id ?? null;
+		deleteInput.value = id;
+		deleteForm.requestSubmit();
 	}
 
 	let contextMenuItems = $derived([
-		{ label: 'Edit', action: handleEdit },
-		{ label: 'Delete', action: handleDelete }
+		{
+			label: 'Edit details',
+			action: () => {
+				if (contextSongId) selectedSongId = contextSongId;
+			}
+		},
+		{
+			label: 'Practice',
+			action: () => {
+				if (contextSongId) goto(`/songs/${contextSongId}/practice?from=/songs`);
+			}
+		},
+		{
+			label: 'Delete',
+			danger: true,
+			action: () => contextSongId && requestDelete(contextSongId, contextSongTitle)
+		}
 	]);
 
 	function clearSearch() {
 		searchQuery = '';
 		durationFilter = 'all';
+		// The button that called this is about to disappear
+		searchInput?.focus();
 	}
 
-	const sortOptions: { label: string; value: typeof sortBy }[] = [
-		{ label: 'Title', value: 'title' },
-		{ label: 'Duration', value: 'duration' },
-		{ label: 'Date', value: 'date' }
-	];
+	function handleSearchKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape' && searchQuery) {
+			e.preventDefault();
+			searchQuery = '';
+		}
+	}
 </script>
 
-<div class="p-6 md:p-8">
-	<!-- Header -->
-	<div class="flex items-center justify-between">
-		<div class="flex items-baseline gap-3">
+<svelte:head>
+	<title>Songs · Setlist</title>
+</svelte:head>
+
+{#snippet sortHead(label: string, field: SortField, extra = '')}
+	{@const selected = sortBy === field}
+	<button
+		type="button"
+		aria-pressed={selected}
+		class="text-label whitespace-nowrap uppercase transition-colors {extra} {selected
+			? 'text-surface-900 dark:text-surface-100'
+			: 'text-surface-500 hover:text-surface-800 dark:text-surface-300 dark:hover:text-surface-100'}"
+		onclick={() => chooseSort(field)}
+	>
+		{label}{#if selected}<span class="ml-1" aria-hidden="true">{sortDir === 'asc' ? '↑' : '↓'}</span
+			><span class="sr-only">, {sortDir === 'asc' ? 'ascending' : 'descending'}</span>{/if}
+	</button>
+{/snippet}
+
+<div class="page-frame">
+	<!-- Header: title and count, tools, the one primary action -->
+	<div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+		<div class="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3">
 			<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Songs</h1>
 			{#if hasSongs}
-				<span class="text-sm text-surface-500 dark:text-surface-300">{songCountLabel}</span>
+				<!-- Live: this is how a filtered result count reaches a screen reader -->
+				<span role="status" class="text-sm text-surface-500 dark:text-surface-300"
+					>{songCountLabel}</span
+				>
 			{/if}
 		</div>
-		<div class="flex items-center gap-2">
-			{#if hasSongs}
-				<button
-					onclick={() => (searchExpanded = !searchExpanded)}
-					class="rounded-lg p-2 text-surface-500 hover:bg-surface-200 dark:text-surface-300 dark:hover:bg-surface-700"
-					aria-label="Toggle search"
-				>
+
+		{#if hasSongs}
+			<div
+				class="order-3 flex w-full flex-wrap items-center gap-2 sm:order-2 sm:w-auto"
+				role="search"
+			>
+				<div class="relative min-w-44 flex-1 sm:w-64 sm:flex-none">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						width="20"
-						height="20"
+						width="16"
+						height="16"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
 						stroke-width="2"
 						stroke-linecap="round"
 						stroke-linejoin="round"
+						class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-surface-500 dark:text-surface-300"
+						aria-hidden="true"
 					>
 						<circle cx="11" cy="11" r="8" />
 						<path d="m21 21-4.3-4.3" />
 					</svg>
-				</button>
-			{/if}
-			<a
-				href="/songs/new"
-				class="flex items-center justify-center rounded-lg bg-accent-500 p-2 text-white shadow-sm hover:bg-accent-600"
-				aria-label="Add song"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="20"
-					height="20"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
+					<input
+						bind:this={searchInput}
+						bind:value={searchQuery}
+						type="text"
+						placeholder="Search songs..."
+						aria-label="Search songs"
+						enterkeyhint="search"
+						autocapitalize="off"
+						autocorrect="off"
+						spellcheck="false"
+						onkeydown={handleSearchKeydown}
+						class="focus-live h-9 w-full rounded-lg border border-surface-300 bg-surface-50 pr-8 pl-9 text-sm text-surface-900 placeholder-surface-500 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-300"
+					/>
+					{#if searchQuery}
+						<button
+							type="button"
+							onclick={() => {
+								searchQuery = '';
+								searchInput?.focus();
+							}}
+							aria-label="Clear search"
+							class="absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-surface-500 hover:text-surface-800 dark:text-surface-300 dark:hover:text-surface-100"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M18 6 6 18M6 6l12 12" />
+							</svg>
+						</button>
+					{/if}
+				</div>
+				<select
+					bind:value={durationFilter}
+					aria-label="Filter by length"
+					class="focus-live h-9 shrink-0 rounded-lg border border-surface-300 bg-surface-50 pl-3 text-sm text-surface-700 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-200"
 				>
-					<path d="M12 5v14M5 12h14" />
-				</svg>
-			</a>
-		</div>
+					<option value="all">Any length</option>
+					<option value="under3">Under 3 min</option>
+					<option value="3to5">3 to 5 min</option>
+					<option value="over5">Over 5 min</option>
+				</select>
+			</div>
+		{/if}
+
+		<a
+			bind:this={addLink}
+			href="/songs/new"
+			class="focus-live order-2 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-accent-500 px-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-600 sm:order-3 pointer-coarse:h-11"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2.5"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<path d="M12 5v14M5 12h14" />
+			</svg>
+			Add song
+		</a>
 	</div>
 
-	<!-- Search (collapsible) -->
 	{#if hasSongs}
-		<SongSearch bind:searchQuery bind:durationFilter bind:expanded={searchExpanded} />
-	{/if}
-
-	{#if hasSongs}
-		<!-- Sort controls -->
-		<div class="mt-4 flex items-center gap-1">
-			<span class="mr-1 text-xs text-surface-500 dark:text-surface-300">Sort:</span>
-			{#each sortOptions as opt}
-				<button
-					class="rounded px-2 py-0.5 text-xs font-medium transition-colors {sortBy === opt.value
-						? 'bg-surface-800 text-surface-100 dark:bg-surface-200 dark:text-surface-800'
-						: 'text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100'}"
-					onclick={() => toggleSort(opt.value)}
-				>
-					{opt.label}
-					{#if sortBy === opt.value}
-						<span class="ml-0.5">{sortDir === 'asc' ? '\u2191' : '\u2193'}</span>
-					{/if}
-				</button>
-			{/each}
-		</div>
-
 		{#if hasResults}
-			<!-- Song list -->
-			<div
-				class="mt-4 overflow-hidden rounded-xl border border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800/50"
-			>
-				{#each filteredSongs as song (song.id)}
-					<SongRow
-						{song}
-						audioCount={song.song_audio.length}
-						onclick={() => (selectedSongId = song.id)}
-						oncontextmenu={(pos) => showContextMenu(song.id, song.title, pos)}
-					/>
-				{/each}
+			<!-- Column heads: instrument-panel labels that double as the sort controls -->
+			<div class="sticky top-0 z-10 -mx-3 mt-5 bg-surface-50 px-3 dark:bg-surface-950">
+				<div
+					class="{SONG_GRID} border-b border-surface-200 py-2 pr-10 dark:border-surface-800 pointer-coarse:py-4"
+					role="group"
+					aria-label="Sort songs"
+				>
+					<div class="flex items-center gap-5">
+						{@render sortHead('Title', 'title')}
+						{@render sortHead('Added', 'date', 'sm:hidden')}
+					</div>
+					<span
+						class="text-label text-surface-500 uppercase max-[359px]:invisible dark:text-surface-300"
+						>Files</span
+					>
+					{@render sortHead('Added', 'date', 'hidden justify-self-end sm:block')}
+					{@render sortHead('Length', 'duration', 'justify-self-end')}
+				</div>
 			</div>
+
+			<ul class="divide-y divide-surface-200 dark:divide-surface-800">
+				{#each filteredSongs as song (song.id)}
+					<li>
+						<SongRow
+							{song}
+							audioCount={song.song_audio.length}
+							fileCount={song.song_files.length}
+							onclick={() => (selectedSongId = song.id)}
+							onmenu={(pos) => showContextMenu(song.id, song.title, pos)}
+						/>
+					</li>
+				{/each}
+			</ul>
 		{:else}
 			<!-- No results state -->
 			<div
@@ -263,16 +364,15 @@
 				stroke-linecap="round"
 				stroke-linejoin="round"
 				class="mx-auto text-surface-300 dark:text-surface-600"
+				aria-hidden="true"
 			>
 				<path
 					d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"
 				/>
 			</svg>
-			<p class="mt-4 font-display text-lg text-surface-700 dark:text-surface-300">
-				Your song library is empty
-			</p>
+			<p class="mt-4 font-display text-lg text-surface-700 dark:text-surface-300">No songs yet</p>
 			<p class="mt-2 text-sm text-surface-500 dark:text-surface-300">
-				Add your first song to get started.
+				A name and a length is all each one needs.
 			</p>
 			<a
 				href="/songs/new"
@@ -285,7 +385,13 @@
 </div>
 
 <!-- Context menu (page-level singleton) -->
-<ContextMenu items={contextMenuItems} x={contextX} y={contextY} bind:visible={contextVisible} />
+<ContextMenu
+	items={contextMenuItems}
+	x={contextX}
+	y={contextY}
+	label="Options for {contextSongTitle}"
+	bind:visible={contextVisible}
+/>
 
 <!-- Song detail flyout -->
 {#if selectedSong}
@@ -295,6 +401,7 @@
 		files={selectedSong.song_files}
 		supabase={data.supabase}
 		practiceHref="/songs/{selectedSong.id}/practice?from=/songs"
+		ondelete={() => selectedSong && requestDelete(selectedSong.id, selectedSong.title)}
 		onclose={() => (selectedSongId = null)}
 	/>
 {/if}
@@ -310,9 +417,25 @@
 	class="hidden"
 	use:enhance={() => {
 		return async ({ result, update }) => {
+			if (result.type === 'failure' || result.type === 'error') {
+				toast.show("Couldn't delete that song. Check your connection and try again.", {
+					variant: 'error',
+					duration: 6000
+				});
+				return;
+			}
 			if (result.type === 'success') {
+				selectedSongId = null;
 				toast.show('Song deleted', { variant: 'success' });
-				await update();
+			}
+			await update();
+			if (result.type === 'success') {
+				// The row that had focus is gone: land on its neighbour, or on Add song
+				await tick();
+				const next = rowAfterDelete
+					? document.querySelector<HTMLElement>(`[data-song-row="${rowAfterDelete}"]`)
+					: addLink;
+				next?.focus();
 			}
 		};
 	}}

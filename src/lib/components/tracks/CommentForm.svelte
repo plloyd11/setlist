@@ -103,9 +103,7 @@
 				<span
 					class="inline-flex items-center gap-1.5 rounded-full bg-accent-100 py-0.5 pr-1 pl-2.5 text-xs font-medium text-accent-700 dark:bg-accent-900/40 dark:text-accent-300"
 				>
-					Pinned at <span class="font-mono font-semibold"
-						>{formatDuration(Math.round(pinnedAt))}</span
-					>
+					Pinned at <span class="font-semibold">{formatDuration(Math.round(pinnedAt))}</span>
 					<button
 						type="button"
 						onclick={removePin}
@@ -131,7 +129,7 @@
 					onclick={pinNow}
 					class="focus-live text-sm font-medium text-surface-600 hover:text-surface-900 dark:text-surface-300 dark:hover:text-surface-100"
 				>
-					Pin at <span class="font-mono">{formatDuration(Math.round(currentTime))}</span>
+					Pin at <span>{formatDuration(Math.round(currentTime))}</span>
 				</button>
 			{/if}
 		{:else}
@@ -147,6 +145,6 @@
 	</div>
 
 	{#if error}
-		<p role="alert" class="text-sm text-danger-600 dark:text-danger-400">{error}</p>
+		<p role="alert" class="text-sm text-danger-600 dark:text-danger-300">{error}</p>
 	{/if}
 </form>

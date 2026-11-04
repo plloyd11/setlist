@@ -97,11 +97,7 @@
 	<div class="hidden items-center gap-4 md:flex">
 		<!-- Total time -->
 		<div class="text-center">
-			<p
-				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-			>
-				Total
-			</p>
+			<p class="text-label text-surface-500 uppercase dark:text-surface-300">Total</p>
 			<p class="font-display text-xl font-bold text-accent-600 dark:text-accent-hot">
 				{formatDuration(totalSeconds)}
 			</p>
@@ -109,11 +105,7 @@
 
 		<!-- Target time input -->
 		<div class="text-center">
-			<p
-				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-			>
-				Target
-			</p>
+			<p class="text-label text-surface-500 uppercase dark:text-surface-300">Target</p>
 			<input
 				type="text"
 				bind:value={targetInput}
@@ -131,11 +123,7 @@
 		<!-- Over/under indicator -->
 		{#if targetSeconds}
 			<div class="text-center">
-				<p
-					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-				>
-					Diff
-				</p>
+				<p class="text-label text-surface-500 uppercase dark:text-surface-300">Diff</p>
 				<p
 					class="text-sm font-bold {isOver
 						? 'text-danger-600 dark:text-danger-300'
@@ -157,17 +145,13 @@
 
 		<!-- Transition stepper -->
 		<div class="text-center">
-			<p
-				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-			>
-				Gap
-			</p>
+			<p class="text-label text-surface-500 uppercase dark:text-surface-300">Gap</p>
 			<div class="flex items-center gap-1">
 				<button
 					onclick={decrementTransition}
 					disabled={transitionSeconds <= 0}
-					class="rounded px-1.5 py-0.5 text-xs text-surface-500 hover:bg-surface-100 disabled:opacity-30 dark:text-surface-300 dark:hover:bg-surface-800"
-					aria-label="Decrease transition time">-</button
+					class="flex h-7 w-7 items-center justify-center rounded text-base leading-none text-surface-500 hover:bg-surface-100 disabled:opacity-30 dark:text-surface-300 dark:hover:bg-surface-800"
+					aria-label="Decrease transition time">−</button
 				>
 				<span class="w-10 text-center text-sm font-medium text-surface-700 dark:text-surface-300">
 					{transitionLabel}
@@ -175,44 +159,42 @@
 				<button
 					onclick={incrementTransition}
 					disabled={transitionSeconds >= 300}
-					class="rounded px-1.5 py-0.5 text-xs text-surface-500 hover:bg-surface-100 disabled:opacity-30 dark:text-surface-300 dark:hover:bg-surface-800"
+					class="flex h-7 w-7 items-center justify-center rounded text-base leading-none text-surface-500 hover:bg-surface-100 disabled:opacity-30 dark:text-surface-300 dark:hover:bg-surface-800"
 					aria-label="Increase transition time">+</button
 				>
 			</div>
 		</div>
 	</div>
 
-	<!-- Mobile layout: compact two rows -->
+	<!-- Mobile layout: the same stacked label-over-reading idiom as desktop, with
+	     controls big enough to hit one-handed in a dark room -->
 	<div class="md:hidden">
-		<div class="flex items-center justify-between gap-3">
+		<div class="flex flex-wrap items-end justify-between gap-x-2 gap-y-2 min-[360px]:gap-x-3">
 			<!-- Total -->
 			<div>
-				<span
-					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-					>Total
-				</span>
-				<span class="font-display text-lg font-bold text-accent-600 dark:text-accent-hot">
+				<p class="text-label text-surface-500 uppercase dark:text-surface-300">Total</p>
+				<p class="font-display text-2xl leading-11 font-bold text-accent-600 dark:text-accent-hot">
 					{formatDuration(totalSeconds)}
-				</span>
+				</p>
 			</div>
 
 			<!-- Over/under -->
 			{#if targetSeconds}
-				<span
-					class="text-sm font-bold {isOver
-						? 'text-danger-600 dark:text-danger-300'
-						: 'text-success-600 dark:text-success-300'}"
-				>
-					{overUnderLabel}
-				</span>
+				<div>
+					<p class="text-label text-surface-500 uppercase dark:text-surface-300">Diff</p>
+					<p
+						class="text-sm leading-11 font-bold {isOver
+							? 'text-danger-600 dark:text-danger-300'
+							: 'text-success-600 dark:text-success-300'}"
+					>
+						{overUnderLabel}
+					</p>
+				</div>
 			{/if}
 
 			<!-- Target input -->
-			<div class="flex items-center gap-1">
-				<span
-					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-					>Tgt
-				</span>
+			<div>
+				<p class="text-label text-surface-500 uppercase dark:text-surface-300">Target</p>
 				<input
 					type="text"
 					bind:value={targetInput}
@@ -221,33 +203,33 @@
 					placeholder="45:00"
 					title="Set length in minutes (45) or mm:ss (45:00)"
 					aria-label="Target set duration, minutes or mm:ss"
-					class="focus-live w-14 rounded border bg-transparent px-1 py-0.5 text-center text-xs text-surface-700 placeholder-surface-500 dark:text-surface-300 dark:placeholder-surface-300 {targetInvalid
+					class="focus-live h-11 w-14 rounded-lg border bg-transparent px-1 text-center text-sm text-surface-700 placeholder-surface-500 min-[360px]:w-16 dark:text-surface-300 dark:placeholder-surface-300 {targetInvalid
 						? 'border-danger-500 ring-1 ring-danger-500'
 						: 'border-surface-300 dark:border-surface-600'}"
 				/>
 			</div>
 
 			<!-- Gap stepper -->
-			<div class="flex items-center gap-0.5">
-				<span
-					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-					>Gap
-				</span>
-				<button
-					onclick={decrementTransition}
-					disabled={transitionSeconds <= 0}
-					class="rounded px-1 text-xs text-surface-500 disabled:opacity-30 dark:text-surface-300"
-					aria-label="Decrease transition time">-</button
-				>
-				<span class="text-xs font-medium text-surface-700 dark:text-surface-300"
-					>{transitionLabel}</span
-				>
-				<button
-					onclick={incrementTransition}
-					disabled={transitionSeconds >= 300}
-					class="rounded px-1 text-xs text-surface-500 disabled:opacity-30 dark:text-surface-300"
-					aria-label="Increase transition time">+</button
-				>
+			<div>
+				<p class="text-center text-label text-surface-500 uppercase dark:text-surface-300">Gap</p>
+				<div class="flex items-center">
+					<button
+						onclick={decrementTransition}
+						disabled={transitionSeconds <= 0}
+						class="flex h-11 w-8 items-center justify-center rounded-lg border border-surface-300 text-lg leading-none text-surface-600 disabled:opacity-30 min-[360px]:w-10 dark:border-surface-600 dark:text-surface-300"
+						aria-label="Decrease transition time">−</button
+					>
+					<span
+						class="w-8 text-center text-sm font-medium text-surface-700 min-[360px]:w-9 dark:text-surface-300"
+						>{transitionLabel}</span
+					>
+					<button
+						onclick={incrementTransition}
+						disabled={transitionSeconds >= 300}
+						class="flex h-11 w-8 items-center justify-center rounded-lg border border-surface-300 text-lg leading-none text-surface-600 disabled:opacity-30 min-[360px]:w-10 dark:border-surface-600 dark:text-surface-300"
+						aria-label="Increase transition time">+</button
+					>
+				</div>
 			</div>
 		</div>
 

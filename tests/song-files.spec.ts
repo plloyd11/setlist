@@ -38,9 +38,9 @@ test.describe('Song charts upload and manage (FILE-01)', () => {
 
 			// Rename the label (the only mutable field)
 			await panel.getByLabel('Rename sample.pdf').click();
-			// exact: the upload form's 'Label — e.g. "Rhythm tab" (optional)' also matches
+			// exact: the upload form's 'Label, e.g. "Rhythm tab" (optional)' also matches
 			await panel
-				.getByPlaceholder('Label — e.g. "Rhythm tab"', { exact: true })
+				.getByPlaceholder('Label, e.g. "Rhythm tab"', { exact: true })
 				.fill('Chorus chart');
 			await panel.getByLabel('Save label').click();
 			await expect(panel.getByText('Chorus chart')).toBeVisible();

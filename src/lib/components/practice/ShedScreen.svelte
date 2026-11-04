@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Digits from '#lib/components/ui/Digits.svelte';
 	import { onMount, type Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import SongPracticePanel from '#lib/components/songs/SongPracticePanel.svelte';
@@ -124,7 +125,7 @@
 							type="button"
 							aria-pressed={pane === option.value}
 							onclick={() => (chosenPane = option.value)}
-							class="focus-live min-h-11 flex-1 border-b-2 text-sm font-medium {pane ===
+							class="focus-live min-h-11 flex-auto border-b-2 px-1 text-sm font-medium {pane ===
 							option.value
 								? 'border-accent-500 text-accent-700 dark:border-accent-400 dark:text-accent-300'
 								: 'border-transparent text-surface-500 dark:text-surface-300'}"
@@ -168,11 +169,7 @@
 			{/if}
 			{#if notes}
 				<div class="stage-pane {pane === 'notes' ? '' : 'hidden md:block'}">
-					<p
-						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-					>
-						Notes
-					</p>
+					<p class="text-label text-surface-500 uppercase dark:text-surface-300">Notes</p>
 					<p
 						class="mt-1 text-sm break-words whitespace-pre-wrap text-surface-700 dark:text-surface-300"
 					>
@@ -213,9 +210,9 @@
 					<span class="sr-only">Practiced </span>
 					<span
 						data-testid="practice-clock"
-						class="font-display text-lg leading-tight font-bold text-accent-600 tabular-nums md:text-xl dark:text-accent-hot"
+						class="font-display text-lg leading-tight font-bold text-accent-600 md:text-xl dark:text-accent-hot"
 					>
-						{formatDuration(Math.floor(tracker.seconds))}
+						<Digits value={formatDuration(Math.floor(tracker.seconds))} />
 					</span>
 				</p>
 				<button

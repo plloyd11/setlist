@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { UNNAMED_MEMBER } from '#lib/utils/memberName.js';
 	import { formatDuration } from '#lib/utils/duration.js';
 	import type { EnrichedComment } from './CommentList.svelte';
 
@@ -25,7 +26,9 @@
 	} = $props();
 
 	let resolved = $derived(comment.resolved_at !== null);
-	let initial = $derived(comment.author_name.charAt(0).toUpperCase());
+	let initial = $derived(
+		comment.author_name === UNNAMED_MEMBER ? '?' : comment.author_name.charAt(0).toUpperCase()
+	);
 	let timeLabel = $derived(
 		new Date(comment.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 	);
@@ -65,7 +68,7 @@
 					<button
 						type="button"
 						onclick={() => onseek(comment.timestamp_seconds ?? 0)}
-						class="focus-live rounded bg-accent-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-accent-800 hover:bg-accent-200 dark:bg-accent-900/40 dark:text-accent-300 dark:hover:bg-accent-900/60"
+						class="focus-live rounded bg-accent-100 px-1.5 py-0.5 text-xs font-semibold text-accent-800 hover:bg-accent-200 dark:bg-accent-900/40 dark:text-accent-300 dark:hover:bg-accent-900/60"
 					>
 						{formatDuration(Math.round(comment.timestamp_seconds))}
 					</button>
@@ -109,7 +112,7 @@
 					<button
 						type="button"
 						onclick={() => ondelete(comment)}
-						class="focus-live rounded px-1.5 py-1.5 text-xs font-medium text-danger-600 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300
+						class="focus-live rounded px-1.5 py-1.5 text-xs font-medium text-danger-600 hover:text-danger-700 dark:text-danger-300 dark:hover:text-danger-300
 							{isReply && !canDelete ? '-ml-1.5' : ''}"
 					>
 						Delete

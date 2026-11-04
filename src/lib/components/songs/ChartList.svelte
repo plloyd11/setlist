@@ -65,7 +65,7 @@
 							type="button"
 							onclick={() => (viewingChartId = viewingChartId === chart.id ? null : chart.id)}
 							aria-pressed={viewingChartId === chart.id}
-							class="focus-live max-w-full truncate rounded-lg border px-3 py-1.5 text-sm font-medium {viewingChartId ===
+							class="focus-live min-h-11 max-w-full truncate rounded-lg border px-3 py-1.5 text-sm font-medium md:min-h-0 {viewingChartId ===
 							chart.id
 								? 'border-accent-500 bg-accent-500 text-white shadow-sm'
 								: 'border-surface-300 text-surface-700 hover:border-accent-400 hover:text-accent-600 dark:border-surface-600 dark:text-surface-300 dark:hover:border-accent-600 dark:hover:text-accent-400'}"
@@ -75,7 +75,7 @@
 					{:else if chart.signedUrl}
 						<a
 							href={downloadHref(chart)}
-							class="focus-live inline-block max-w-full truncate rounded-lg border border-surface-300 px-3 py-1.5 text-sm font-medium text-surface-700 hover:border-accent-400 hover:text-accent-600 dark:border-surface-600 dark:text-surface-300 dark:hover:border-accent-600 dark:hover:text-accent-400"
+							class="focus-live inline-block max-w-full truncate rounded-lg border border-surface-300 px-3 py-1.5 text-sm font-medium text-surface-700 hover:border-accent-400 hover:text-accent-600 dark:border-surface-600 dark:text-surface-300 dark:hover:border-accent-600 dark:hover:text-accent-400 pointer-coarse:py-3"
 						>
 							{chart.label ?? chart.file_name}
 							<span class="text-xs text-surface-400 dark:text-surface-500">↓</span>
@@ -116,7 +116,7 @@
 						href={viewingChart.signedUrl}
 						target="_blank"
 						rel="noopener"
-						class="focus-live ml-auto shrink-0 rounded px-2 py-1 text-xs font-medium text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100"
+						class="hit-44 focus-live ml-auto shrink-0 rounded px-2 py-1 text-xs font-medium text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-100"
 					>
 						Open in new tab
 					</a>

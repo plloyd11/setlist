@@ -41,6 +41,15 @@ export function parseDurationLenient(input: string): number | null {
 }
 
 /**
+ * Format a long stretch of time, like a whole library: "57m", "1h 3m".
+ */
+export function formatRunTime(totalSeconds: number): string {
+	const minutes = Math.round(totalSeconds / 60);
+	const h = Math.floor(minutes / 60);
+	return h > 0 ? `${h}h ${minutes % 60}m` : `${minutes}m`;
+}
+
+/**
  * Format total seconds to a "m:ss" display string.
  * Example: 225 -> "3:45"
  */

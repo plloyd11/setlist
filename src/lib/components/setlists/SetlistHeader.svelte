@@ -105,17 +105,19 @@
 			class="focus-live w-full max-w-md rounded border border-neon-600 bg-transparent px-2 py-1 text-center font-display text-2xl text-surface-900 dark:border-neon-400 dark:text-surface-100"
 		/>
 	{:else}
-		<button
-			onclick={startNameEdit}
-			class="font-display text-2xl text-surface-900 hover:text-accent-600 dark:text-surface-100 dark:hover:text-accent-300"
-			title="Click to rename"
-		>
-			{setlist.name}
-		</button>
+		<h1>
+			<button
+				onclick={startNameEdit}
+				class="max-w-full font-display text-2xl text-surface-900 hover:text-accent-600 dark:text-surface-100 dark:hover:text-accent-300"
+				title="Click to rename"
+			>
+				{setlist.name}
+			</button>
+		</h1>
 	{/if}
 
 	<!-- Date and venue row -->
-	<div class="mt-2 flex items-center justify-center gap-3">
+	<div class="mx-auto mt-2 flex max-w-md items-center justify-center gap-2 md:gap-3">
 		<input
 			type="date"
 			bind:value={dateValue}
@@ -131,7 +133,7 @@
 			onkeydown={handleVenueKeydown}
 			placeholder="Venue"
 			aria-label="Venue"
-			class="focus-live rounded border border-surface-300 bg-transparent px-2 py-1 text-sm text-surface-600 placeholder-surface-500 dark:border-surface-600 dark:text-surface-300 dark:placeholder-surface-300"
+			class="focus-live min-w-0 flex-1 rounded border border-surface-300 bg-transparent px-2 py-1 text-sm text-surface-600 placeholder-surface-500 dark:border-surface-600 dark:text-surface-300 dark:placeholder-surface-300"
 		/>
 	</div>
 </div>

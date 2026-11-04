@@ -29,17 +29,17 @@
 	}
 </script>
 
-<div class="mx-auto max-w-2xl p-6 md:p-8">
+<svelte:head>
+	<title>Settings · Setlist</title>
+</svelte:head>
+
+<div class="page-frame">
 	<h1 class="font-display text-3xl text-surface-900 dark:text-surface-100">Settings</h1>
 
-	<div class="mt-8 space-y-8">
+	<div class="mt-8 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-2 lg:items-start">
 		<!-- Profile section -->
 		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
-				Profile
-			</h2>
+			<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Profile</h2>
 			<div
 				class="mt-3 space-y-4 rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-800 dark:bg-surface-900"
 			>
@@ -62,7 +62,7 @@
 						Display name
 					</label>
 					<p class="mt-0.5 text-xs text-surface-500 dark:text-surface-300">
-						Shown on shared setlists (e.g. your band name)
+						How your band sees you, and the name on your shared setlists
 					</p>
 					<div class="mt-2 flex gap-2">
 						<input
@@ -92,72 +92,66 @@
 			</div>
 		</section>
 
-		<!-- Theme section -->
-		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
-				Appearance
-			</h2>
-			<div
-				class="mt-3 flex items-center justify-between rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-800 dark:bg-surface-900"
-			>
-				<span class="text-sm font-medium text-surface-700 dark:text-surface-300">Dark mode</span>
-				<ThemeToggle variant="switch" />
-			</div>
-		</section>
+		<div class="min-w-0 space-y-8">
+			<!-- Theme section -->
+			<section>
+				<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Appearance</h2>
+				<div
+					class="mt-3 flex items-center justify-between rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-800 dark:bg-surface-900"
+				>
+					<span class="text-sm font-medium text-surface-700 dark:text-surface-300">Dark mode</span>
+					<ThemeToggle variant="switch" />
+				</div>
+			</section>
 
-		<!-- Account section -->
-		<section>
-			<h2
-				class="text-sm font-semibold tracking-wider text-surface-400 uppercase dark:text-surface-300"
-			>
-				Account
-			</h2>
-			<div class="mt-3 space-y-3">
-				{#if data.user}
-					<div
-						class="rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-800 dark:bg-surface-900"
-					>
-						<div class="flex items-center gap-3">
-							{#if data.user.user_metadata?.avatar_url}
-								<img
-									src={data.user.user_metadata.avatar_url}
-									alt=""
-									class="h-10 w-10 rounded-full"
-								/>
-							{/if}
-							<div>
-								{#if data.user.user_metadata?.full_name}
-									<p class="text-sm font-medium text-surface-900 dark:text-surface-100">
-										{data.user.user_metadata.full_name}
-									</p>
+			<!-- Account section -->
+			<section>
+				<h2 class="font-display text-lg text-surface-900 dark:text-surface-100">Account</h2>
+				<div class="mt-3 space-y-3">
+					{#if data.user}
+						<div
+							class="rounded-xl border border-surface-200 bg-surface-50 p-4 dark:border-surface-800 dark:bg-surface-900"
+						>
+							<div class="flex items-center gap-3">
+								{#if data.user.user_metadata?.avatar_url}
+									<img
+										src={data.user.user_metadata.avatar_url}
+										alt=""
+										class="h-10 w-10 rounded-full"
+									/>
 								{/if}
-								<p class="text-sm text-surface-500 dark:text-surface-300">
-									{data.user.email}
-								</p>
+								<div>
+									{#if data.user.user_metadata?.full_name}
+										<p class="text-sm font-medium text-surface-900 dark:text-surface-100">
+											{data.user.user_metadata.full_name}
+										</p>
+									{/if}
+									<p class="text-sm text-surface-500 dark:text-surface-300">
+										{data.user.email}
+									</p>
+								</div>
 							</div>
 						</div>
-					</div>
-				{/if}
+					{/if}
 
-				<button
-					onclick={handleSignOut}
-					disabled={signingOut}
-					class="w-full rounded-xl bg-surface-200 px-4 py-3 text-sm font-medium text-surface-700 transition-colors hover:bg-surface-300 disabled:opacity-50 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
-				>
-					{signingOut ? 'Signing out...' : 'Sign out'}
-				</button>
-			</div>
-		</section>
-
-		<p class="text-center text-sm text-surface-500 dark:text-surface-300">
-			New here or need a refresher? Read the
-			<a
-				href="/help"
-				class="focus-live rounded font-medium text-accent-600 hover:underline dark:text-accent-300"
-				>getting started guide</a
-			>.
-		</p>
+					<button
+						onclick={handleSignOut}
+						disabled={signingOut}
+						class="w-full rounded-xl bg-surface-200 px-4 py-3 text-sm font-medium text-surface-700 transition-colors hover:bg-surface-300 disabled:opacity-50 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+					>
+						{signingOut ? 'Signing out...' : 'Sign out'}
+					</button>
+				</div>
+			</section>
+		</div>
 	</div>
+
+	<p class="mt-8 text-sm text-surface-500 dark:text-surface-300">
+		New here or need a refresher? Read the
+		<a
+			href="/help"
+			class="focus-live rounded font-medium text-accent-600 hover:underline dark:text-accent-300"
+			>getting started guide</a
+		>.
+	</p>
 </div>

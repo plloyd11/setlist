@@ -14,3 +14,34 @@ export function startOfWeek(date: Date): Date {
 	start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
 	return start;
 }
+
+export interface WeekDay {
+	key: string;
+	name: string;
+	initial: string;
+	seconds: number;
+	isToday: boolean;
+}
+
+/** Monday to Sunday of the week containing `now`, with the time practiced on each day */
+export function weekOf(sessions: { startedAt: string; seconds: number }[], now: Date): WeekDay[] {
+	const dayKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+	const start = startOfWeek(now);
+	const seconds = new Map<string, number>();
+	for (const session of sessions) {
+		const key = dayKey(new Date(session.startedAt));
+		seconds.set(key, (seconds.get(key) ?? 0) + session.seconds);
+	}
+	return Array.from({ length: 7 }, (_, i) => {
+		const date = new Date(start);
+		date.setDate(start.getDate() + i);
+		const key = dayKey(date);
+		return {
+			key,
+			name: date.toLocaleDateString(undefined, { weekday: 'long' }),
+			initial: date.toLocaleDateString(undefined, { weekday: 'narrow' }),
+			seconds: seconds.get(key) ?? 0,
+			isToday: key === dayKey(now)
+		};
+	});
+}

@@ -27,14 +27,15 @@
 	};
 </script>
 
-{#if visible}
-	<div
-		class="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-lg px-4 py-2 text-sm font-medium shadow-lg md:bottom-6 {variantClasses[
-			variant
-		]}"
-		role="status"
-		aria-live="polite"
-	>
-		{message}
-	</div>
-{/if}
+<!-- The live region stays mounted: screen readers miss one that appears with its text -->
+<div role="status" aria-live="polite" aria-atomic="true">
+	{#if visible}
+		<div
+			class="fixed bottom-20 left-1/2 z-70 -translate-x-1/2 rounded-lg px-4 py-2 text-sm font-medium shadow-lg md:bottom-6 {variantClasses[
+				variant
+			]}"
+		>
+			{message}
+		</div>
+	{/if}
+</div>

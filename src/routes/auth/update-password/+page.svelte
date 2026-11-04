@@ -22,6 +22,10 @@
 	};
 </script>
 
+<svelte:head>
+	<title>Update password · Setlist</title>
+</svelte:head>
+
 <div class="flex min-h-screen items-center justify-center bg-surface-50 dark:bg-surface-950">
 	<div class="w-full max-w-sm px-6">
 		<div
@@ -65,7 +69,7 @@
 			{/if}
 
 			{#if error}
-				<p class="mt-4 text-center text-sm text-danger-500 dark:text-danger-400">
+				<p class="mt-4 text-center text-sm text-danger-500 dark:text-danger-300">
 					{error}
 				</p>
 			{/if}

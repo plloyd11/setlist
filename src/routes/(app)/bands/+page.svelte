@@ -18,7 +18,11 @@
 	}
 </script>
 
-<div class="p-6 md:p-8">
+<svelte:head>
+	<title>Bands · Setlist</title>
+</svelte:head>
+
+<div class="page-frame">
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div class="flex items-baseline gap-3">
@@ -29,7 +33,7 @@
 		</div>
 		<button
 			onclick={toggleCreate}
-			class="flex items-center justify-center rounded-lg bg-accent-500 p-2 text-white shadow-sm hover:bg-accent-600"
+			class="flex items-center justify-center rounded-lg bg-accent-500 p-2 text-white shadow-sm hover:bg-accent-600 pointer-coarse:h-11 pointer-coarse:w-11"
 			aria-label="Create band"
 		>
 			<svg

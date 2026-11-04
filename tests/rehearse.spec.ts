@@ -101,7 +101,7 @@ test.describe('Rehearse playthrough (REHEARSE-02)', () => {
 
 			// Pause-and-wait song advances only on user action
 			await expect(page.getByRole('heading', { name: 'Rehearse Closer' })).toBeVisible();
-			await page.getByRole('button', { name: 'Done — next song' }).click();
+			await page.getByRole('button', { name: 'Done, next song' }).click();
 			await expect(page.getByText('Set complete')).toBeVisible();
 		} finally {
 			await cleanupSongAudio(songA.id);

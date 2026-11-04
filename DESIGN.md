@@ -145,11 +145,13 @@ A dark venue lit by two lamps: one neon-chartreuse, one warm copper, over a deep
 - **Title** (Cartridge 600, 1.125rem, 1.3): Card titles, dialog headings, section heads.
 - **Big Numbers** (Cartridge 700, 1.25–1.5rem): Set totals and timing readouts — display type because they're the headline of the screen.
 - **Body** (Klima 400, 0.875rem, 1.5): Default UI text. Cap prose at 65–75ch.
-- **Label** (Klima 500, 0.625rem, +0.05em, uppercase): Micro-labels over readings (TOTAL, TARGET, GAP) in the TimingBar. This is a deliberate instrument-panel idiom for data readouts — keep it there; do not spread eyebrow labels across marketing sections.
+- **Label** (the `text-label` token: Klima 500, 0.625rem, +0.05em, uppercase): Micro-labels over readings (TOTAL, TARGET, GAP) in the TimingBar. This is a deliberate instrument-panel idiom for data readouts — keep it there; do not spread eyebrow labels across marketing sections.
 
 ### Named Rules
 
 **The Marquee Rule.** Cartridge owns headings and big timing numbers. Klima owns everything read at length. If a string is a sentence, it's Klima.
+
+**The Steady Digits Rule.** Neither typeface has tabular figures. A reading that ticks (a running clock) or stacks (a column of durations) uses the `Digits` component, so it holds still and lines up. A static headline number keeps its natural spacing.
 
 ## 4. Elevation
 
@@ -210,7 +212,27 @@ The product's reason to exist, rendered as an instrument panel: a sticky bottom 
 
 ### The Next Gig Board (dashboard hero)
 
-The first authenticated screen extends the instrument idiom: one Night Case panel with the next gig's name and venue on the left and labeled readings on the right — COUNTDOWN in copper (the page's chromatic peak), TOTAL / TARGET / DIFF / SONGS in the TimingBar vocabulary, and the copper-glow "Sharing on" lamp when the set is live. With no upcoming gig it shows the latest set (total goes copper instead of the countdown); with no sets at all it becomes the activation moment. Recent setlists are rows, not cards; the library is one quiet pulse reading, never a stat card.
+The first authenticated screen extends the instrument idiom: one Night Case panel with the next gig's name, venue and band on the left and labeled readings on the right: COUNTDOWN in copper (the page's chromatic peak), TOTAL / TARGET / DIFF / SONGS in the TimingBar vocabulary, and the copper-glow "Sharing on" lamp when the set is live. Under them, a **fit strip** drawn to scale: olive up to the target and red only for what runs over, so 53 seconds over looks like 53 seconds. The footer says what the numbers mean in one sentence ("0:53 over. Something has to go.") beside the actions: Rehearse, Edit set, Print, Share. With no upcoming gig it shows the latest set (total goes copper instead of the countdown); with no sets at all it becomes the activation moment, and nothing else on the page competes with it.
+
+Below the board, the Practice skeleton: the work on the left, a 20rem rail on the right. On the left, Coming up (rows that lead with the date), Recent setlists and Demos, all rows, not cards. A demo row reports its newest news, an upload or an open comment. In the rail, **Getting ready** (songs solid out of the set, a status strip, and the worst songs first), the week, bands, and the library as one quiet pulse reading, never a stat card. On a phone, Getting ready comes straight after the board.
+
+### The Session Board (Practice)
+
+Practice borrows the instrument idiom for the time you have, not the time the set takes. Today and Warm up open on one panel: a micro-label over the total in Tube Hot (the page's chromatic peak, next to the Hero CTA), the length picker, then a thin **session strip** drawn to scale above the run sheet of steps. Each row's numbered swatch matches its slice of the strip, so the swatches do the legend's job, and pointing at a row dims the other slices.
+
+**The session heats up.** Warm-up is cold steel, technique is working copper, songs are the hot filament (dark: `surface-300`, `accent-500`, `accent-hot`; light: `surface-500`, `accent-400`, `accent-600`). This ramp passes separation and contrast against each theme's panel surface; a ramp of three coppers doesn't, because hot and mid can't be told apart. Status colors and Limelight stay out of it.
+
+**Song status** is a chip with a dot, in the status colors: Needs work is Overtime Red, Learning is copper, Solid is On-Time Olive. Always `StatusChip`, so it reads the same in Today, Shed and the Log.
+
+Every Practice tab shares one skeleton: the work on the left, a 20rem rail of instruments and side lists on the right, stacking to one column on a phone. Adding to a list happens in the footer of that list's panel. The metronome's lamps run the panel's full width and light only while it's running.
+
+### The Song Library
+
+Rows, not a card: hairline dividers on the page, with titles aligned to the heading, the same as Recent setlists on the dashboard. Columns are shared by the head and every row, so attachments read straight down in fixed slots rather than trailing each title. The column heads use the Label idiom and double as the sort controls. The length is the brightest thing in a row. Search and the length filter stay visible, and every row has a visible way to its actions.
+
+### The Page Frame
+
+Every app page runs the full width of its content area, with the same gutters: the `page-frame` utility in `src/routes/layout.css` (1rem on a phone, 2rem from `md` up). No page sets a max-width of its own. Readability is kept inside the frame instead: prose stops at `max-w-prose`, form fields stay sized to what they hold, and pages of stacked sections (Settings, Help) flow into columns rather than stretch. Exceptions are the screens that aren't content pages: the shed screens and print editor frame themselves, and sign-in, invites, errors, the public share sheet and the landing page keep their own composition.
 
 ## 6. Do's and Don'ts
 
@@ -219,7 +241,7 @@ The first authenticated screen extends the instrument idiom: one Night Case pane
 - **Do** design dark-mode-first; verify every screen in dark mode on a phone-sized viewport before light mode.
 - **Do** keep the set total vs. target glanceable on every setlist surface — it is the hero reading.
 - **Do** use the `.focus-live` utility for all focus states — never hand-pick focus colors per element; the utility carries the theme split.
-- **Do** keep touch targets ≥44px on mobile surfaces; musicians use this on phones in dark rooms.
+- **Do** keep touch targets ≥44px on mobile surfaces; musicians use this on phones in dark rooms. `layout.css` grows button hit areas under `pointer: coarse`; links opt in with `.hit-44`.
 - **Do** hold body text to ≥4.5:1 contrast in both themes (surface-900 on Day Haze; surface-100 on Night Stage).
 - **Do** give every animation a `prefers-reduced-motion` alternative and keep drag feedback under glow, not bounce.
 

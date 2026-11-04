@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Digits from '#lib/components/ui/Digits.svelte';
 	import { onMount } from 'svelte';
 	import WaveformPlayer from '#lib/components/tracks/WaveformPlayer.svelte';
 	import {
@@ -147,17 +148,17 @@
 </script>
 
 <svelte:head>
-	<title>Rehearse — {data.setlist.name}</title>
+	<title>Rehearse · {data.setlist.name}</title>
 </svelte:head>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="mx-auto flex min-h-full w-full max-w-3xl flex-col p-4 pb-0 md:p-8 md:pb-0">
+<div class="flex min-h-full flex-col page-frame pb-0 md:pb-0">
 	<!-- Header -->
 	<div class="flex items-center gap-3">
 		<a
 			href={data.backHref}
-			class="focus-live flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-surface-500 hover:bg-surface-100 hover:text-surface-700 dark:text-surface-300 dark:hover:bg-surface-800 dark:hover:text-surface-100"
+			class="hit-44 focus-live flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-surface-500 hover:bg-surface-100 hover:text-surface-700 dark:text-surface-300 dark:hover:bg-surface-800 dark:hover:text-surface-100"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -185,32 +186,20 @@
 		class="mt-4 flex items-start gap-6 rounded-xl border border-surface-200 bg-surface-50 px-4 py-3 dark:border-surface-700 dark:bg-surface-800"
 	>
 		<div>
-			<p
-				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-			>
-				Elapsed
-			</p>
-			<p class="font-display text-xl font-bold text-accent-600 tabular-nums dark:text-accent-hot">
-				{formatDuration(Math.floor(rehearse.elapsedSeconds))}
+			<p class="text-label text-surface-500 uppercase dark:text-surface-300">Elapsed</p>
+			<p class="font-display text-xl font-bold text-accent-600 dark:text-accent-hot">
+				<Digits value={formatDuration(Math.floor(rehearse.elapsedSeconds))} />
 			</p>
 		</div>
 		<div>
-			<p
-				class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-			>
-				Total
-			</p>
-			<p class="font-display text-xl font-bold text-surface-700 tabular-nums dark:text-surface-300">
+			<p class="text-label text-surface-500 uppercase dark:text-surface-300">Total</p>
+			<p class="font-display text-xl font-bold text-surface-700 dark:text-surface-300">
 				{formatDuration(rehearse.totalSeconds)}
 			</p>
 		</div>
 		{#if rehearse.upNext && rehearse.status !== 'finished'}
 			<div class="min-w-0 flex-1 text-right">
-				<p
-					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-				>
-					Up next
-				</p>
+				<p class="text-label text-surface-500 uppercase dark:text-surface-300">Up next</p>
 				<p class="truncate text-sm font-medium text-surface-700 dark:text-surface-300">
 					{rehearse.upNext}
 				</p>
@@ -253,7 +242,7 @@
 				{songCount === 1 ? 'song' : 'songs'} &middot; {formatDuration(rehearse.totalSeconds)}
 			</p>
 			<p class="mt-2 max-w-md text-sm text-surface-500 dark:text-surface-300">
-				Plays your set in order — songs with audio play through, timed breaks count down, and songs
+				Plays your set in order: songs with audio play through, timed breaks count down, and songs
 				without audio wait for you to play them live.
 			</p>
 			<!-- The hero CTA: the one always-energized button on this screen -->
@@ -300,9 +289,7 @@
 				{@const variant = rehearse.currentVariant}
 				<div class="flex items-end justify-between gap-3">
 					<div class="min-w-0">
-						<p
-							class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-						>
+						<p class="text-label text-surface-500 uppercase dark:text-surface-300">
 							Now {variant ? 'playing' : 'up'}
 						</p>
 						<h2
@@ -348,12 +335,12 @@
 					{/if}
 					{#if autoplayBlocked}
 						<p role="status" class="mt-2 text-sm text-surface-600 dark:text-surface-300">
-							Your browser blocked autoplay — press play to continue.
+							Your browser blocked autoplay. Press play to continue.
 						</p>
 					{/if}
 					{#if loadError}
-						<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-400">
-							Audio failed to load — it may have expired. Skip ahead, or reload the page for fresh
+						<p role="alert" class="mt-2 text-sm text-danger-600 dark:text-danger-300">
+							Audio failed to load. It may have expired. Skip ahead, or reload the page for fresh
 							links.
 						</p>
 					{/if}
@@ -363,14 +350,14 @@
 						class="mt-3 rounded-xl border border-surface-200 bg-surface-50 p-6 text-center dark:border-surface-700 dark:bg-surface-800"
 					>
 						<p class="text-sm text-surface-500 dark:text-surface-300">
-							No audio for this one — play it live, then carry on.
+							No audio for this one. Play it live, then carry on.
 						</p>
 						<button
 							type="button"
 							onclick={() => rehearse.next()}
 							class="focus-live mt-4 rounded-lg bg-accent-500 px-6 py-3 font-semibold text-white shadow-sm hover:bg-accent-600"
 						>
-							Done — next song
+							Done, next song
 						</button>
 					</div>
 				{/if}
@@ -383,15 +370,11 @@
 				<div
 					class="rounded-xl border border-surface-200 bg-surface-50 p-8 text-center dark:border-surface-700 dark:bg-surface-800"
 				>
-					<p
-						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-					>
+					<p class="text-label text-surface-500 uppercase dark:text-surface-300">
 						{item.kind === 'gap' ? (item.label ?? 'Break') : 'Transition'}
 					</p>
-					<p
-						class="mt-1 font-display text-6xl font-bold text-surface-900 tabular-nums dark:text-surface-100"
-					>
-						{formatDuration(Math.ceil(rehearse.countdownRemaining))}
+					<p class="mt-1 font-display text-6xl font-bold text-surface-900 dark:text-surface-100">
+						<Digits value={formatDuration(Math.ceil(rehearse.countdownRemaining))} />
 					</p>
 					{#if isLive}
 						<span
@@ -421,8 +404,7 @@
 							? 'shadow-glow-neon ring-2 ring-neon-600 ring-inset dark:ring-neon-400'
 							: ''}"
 					>
-						<span
-							class="w-6 shrink-0 text-right text-sm text-surface-400 tabular-nums dark:text-surface-500"
+						<span class="w-6 shrink-0 text-right text-sm text-surface-400 dark:text-surface-500"
 							>{songNumbers.get(listItem.key)}</span
 						>
 						<span
@@ -451,8 +433,8 @@
 								<circle cx="18" cy="16" r="3" />
 							</svg>
 						{/if}
-						<span class="shrink-0 text-sm text-surface-500 tabular-nums dark:text-surface-300">
-							{formatDuration(listItem.durationSeconds)}
+						<span class="shrink-0 text-sm text-surface-500 dark:text-surface-300">
+							<Digits value={formatDuration(listItem.durationSeconds)} />
 						</span>
 					</li>
 				{:else if listItem.kind === 'gap'}
@@ -470,14 +452,14 @@
 						>
 							{listItem.label ?? 'Break'}
 						</span>
-						<span class="shrink-0 text-xs text-surface-500 tabular-nums dark:text-surface-300">
-							{formatDuration(listItem.seconds)}
+						<span class="shrink-0 text-xs text-surface-500 dark:text-surface-300">
+							<Digits value={formatDuration(listItem.seconds)} />
 						</span>
 					</li>
 				{:else}
 					<li
 						data-key={listItem.key}
-						class="px-4 py-1 text-center text-[10px] tracking-wider text-surface-400 uppercase dark:text-surface-500 {isCurrent &&
+						class="px-4 py-1 text-center text-label tracking-wider text-surface-400 uppercase dark:text-surface-500 {isCurrent &&
 						isLive
 							? 'shadow-glow-neon ring-2 ring-neon-600 ring-inset dark:ring-neon-400'
 							: ''}"
@@ -493,7 +475,7 @@
 	     phones in dark rooms -->
 	{#if rehearse.status !== 'idle' && rehearse.status !== 'finished' && rehearse.items.length > 0}
 		<div
-			class="sticky bottom-0 z-10 -mx-4 mt-auto border-t border-surface-200 bg-surface-50/95 pt-0 backdrop-blur md:-mx-8 dark:border-surface-700 dark:bg-surface-900/95"
+			class="sticky bottom-0 z-10 -mx-4 mt-auto border-t border-surface-200 bg-surface-50 pt-0 md:-mx-8 dark:border-surface-700 dark:bg-surface-900"
 		>
 			<div class="flex items-center justify-center gap-6 px-4 py-3">
 				<button
@@ -514,7 +496,7 @@
 						onclick={() => rehearse.next()}
 						class="focus-live flex h-12 items-center justify-center rounded-full bg-accent-500 px-6 font-semibold text-white shadow-sm hover:bg-accent-600"
 					>
-						Done — next
+						Done, next
 					</button>
 				{:else}
 					<button

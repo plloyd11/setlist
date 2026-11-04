@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { memberName } from '#lib/utils/memberName.js';
 	import { enhance } from '$app/forms';
 
 	interface MemberData {
@@ -44,29 +45,29 @@
 </script>
 
 <div
-	class="flex items-center justify-between rounded-lg border border-surface-200 bg-surface-50 px-4 py-3 dark:border-surface-700 dark:bg-surface-800"
+	class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-lg border border-surface-200 bg-surface-50 px-4 py-3 dark:border-surface-700 dark:bg-surface-800"
 >
-	<div class="flex items-center gap-3">
+	<div class="flex min-w-0 flex-1 basis-56 items-center gap-3">
 		<!-- Avatar -->
 		{#if member.logo_url}
 			<img
 				src={member.logo_url}
 				alt={member.display_name ?? 'Member'}
 				loading="lazy"
-				class="h-9 w-9 rounded-full object-cover"
+				class="h-9 w-9 shrink-0 rounded-full object-cover"
 			/>
 		{:else}
 			<div
-				class="flex h-9 w-9 items-center justify-center rounded-full bg-surface-200 text-sm font-medium text-surface-600 dark:bg-surface-700 dark:text-surface-300"
+				class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-200 text-sm font-medium text-surface-600 dark:bg-surface-700 dark:text-surface-300"
 			>
 				{initial}
 			</div>
 		{/if}
 
-		<div>
-			<div class="flex items-center gap-2">
-				<span class="font-medium text-surface-900 dark:text-surface-100">
-					{member.display_name ?? 'Unknown'}
+		<div class="min-w-0">
+			<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+				<span class="min-w-0 truncate font-medium text-surface-900 dark:text-surface-100">
+					{memberName(member)}
 				</span>
 				{#if isMemberOwner}
 					<span
@@ -83,6 +84,14 @@
 				{/if}
 				{#if isCurrentUser}
 					<span class="text-xs text-surface-500 dark:text-surface-300">(you)</span>
+					{#if !member.display_name}
+						<a
+							href="/settings"
+							class="hit-44 focus-live rounded text-xs font-medium text-accent-600 hover:underline dark:text-accent-300"
+						>
+							Add your name
+						</a>
+					{/if}
 				{/if}
 			</div>
 			<p class="text-xs text-surface-500 dark:text-surface-300">
@@ -92,7 +101,7 @@
 	</div>
 
 	<!-- Actions -->
-	<div class="flex items-center gap-2">
+	<div class="ml-auto flex items-center gap-2 empty:hidden">
 		{#if isOwner && !isMemberOwner && !isCurrentUser}
 			<!-- Owner can remove non-owner members -->
 			{#if confirmingRemove}
@@ -110,14 +119,14 @@
 					<div class="flex items-center gap-1">
 						<button
 							type="submit"
-							class="rounded-md bg-danger-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-danger-600"
+							class="min-h-11 rounded-md bg-danger-500 px-3 py-1 text-xs font-medium text-white hover:bg-danger-600 md:min-h-0"
 						>
 							Confirm
 						</button>
 						<button
 							type="button"
 							onclick={() => (confirmingRemove = false)}
-							class="rounded-md bg-surface-200 px-2.5 py-1 text-xs font-medium text-surface-700 hover:bg-surface-300 dark:bg-surface-700 dark:text-surface-300 dark:hover:bg-surface-600"
+							class="min-h-11 rounded-md bg-surface-200 px-3 py-1 text-xs font-medium text-surface-700 hover:bg-surface-300 md:min-h-0 dark:bg-surface-700 dark:text-surface-300 dark:hover:bg-surface-600"
 						>
 							Cancel
 						</button>
@@ -138,14 +147,14 @@
 					<div class="flex items-center gap-1">
 						<button
 							type="submit"
-							class="rounded-md bg-accent-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-accent-600"
+							class="min-h-11 rounded-md bg-accent-500 px-3 py-1 text-xs font-medium text-white hover:bg-accent-600 md:min-h-0"
 						>
-							Confirm Transfer
+							Confirm transfer
 						</button>
 						<button
 							type="button"
 							onclick={() => (confirmingTransfer = false)}
-							class="rounded-md bg-surface-200 px-2.5 py-1 text-xs font-medium text-surface-700 hover:bg-surface-300 dark:bg-surface-700 dark:text-surface-300 dark:hover:bg-surface-600"
+							class="min-h-11 rounded-md bg-surface-200 px-3 py-1 text-xs font-medium text-surface-700 hover:bg-surface-300 md:min-h-0 dark:bg-surface-700 dark:text-surface-300 dark:hover:bg-surface-600"
 						>
 							Cancel
 						</button>
@@ -155,14 +164,14 @@
 				<button
 					type="button"
 					onclick={() => (confirmingTransfer = true)}
-					class="rounded-md border border-surface-300 px-2.5 py-1 text-xs font-medium text-surface-600 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-700"
+					class="min-h-11 rounded-md border border-surface-300 px-3 py-1 text-xs font-medium text-surface-600 hover:bg-surface-100 md:min-h-0 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-700"
 				>
-					Transfer Ownership
+					Transfer ownership
 				</button>
 				<button
 					type="button"
 					onclick={() => (confirmingRemove = true)}
-					class="rounded-md border border-danger-300 px-2.5 py-1 text-xs font-medium text-danger-600 hover:bg-danger-50 dark:border-danger-700 dark:text-danger-400 dark:hover:bg-danger-900/20"
+					class="min-h-11 rounded-md border border-danger-300 px-3 py-1 text-xs font-medium text-danger-600 hover:bg-danger-50 md:min-h-0 dark:border-danger-700 dark:text-danger-300 dark:hover:bg-danger-900/20"
 				>
 					Remove
 				</button>
@@ -174,9 +183,9 @@
 			<form method="POST" action="/bands/{bandId}/members?/leaveBand" use:enhance>
 				<button
 					type="submit"
-					class="rounded-md border border-surface-300 px-2.5 py-1 text-xs font-medium text-surface-600 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-700"
+					class="min-h-11 rounded-md border border-surface-300 px-3 py-1 text-xs font-medium text-surface-600 hover:bg-surface-100 md:min-h-0 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-700"
 				>
-					Leave Band
+					Leave band
 				</button>
 			</form>
 		{/if}

@@ -51,7 +51,7 @@
 		<a
 			href={item.href}
 			aria-current={isActive(page.url.pathname, item.href) ? 'page' : undefined}
-			class="focus-live flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] transition-colors
+			class="focus-live flex flex-1 flex-col items-center gap-0.5 py-2 text-label tracking-normal transition-colors
 				{isActive(page.url.pathname, item.href)
 				? 'font-bold text-surface-950 dark:text-surface-50'
 				: 'font-medium text-surface-500 dark:text-surface-300'}"

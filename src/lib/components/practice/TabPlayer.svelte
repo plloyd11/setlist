@@ -273,10 +273,7 @@
 					</svg>
 				{/if}
 			</button>
-			<span
-				data-testid="tab-time"
-				class="text-sm text-surface-600 tabular-nums dark:text-surface-300"
-			>
+			<span data-testid="tab-time" class="text-sm text-surface-600 dark:text-surface-300">
 				{formatDuration(Math.floor(currentMs / 1000))} / {formatDuration(Math.floor(endMs / 1000))}
 			</span>
 

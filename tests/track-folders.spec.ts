@@ -71,7 +71,7 @@ test.describe('Track folders (TRACK-05)', () => {
 
 			// Rename to a sibling's name is rejected inline; a fresh name works
 			await page.getByLabel('Folder options for Live takes').click();
-			await page.getByRole('button', { name: 'Rename' }).click();
+			await page.getByRole('menuitem', { name: 'Rename' }).click();
 			await page.getByPlaceholder('Folder name...').fill('Voice memos');
 			await page.getByRole('button', { name: 'Rename' }).click();
 			await expect(page.getByText('A folder with that name already exists here')).toBeVisible();
@@ -124,7 +124,7 @@ test.describe('Track folders (TRACK-05)', () => {
 			await page.goto(`/bands/${band.id}/demos`);
 			const card = page.getByRole('link', { name: new RegExp(track.title) });
 			await card.click({ button: 'right' });
-			await page.getByRole('button', { name: 'Move to…' }).click();
+			await page.getByRole('menuitem', { name: 'Move to…' }).click();
 			await page.locator('dialog').getByRole('button', { name: 'Voice memos' }).click();
 			await expect(card).not.toBeVisible();
 			await expect(page.getByText('1 demo', { exact: true })).toBeVisible();
@@ -133,7 +133,7 @@ test.describe('Track folders (TRACK-05)', () => {
 			await page.goto(`/bands/${band.id}/demos?folder=${folder.id}`);
 			await expect(card).toBeVisible();
 			await card.click({ button: 'right' });
-			await page.getByRole('button', { name: 'Move to…' }).click();
+			await page.getByRole('menuitem', { name: 'Move to…' }).click();
 			await page.locator('dialog').getByRole('button', { name: 'Demos (top level)' }).click();
 			await expect(card).not.toBeVisible();
 
@@ -165,7 +165,7 @@ test.describe('Track folders (TRACK-05)', () => {
 			// The Move-to dialog disables the folder's own subtree
 			await page.goto(`/bands/${band.id}/demos`);
 			await page.getByLabel('Folder options for Outer').click();
-			await page.getByRole('button', { name: 'Move to…' }).click();
+			await page.getByRole('menuitem', { name: 'Move to…' }).click();
 			await expect(page.locator('dialog').getByRole('button', { name: 'Inner' })).toBeDisabled();
 			await expect(page.locator('dialog').getByRole('button', { name: 'Outer' })).toBeDisabled();
 			await page.locator('dialog').getByRole('button', { name: 'Cancel' }).click();
@@ -186,7 +186,7 @@ test.describe('Track folders (TRACK-05)', () => {
 
 			// Deleting Outer reparents Inner (and its track) to the root
 			await page.getByLabel('Folder options for Outer').click();
-			await page.getByRole('button', { name: 'Delete' }).click();
+			await page.getByRole('menuitem', { name: 'Delete' }).click();
 			await page.locator('dialog:has-text("Delete \\"Outer\\"?")').waitFor();
 			await page.locator('dialog').getByRole('button', { name: 'Delete' }).click();
 			await expect(page.getByRole('link', { name: /Outer/ })).not.toBeVisible();

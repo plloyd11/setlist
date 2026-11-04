@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
 import type { Setlist } from '#lib/types/database.js';
+import { summarizeSetlistRows } from '#lib/utils/setlistTiming.js';
 
 // gig_date is a date-only string; parse as local midnight so countdown
 // math doesn't drift across timezones (same rule as the dashboard board)
@@ -81,39 +82,23 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 	];
 
 	// One query covers song counts + durations for every displayed setlist
-	const ids = [hero, ...recent].filter((s): s is Setlist => !!s).map((s) => s.id);
+	const shown = [hero, ...recent].filter((s): s is Setlist => !!s);
+	const ids = shown.map((s) => s.id);
 	const [setlistSongsRes, profilesRes] = await Promise.all([
 		ids.length > 0
 			? supabase
 					.from('setlist_songs')
 					.select('setlist_id, gap_seconds, songs(duration_seconds)')
 					.in('setlist_id', ids)
+					.order('position')
 			: Promise.resolve({ data: [] }),
 		uploaderIds.length > 0
 			? supabase.from('profiles').select('id, display_name, logo_url').in('id', uploaderIds)
 			: Promise.resolve({ data: [] })
 	]);
 
-	const totals = new Map<string, { count: number; seconds: number }>();
-	for (const row of setlistSongsRes.data ?? []) {
-		const t = totals.get(row.setlist_id) ?? { count: 0, seconds: 0 };
-		const song = row.songs as unknown as { duration_seconds: number } | null;
-		if (song) {
-			// Gap rows have no song: they add time but don't count as songs
-			t.count += 1;
-			t.seconds += song.duration_seconds;
-		} else if (row.gap_seconds) {
-			t.seconds += row.gap_seconds;
-		}
-		totals.set(row.setlist_id, t);
-	}
-
-	// Same arithmetic as the TimingBar: song time + inter-song transitions
-	const withTotals = (s: Setlist) => {
-		const t = totals.get(s.id) ?? { count: 0, seconds: 0 };
-		const transitions = t.count > 1 ? (t.count - 1) * s.transition_seconds : 0;
-		return { ...s, songCount: t.count, totalSeconds: t.seconds + transitions };
-	};
+	const stats = summarizeSetlistRows(setlistSongsRes.data ?? [], shown);
+	const withTotals = (s: Setlist) => ({ ...s, ...stats[s.id] });
 
 	const profileMap = new Map((profilesRes.data ?? []).map((p) => [p.id, p]));
 	const tracks: BandTrack[] = trackRows.map((t) => ({

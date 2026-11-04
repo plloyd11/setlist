@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
+import { summarizeSetlistRows, type SetlistStats } from '#lib/utils/setlistTiming.js';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase, safeGetSession } }) => {
 	const { session } = await safeGetSession();
@@ -17,7 +18,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 	const setlistList = setlists ?? [];
 
 	// Build stats map: setlist_id -> { songCount, totalSeconds }
-	const stats: Record<string, { songCount: number; totalSeconds: number }> = {};
+	let stats: Record<string, SetlistStats> = {};
 
 	if (setlistList.length > 0) {
 		const setlistIds = setlistList.map((s) => s.id);
@@ -26,23 +27,10 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 		const { data: setlistSongs } = await supabase
 			.from('setlist_songs')
 			.select('setlist_id, gap_seconds, songs(duration_seconds)')
-			.in('setlist_id', setlistIds);
+			.in('setlist_id', setlistIds)
+			.order('position');
 
-		if (setlistSongs) {
-			for (const row of setlistSongs) {
-				const sid = row.setlist_id;
-				if (!stats[sid]) {
-					stats[sid] = { songCount: 0, totalSeconds: 0 };
-				}
-				const song = row.songs as unknown as { duration_seconds: number } | null;
-				if (song) {
-					stats[sid].songCount += 1;
-					stats[sid].totalSeconds += song.duration_seconds;
-				} else if (row.gap_seconds) {
-					stats[sid].totalSeconds += row.gap_seconds;
-				}
-			}
-		}
+		stats = summarizeSetlistRows(setlistSongs ?? [], setlistList);
 	}
 
 	return { setlists: setlistList, stats };

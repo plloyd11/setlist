@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 			.order('title'),
 		supabase.from('setlists').select('id, name').order('created_at', { ascending: false }),
 		supabase.from('setlist_songs').select('setlist_id, song_id').not('song_id', 'is', null),
-		supabase.from('song_practice').select('song_id, status'),
+		supabase.from('song_practice').select('song_id, status, note'),
 		// RLS returns the demos of every band you're in, most recently changed first.
 		// waveform_peaks stays out: the list never draws a waveform.
 		supabase
@@ -39,6 +39,9 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 	}
 
 	const statusBySong = new Map((statuses ?? []).map((row) => [row.song_id, row.status as string]));
+	const noteBySong = new Map(
+		(statuses ?? []).map((row) => [row.song_id, row.note as string | null])
+	);
 	// What you're working on comes first; the query already sorted by title within each
 	const rank = (status: string | undefined) =>
 		status === 'needs_work' ? 0 : status === 'learning' ? 1 : 2;
@@ -53,7 +56,8 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 				hasAudio: (s.song_audio[0]?.count ?? 0) > 0,
 				hasChart: (s.song_files[0]?.count ?? 0) > 0,
 				setlistIds: setlistIdsBySong[s.id] ?? [],
-				status: statusBySong.get(s.id) ?? null
+				status: statusBySong.get(s.id) ?? null,
+				note: noteBySong.get(s.id) ?? null
 			})),
 		demos: (tracks ?? []).flatMap((track) => {
 			const latest = [...track.track_versions].sort(

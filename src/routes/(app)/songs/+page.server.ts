@@ -1,4 +1,4 @@
-import { fail } from '@sveltejs/kit';
+import { error as httpError, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import type { Song, SongAudio, SongFile } from '#lib/types/database.js';
 import { parseDuration } from '#lib/utils/duration.js';
@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 	}
 
 	// Embed audio variants and charts; peaks excluded to keep the list payload small
-	const { data: songs } = await supabase
+	const { data: songs, error: loadError } = await supabase
 		.from('songs')
 		.select(
 			'*, song_audio(id, song_id, label, storage_path, file_name, mime_type, file_size_bytes, duration_seconds, created_at), song_files(*)'
@@ -26,6 +26,9 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		.order('title', { ascending: true })
 		.order('created_at', { referencedTable: 'song_audio', ascending: true })
 		.order('created_at', { referencedTable: 'song_files', ascending: true });
+
+	// Don't let a failed query read as "No songs yet"
+	if (loadError) httpError(500, 'Could not load your songs');
 
 	return { songs: (songs ?? []) as SongWithAudio[] };
 };

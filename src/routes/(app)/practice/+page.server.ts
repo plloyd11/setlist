@@ -20,7 +20,8 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		{ data: routine },
 		{ data: skills },
 		{ data: statuses },
-		{ data: recentSkillWork }
+		{ data: recentSkillWork },
+		{ data: recentSessions }
 	] = await Promise.all([
 		supabase
 			.from('setlists')
@@ -44,7 +45,12 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 			.select('skill_id, created_at')
 			.not('skill_id', 'is', null)
 			.order('created_at', { ascending: false })
-			.limit(200)
+			.limit(200),
+		// Eight days covers this week in any time zone; the page works out which days count
+		supabase
+			.from('practice_sessions')
+			.select('started_at, practice_session_items(practice_seconds)')
+			.gte('started_at', new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString())
 	]);
 	if (gigError) throw error(500, 'Could not load your session. Please try again.');
 
@@ -124,6 +130,10 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 				hasChart: (song.song_files[0]?.count ?? 0) > 0
 			}))
 		},
+		week: (recentSessions ?? []).map((session) => ({
+			startedAt: session.started_at,
+			seconds: session.practice_session_items.reduce((sum, item) => sum + item.practice_seconds, 0)
+		})),
 		gig: gig
 			? {
 					id: gig.id,

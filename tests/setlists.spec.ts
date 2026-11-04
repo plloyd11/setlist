@@ -14,7 +14,7 @@ test.describe('Setlist - Create (SETL-01)', () => {
 		// Server action redirects to /setlists/[id]
 		await expect(page).toHaveURL(/\/setlists\/.+/);
 		// Verify name displayed on detail page
-		await expect(page.getByText('Friday Night Gig')).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Friday Night Gig' })).toBeVisible();
 
 		// Cleanup: extract setlist ID from URL and delete
 		const setlistId = page.url().split('/setlists/')[1];

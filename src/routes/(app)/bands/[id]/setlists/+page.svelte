@@ -40,7 +40,7 @@
 
 	async function handleDelete(id: string, name: string) {
 		const confirmed = await confirmDialog.confirm(
-			'Delete Setlist',
+			'Delete setlist',
 			`Are you sure you want to delete "${name}"? This cannot be undone.`
 		);
 		if (confirmed) {
@@ -61,7 +61,11 @@
 	}
 </script>
 
-<div class="p-6 md:p-8">
+<svelte:head>
+	<title>Setlists · {data.band.name}</title>
+</svelte:head>
+
+<div class="page-frame">
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div class="flex items-baseline gap-3">
@@ -72,7 +76,7 @@
 		</div>
 		<button
 			onclick={toggleCreate}
-			class="flex items-center justify-center rounded-lg bg-accent-500 p-2 text-white shadow-sm hover:bg-accent-600"
+			class="flex items-center justify-center rounded-lg bg-accent-500 p-2 text-white shadow-sm hover:bg-accent-600 pointer-coarse:h-11 pointer-coarse:w-11"
 			aria-label="New setlist"
 		>
 			<svg

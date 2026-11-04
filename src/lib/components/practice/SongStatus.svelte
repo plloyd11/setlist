@@ -7,10 +7,10 @@
 		note: initialNote
 	}: { status: SongPracticeStatus | null; note: string | null } = $props();
 
-	const OPTIONS: { value: SongPracticeStatus; label: string }[] = [
-		{ value: 'learning', label: 'Learning' },
-		{ value: 'needs_work', label: 'Needs work' },
-		{ value: 'solid', label: 'Solid' }
+	const OPTIONS: { value: SongPracticeStatus; label: string; on: string }[] = [
+		{ value: 'learning', label: 'Learning', on: 'border-accent-500 bg-accent-500' },
+		{ value: 'needs_work', label: 'Needs work', on: 'border-danger-500 bg-danger-500' },
+		{ value: 'solid', label: 'Solid', on: 'border-success-500 bg-success-500' }
 	];
 
 	// svelte-ignore state_referenced_locally
@@ -43,20 +43,16 @@
 </script>
 
 <section aria-label="Song status">
-	<p
-		class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-	>
-		Where it's at
-	</p>
-	<div class="mt-1 flex gap-1">
+	<p class="text-label text-surface-500 uppercase dark:text-surface-300">Where it's at</p>
+	<div class="mt-1 flex">
 		{#each OPTIONS as option (option.value)}
 			<button
 				type="button"
 				aria-pressed={status === option.value}
 				onclick={() => save(status === option.value ? null : option.value)}
-				class="focus-live min-h-11 flex-1 rounded-lg border px-2 text-sm font-medium {status ===
+				class="focus-live relative -ml-px min-h-11 flex-1 border px-2 text-sm font-medium transition-colors duration-150 first:ml-0 first:rounded-l-lg last:rounded-r-lg focus-visible:z-10 {status ===
 				option.value
-					? 'border-accent-500 bg-accent-500 text-white'
+					? `z-[1] text-white ${option.on}`
 					: 'border-surface-300 text-surface-700 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-800'}"
 			>
 				{option.label}
@@ -77,7 +73,7 @@
 		</label>
 	{/if}
 	{#if saveFailed}
-		<p role="alert" class="mt-1 text-sm text-danger-600 dark:text-danger-400">
+		<p role="alert" class="mt-1 text-sm text-danger-600 dark:text-danger-300">
 			Couldn't save that. Try again.
 		</p>
 	{/if}

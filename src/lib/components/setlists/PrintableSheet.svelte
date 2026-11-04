@@ -57,7 +57,7 @@
 		const parts: string[] = [];
 		if (venue) parts.push(venue);
 		if (dateDisplay) parts.push(dateDisplay);
-		return parts.join(' — ');
+		return parts.join(' · ');
 	});
 
 	let fonts = $derived(PRINT_FONT_FAMILIES[settings.font_family]);
@@ -89,7 +89,7 @@
 			{/if}
 
 			{#if settings.show_title}
-				<h1 class="sheet-title text-black">
+				<h1 class="sheet-title font-normal text-black">
 					{name}
 				</h1>
 			{/if}
@@ -115,8 +115,8 @@
 						{#if settings.show_numbers && settings.text_align === 'left'}
 							<span class="w-8"></span>
 						{/if}
-						<span class="sheet-gap-text font-medium tracking-wider text-gray-400 uppercase">
-							{entry.gap_label || 'Gap'} — {formatDuration(entry.gap_seconds)}
+						<span class="sheet-gap-text font-medium tracking-wider text-gray-500 uppercase">
+							{entry.gap_label || 'Gap'} · {formatDuration(entry.gap_seconds)}
 						</span>
 					</li>
 				{:else}
@@ -129,18 +129,25 @@
 							<!-- Left-aligned sheets keep a fixed number column so titles line
 							     up; centered sheets let the number sit inline with the title -->
 							<span
-								class="font-medium text-gray-400 {settings.text_align === 'left'
+								class="font-medium text-gray-500 {settings.text_align === 'left'
 									? 'w-8 text-right'
 									: ''}"
 							>
 								{entry.number}
 							</span>
 						{/if}
-						<span class="text-black">
+						<span
+							class="sheet-song text-black {settings.text_align === 'center' ? 'text-center' : ''}"
+						>
 							{entry.title}
 						</span>
 						{#if settings.show_notes && entry.notes}
-							<span class="sheet-small min-w-0 truncate text-gray-500">
+							<span
+								class="sheet-small sheet-note min-w-0 truncate text-gray-500 {settings.show_numbers &&
+								settings.text_align === 'left'
+									? 'sheet-note-indent'
+									: ''}"
+							>
 								{entry.notes}
 							</span>
 						{/if}
@@ -149,7 +156,7 @@
 			{/each}
 		</ol>
 	{:else}
-		<p class="sheet-small py-8 text-center text-gray-400">No songs in this setlist</p>
+		<p class="sheet-small py-8 text-center text-gray-500">No songs in this setlist</p>
 	{/if}
 </div>
 
@@ -175,6 +182,25 @@
 	}
 	.sheet-row {
 		padding-block: var(--sheet-gap);
+	}
+	/* A phone can't fit a title and its note side by side: the note would truncate
+	   and squeeze the title. Screen only, so the printed sheet keeps its layout. */
+	@media screen and (max-width: 639px) {
+		.sheet-row {
+			flex-wrap: wrap;
+			row-gap: 0;
+		}
+		/* Clamped so a long title wraps within its line instead of leaving the number behind */
+		.sheet-song {
+			max-width: calc(100% - 3em);
+		}
+		.sheet-note {
+			flex-basis: 100%;
+			white-space: normal;
+		}
+		.sheet-note-indent {
+			padding-left: calc(2rem + 0.75rem);
+		}
 	}
 	.sheet-logo {
 		max-height: var(--sheet-logo-h);

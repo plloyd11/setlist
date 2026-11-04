@@ -65,7 +65,7 @@
 					{#if entry.crumb.href}
 						<a
 							href={entry.crumb.href}
-							class="focus-live block max-w-40 truncate px-1 py-0.5 text-surface-500 hover:text-accent-600 dark:text-surface-300 dark:hover:text-accent-400"
+							class="focus-live block max-w-40 truncate px-1 py-0.5 text-surface-500 hover:text-accent-600 dark:text-surface-300 dark:hover:text-accent-400 pointer-coarse:-my-2.5 pointer-coarse:py-3"
 						>
 							{entry.crumb.label}
 						</a>

@@ -112,7 +112,7 @@
 				</svg>
 				Loop
 				{#if loop}
-					<span class="text-xs tabular-nums opacity-80">{rangeLabel(loop)}</span>
+					<span class="text-xs opacity-80">{rangeLabel(loop)}</span>
 				{/if}
 			</button>
 			<button
@@ -141,11 +141,7 @@
 
 	<!-- Saved sections -->
 	<div class="mt-3 border-t border-surface-200 pt-3 dark:border-surface-700">
-		<p
-			class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-		>
-			Sections
-		</p>
+		<p class="text-label text-surface-500 uppercase dark:text-surface-300">Sections</p>
 		<div class="mt-2 flex flex-wrap items-center gap-2">
 			{#each sections as section (section.id)}
 				<span

@@ -95,7 +95,7 @@
 
 <svelte:head>
 	<!-- The document title doubles as the suggested print-to-PDF filename -->
-	<title>{data.setlist.name} — Print</title>
+	<title>{data.setlist.name} · Print</title>
 </svelte:head>
 
 <div class="print-editor md:grid md:h-full md:grid-cols-[280px_1fr]">
@@ -116,11 +116,7 @@
 		<div class="mt-4 space-y-6">
 			<!-- Font family -->
 			<div>
-				<p
-					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-				>
-					Font
-				</p>
+				<p class="text-sm font-medium text-surface-700 dark:text-surface-300">Font</p>
 
 				<div class="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Font family">
 					{#each fontOptions as [value, font] (value)}
@@ -145,7 +141,7 @@
 				<div class="flex items-baseline justify-between">
 					<label
 						for="print-font-size"
-						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
+						class="text-sm font-medium text-surface-700 dark:text-surface-300"
 					>
 						Size
 					</label>
@@ -170,8 +166,7 @@
 				<div class="flex items-baseline justify-between">
 					<label
 						for="print-line-spacing"
-						class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-						>Spacing</label
+						class="text-sm font-medium text-surface-700 dark:text-surface-300">Spacing</label
 					>
 
 					<span class="text-sm font-medium text-surface-700 dark:text-surface-300"
@@ -192,11 +187,7 @@
 
 			<!-- Alignment -->
 			<div>
-				<p
-					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-				>
-					Align
-				</p>
+				<p class="text-sm font-medium text-surface-700 dark:text-surface-300">Align</p>
 
 				<div class="mt-2 flex gap-2" role="radiogroup" aria-label="Text alignment">
 					{#each alignOptions as opt (opt.value)}
@@ -217,11 +208,7 @@
 
 			<!-- Content toggles -->
 			<div>
-				<p
-					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-				>
-					Show
-				</p>
+				<p class="text-sm font-medium text-surface-700 dark:text-surface-300">Show</p>
 				<div class="mt-1">
 					<label
 						class="flex min-h-11 items-center gap-3 text-sm text-surface-700 dark:text-surface-300"
@@ -294,11 +281,7 @@
 
 			<!-- Logo size -->
 			<div>
-				<p
-					class="text-[10px] font-medium tracking-wider text-surface-500 uppercase dark:text-surface-300"
-				>
-					Logo size
-				</p>
+				<p class="text-sm font-medium text-surface-700 dark:text-surface-300">Logo size</p>
 
 				<div class="mt-2 flex gap-2" role="radiogroup" aria-label="Logo size">
 					{#each logoSizes as opt (opt.value)}
@@ -339,7 +322,14 @@
 	</div>
 
 	<!-- Paper preview: a true-scale US-letter page, shrunk to fit on screen -->
-	<div class="print-preview bg-surface-100 p-4 md:overflow-y-auto md:p-8 dark:bg-surface-900">
+	<!-- Scrolls on its own, so keyboard users need to be able to reach it -->
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+	<div
+		class="print-preview bg-surface-100 p-4 md:overflow-y-auto md:p-8 dark:bg-surface-900"
+		role="region"
+		aria-label="Print preview"
+		tabindex="0"
+	>
 		<div bind:clientWidth={previewWidth}>
 			<div class="paper mx-auto bg-white shadow-lg" style="zoom: {previewZoom}">
 				<PrintableSheet

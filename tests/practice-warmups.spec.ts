@@ -346,6 +346,10 @@ test.describe("Today's session", () => {
 			await expect(steps).toHaveCount(3);
 			await expect(today).not.toContainText('Warm two');
 			expect(await total()).toBe(15);
+			// The strip above the steps shows the same session
+			const strip = today.getByRole('img', { name: /How the session splits/ });
+			await expect(strip).toHaveAttribute('aria-label', /Warm one 3m/);
+			await expect(strip).not.toHaveAttribute('aria-label', /Warm two/);
 
 			// A long session spreads across more songs and techniques
 			await length(90).click();

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { memberName } from '#lib/utils/memberName.js';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { goto, refreshAll } from '$app/navigation';
@@ -127,7 +128,7 @@
 
 	async function handleDeleteComment(comment: EnrichedComment) {
 		const confirmed = await confirmDialog.confirm(
-			'Delete Comment',
+			'Delete comment',
 			'Are you sure you want to delete this comment? Replies will be deleted too.'
 		);
 		if (confirmed) {
@@ -138,7 +139,7 @@
 
 	async function handleDeleteTrack() {
 		const confirmed = await confirmDialog.confirm(
-			'Delete Demo',
+			'Delete demo',
 			`Are you sure you want to delete "${data.track.title}"? All versions and comments will be deleted. This cannot be undone.`
 		);
 		if (confirmed) {
@@ -155,7 +156,7 @@
 	function handlePlayerError() {
 		if (retriedVersionId !== data.selectedVersion.id) {
 			retriedVersionId = data.selectedVersion.id;
-			toast.show('Playback session expired — reloading', { variant: 'error' });
+			toast.show('Playback session expired. Reloading.', { variant: 'error' });
 			wantFreshUrl = true;
 			refreshAll();
 		} else {
@@ -166,15 +167,19 @@
 	let audioFailed = $derived(failedVersionId === data.selectedVersion.id);
 </script>
 
+<svelte:head>
+	<title>{data.track.title} · {data.band.name}</title>
+</svelte:head>
+
 <svelte:window onkeydown={handlePageKeydown} />
 
-<div class="p-6 md:p-8">
+<div class="page-frame">
 	<!-- Header -->
 	<div class="flex flex-wrap items-start justify-between gap-3">
 		<div class="min-w-0">
 			<a
 				href="/bands/{bandId}/demos"
-				class="text-sm text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-200"
+				class="hit-44 focus-live rounded text-sm text-surface-500 hover:text-surface-700 dark:text-surface-300 dark:hover:text-surface-200"
 			>
 				&larr; Demos
 			</a>
@@ -187,7 +192,7 @@
 			<p class="mt-1 text-xs text-surface-500 dark:text-surface-300">
 				v{data.selectedVersion.version_number}
 				&middot; {data.selectedVersion.file_name}
-				&middot; uploaded by {uploaderProfile?.display_name ?? 'Former member'}
+				&middot; uploaded by {memberName(uploaderProfile)}
 				&middot; {uploadedLabel}
 			</p>
 		</div>
@@ -206,7 +211,7 @@
 				<button
 					onclick={handleDeleteTrack}
 					aria-label="Delete demo"
-					class="rounded-lg border border-surface-300 px-3 py-1.5 text-sm font-medium text-danger-600 hover:bg-danger-50 dark:border-surface-600 dark:text-danger-400 dark:hover:bg-danger-900/20"
+					class="rounded-lg border border-surface-300 px-3 py-1.5 text-sm font-medium text-danger-600 hover:bg-danger-50 dark:border-surface-600 dark:text-danger-300 dark:hover:bg-danger-900/20"
 				>
 					Delete
 				</button>

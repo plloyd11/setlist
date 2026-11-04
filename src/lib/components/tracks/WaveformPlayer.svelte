@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Digits from '#lib/components/ui/Digits.svelte';
 	import type WaveSurfer from 'wavesurfer.js';
 	import type RegionsPlugin from 'wavesurfer.js/plugins/regions';
 	import type { Region } from 'wavesurfer.js/plugins/regions';
@@ -382,7 +383,7 @@
 					class="focus-live group absolute -bottom-5 z-10 flex h-11 w-11 -translate-x-1/2 items-center justify-center
 						{marker.resolved ? 'opacity-40' : ''}"
 					style="left: {Math.min((marker.time / totalDuration) * 100, 100)}%"
-					title="{formatDuration(Math.round(marker.time))} — {marker.label}"
+					title="{formatDuration(Math.round(marker.time))}: {marker.label}"
 					aria-label="Comment at {formatDuration(Math.round(marker.time))}: {marker.label}"
 					onclick={() => {
 						seekTo(marker.time);
@@ -484,10 +485,10 @@
 				</svg>
 			</button>
 		{/if}
-		<span class="text-sm text-surface-600 tabular-nums dark:text-surface-300">
-			{formatDuration(Math.round(currentTime))}
+		<span class="text-sm text-surface-600 dark:text-surface-300">
+			<Digits value={formatDuration(Math.round(currentTime))} />
 			<span class="text-surface-400 dark:text-surface-300">/</span>
-			{formatDuration(Math.round(totalDuration))}
+			<Digits value={formatDuration(Math.round(totalDuration))} />
 		</span>
 	</div>
 </div>

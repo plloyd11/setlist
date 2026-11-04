@@ -4,6 +4,10 @@
 	let { data, form } = $props();
 </script>
 
+<svelte:head>
+	<title>Band invite · Setlist</title>
+</svelte:head>
+
 <div class="flex min-h-[60vh] items-center justify-center p-6">
 	<div class="w-full max-w-sm text-center">
 		<!-- Band logo -->
@@ -60,7 +64,7 @@
 
 			{#if form?.error}
 				<div
-					class="mt-4 rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-800 dark:bg-danger-900/20 dark:text-danger-400"
+					class="mt-4 rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700 dark:border-danger-800 dark:bg-danger-900/20 dark:text-danger-300"
 				>
 					{form.error}
 				</div>
