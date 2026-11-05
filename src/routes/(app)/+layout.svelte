@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Sidebar from '#lib/components/layout/Sidebar.svelte';
 	import BottomNav from '#lib/components/layout/BottomNav.svelte';
+	import RigIndicator from '#lib/components/practice/RigIndicator.svelte';
 	import { page } from '$app/state';
 
 	let { data, children } = $props();
@@ -39,4 +40,5 @@
 	{#if !immersive}
 		<BottomNav />
 	{/if}
+	<RigIndicator />
 </div>

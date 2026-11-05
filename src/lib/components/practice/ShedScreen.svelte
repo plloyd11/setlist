@@ -6,13 +6,15 @@
 	import ChartList from '#lib/components/songs/ChartList.svelte';
 	import Metronome from '#lib/components/practice/Metronome.svelte';
 	import PlanBar from '#lib/components/practice/PlanBar.svelte';
+	import RigPanel from '#lib/components/practice/RigPanel.svelte';
 	import { PracticeTracker, type PracticeItemRef } from './practiceTracker.svelte.js';
+	import { rig } from '#lib/utils/rig.svelte.js';
 	import { formatDuration } from '#lib/utils/duration.js';
 	import { formatPracticeTime } from '#lib/utils/practiceTime.js';
 	import { practiceShortcut } from '#lib/utils/practiceKeys.js';
 	import { createWakeLock } from '#lib/utils/wakeLock.js';
 
-	type Pane = 'chart' | 'controls' | 'metronome' | 'notes' | 'more';
+	type Pane = 'chart' | 'controls' | 'metronome' | 'rig' | 'notes' | 'more';
 
 	let {
 		item,
@@ -63,6 +65,7 @@
 		...(charts.length > 0 ? [{ value: 'chart' as const, label: 'Chart' }] : []),
 		...(hasAudio ? [{ value: 'controls' as const, label: 'Controls' }] : []),
 		{ value: 'metronome', label: 'Metronome' },
+		{ value: 'rig', label: 'Rig' },
 		...(notes ? [{ value: 'notes' as const, label: 'Notes' }] : []),
 		...(side ? [{ value: 'more' as const, label: sideLabel }] : [])
 	]);
@@ -77,7 +80,12 @@
 
 		const userId = page.data.user?.id;
 		if (userId) {
-			tracker = new PracticeTracker(userId, item, () => playing || metronomeRunning);
+			// Playing through the rig counts, with or without a track
+			tracker = new PracticeTracker(
+				userId,
+				item,
+				() => playing || metronomeRunning || rig.isPlaying()
+			);
 			tracker.start();
 		}
 		onready?.();
@@ -119,13 +127,14 @@
 			</div>
 
 			{#if paneOptions.length > 1}
-				<div class="stage-tabs flex md:hidden">
+				<!-- Scrolls sideways when every pane is offered on the narrowest phones -->
+				<div class="stage-tabs flex overflow-x-auto md:hidden">
 					{#each paneOptions as option (option.value)}
 						<button
 							type="button"
 							aria-pressed={pane === option.value}
 							onclick={() => (chosenPane = option.value)}
-							class="focus-live min-h-11 flex-auto border-b-2 px-1 text-sm font-medium {pane ===
+							class="focus-live min-h-11 flex-auto border-b-2 px-1 text-sm font-medium whitespace-nowrap {pane ===
 							option.value
 								? 'border-accent-500 text-accent-700 dark:border-accent-400 dark:text-accent-300'
 								: 'border-transparent text-surface-500 dark:text-surface-300'}"
@@ -161,6 +170,9 @@
 					songId={prefsKey ?? item.refId ?? undefined}
 					onrunningchange={(running) => (metronomeRunning = running)}
 				/>
+			</div>
+			<div class="stage-pane {pane === 'rig' ? '' : 'hidden md:block'}">
+				<RigPanel />
 			</div>
 			{#if side}
 				<div class="stage-pane {pane === 'more' ? '' : 'hidden md:block'}">
