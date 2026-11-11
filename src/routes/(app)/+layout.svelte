@@ -2,9 +2,19 @@
 	import Sidebar from '#lib/components/layout/Sidebar.svelte';
 	import BottomNav from '#lib/components/layout/BottomNav.svelte';
 	import RigIndicator from '#lib/components/practice/RigIndicator.svelte';
+	import TourOverlay from '#lib/components/tour/TourOverlay.svelte';
 	import { page } from '$app/state';
+	import { rig } from '#lib/utils/rig.svelte.js';
+	import { createRigCloud } from '#lib/utils/rigCloud.js';
 
 	let { data, children } = $props();
+
+	// Uploaded IRs follow the account. This only says whose it is: nothing is fetched
+	// until a rig screen is opened.
+	let userId = $derived(data.user?.id);
+	$effect(() => {
+		rig.connect(userId ? createRigCloud(data.supabase, userId) : null);
+	});
 
 	// A phone on a music stand needs every pixel; the shed screen has a Back link
 	let immersive = $derived(
@@ -42,3 +52,4 @@
 	{/if}
 	<RigIndicator />
 </div>
+<TourOverlay user={data.user} supabase={data.supabase} />

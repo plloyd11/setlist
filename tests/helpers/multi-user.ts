@@ -5,9 +5,10 @@ import { createTestUser, deleteTestUser } from './auth';
  * Create a second authenticated user in a fresh browser context.
  * Uses Date.now() as workerIndex to avoid email collisions with worker-scoped users.
  * Returns { page, user, cleanup } where cleanup closes the context and deletes the user.
+ * `tourSeen: false` makes it a real first visit: the onboarding tour opens on the dashboard.
  */
-export async function createSecondUser(browser: Browser) {
-	const user = await createTestUser(Date.now());
+export async function createSecondUser(browser: Browser, options: { tourSeen?: boolean } = {}) {
+	const user = await createTestUser(Date.now(), options);
 
 	// Open fresh browser context with no existing auth state. Contexts created
 	// directly on the raw `browser` fixture don't inherit config `use` options

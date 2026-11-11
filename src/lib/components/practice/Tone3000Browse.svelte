@@ -1,6 +1,7 @@
 <script lang="ts">
 	import logo from '#lib/assets/tone3000-logo.svg';
 	import { secondaryButton } from './practiceStyles.js';
+	import type { IrSlot } from '#lib/utils/rig.svelte.js';
 	import { tone3000 } from '#lib/utils/tone3000Browser.svelte.js';
 	import {
 		creatorName,
@@ -19,9 +20,10 @@
 	 * Their terms ask for the logo at the way in, and the creator, gear, format and
 	 * license wherever a tone is shown.
 	 */
-	let { kind }: { kind: T3kKind } = $props();
+	let { kind, slot = 0 }: { kind: T3kKind; /** For IRs: the first or the second */ slot?: IrSlot } =
+		$props();
 
-	let mine = $derived(tone3000.kind === kind);
+	let mine = $derived(tone3000.kind === kind && tone3000.slot === slot);
 	let status = $derived(mine ? tone3000.status : 'idle');
 	let tone = $derived(mine ? tone3000.tone : null);
 	let image = $derived(httpsUrl(tone?.images?.[0]));
@@ -40,8 +42,12 @@
 			<button
 				type="button"
 				class="{secondaryButton} flex w-full items-center justify-center gap-2"
-				aria-label="Browse TONE3000 for {kind === 'nam' ? 'amps' : 'cab IRs'}"
-				onclick={() => tone3000.browse(kind)}
+				aria-label="Browse TONE3000 for {kind === 'nam'
+					? 'amps'
+					: slot === 1
+						? 'a second cab IR'
+						: 'cab IRs'}"
+				onclick={() => tone3000.browse(kind, slot)}
 			>
 				Browse
 				<img src={logo} alt="" width="92" height="14" class="h-3.5 w-auto" />

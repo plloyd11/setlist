@@ -1,7 +1,10 @@
 /**
- * The rig's files, kept in this browser's IndexedDB rather than the database: cab
- * IRs and NAM amp models. A rig belongs to one machine (its audio device IDs do too),
- * the files are small, and keeping them here needs no migration or bucket.
+ * The rig's files, kept in this browser's IndexedDB: cab IRs and NAM amp models. This
+ * is the copy the rig plays from, so nothing is fetched when Monitor goes on. A rig
+ * belongs to one machine (its audio device IDs do too), and so do its amp models.
+ *
+ * Uploaded IRs also follow the account (rigCloud.ts). The copy here stays the working
+ * one, and `owner` records whose account it's in step with.
  */
 
 const DB_NAME = 'setlist-rig';
@@ -33,8 +36,12 @@ export interface RigFileSource {
 export interface RigFile {
 	id: string;
 	name: string;
+	/** Bytes kept in this browser */
+	size: number;
 	/** Only for files from TONE3000 */
 	source?: RigFileSource;
+	/** The account this IR is kept with, once it has synced */
+	owner?: string;
 }
 
 interface StoredFile extends RigFile {
@@ -82,7 +89,13 @@ export async function listRigFiles(kind: RigFileKind): Promise<RigFile[]> {
 	const all = await run<StoredFile[]>(kind, 'readonly', (store) => store.getAll());
 	return all
 		.sort((a, b) => a.addedAt - b.addedAt)
-		.map(({ id, name, source }) => (source ? { id, name, source } : { id, name }));
+		.map(({ id, name, bytes, source, owner }) => ({
+			id,
+			name,
+			size: bytes.byteLength,
+			...(source ? { source } : {}),
+			...(owner ? { owner } : {})
+		}));
 }
 
 export async function getRigFileBytes(kind: RigFileKind, id: string): Promise<ArrayBuffer | null> {
@@ -90,16 +103,57 @@ export async function getRigFileBytes(kind: RigFileKind, id: string): Promise<Ar
 	return record?.bytes ?? null;
 }
 
+/**
+ * `synced` is for an IR arriving from the account: it keeps the id it has there, so
+ * rig settings point at the same file on every device.
+ */
 export async function saveRigFile(
 	kind: RigFileKind,
 	name: string,
 	bytes: ArrayBuffer,
-	source?: RigFileSource
+	source?: RigFileSource,
+	synced?: { id: string; owner: string }
 ): Promise<RigFile> {
-	const file: RigFile = { id: crypto.randomUUID(), name, ...(source ? { source } : {}) };
+	const file: RigFile = {
+		id: synced?.id ?? crypto.randomUUID(),
+		name,
+		size: bytes.byteLength,
+		...(source ? { source } : {}),
+		...(synced ? { owner: synced.owner } : {})
+	};
 	const record: StoredFile = { ...file, bytes, addedAt: Date.now() };
 	await run(kind, 'readwrite', (store) => store.add(record));
 	return file;
+}
+
+export function renameRigFile(kind: RigFileKind, id: string, name: string): Promise<void> {
+	return updateRigFile(kind, id, { name });
+}
+
+/** A read and a write in one transaction, so a change can't lose the bytes */
+export async function updateRigFile(
+	kind: RigFileKind,
+	id: string,
+	patch: { name?: string; owner?: string }
+): Promise<void> {
+	const db = await openDb();
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction(kind, 'readwrite');
+		const store = tx.objectStore(kind);
+		const request = store.get(id);
+		request.onsuccess = () => {
+			const record = request.result as StoredFile | undefined;
+			if (record) store.put({ ...record, ...patch });
+		};
+		tx.oncomplete = () => {
+			db.close();
+			resolve();
+		};
+		tx.onerror = tx.onabort = () => {
+			db.close();
+			reject(tx.error ?? request.error);
+		};
+	});
 }
 
 export async function deleteRigFile(kind: RigFileKind, id: string): Promise<void> {

@@ -53,7 +53,16 @@ test.describe('One set, one total', () => {
 });
 
 test.describe('The page frame', () => {
-	const ROUTES = ['/dashboard', '/songs', '/setlists', '/practice', '/bands', '/settings', '/help'];
+	const ROUTES = [
+		'/dashboard',
+		'/songs',
+		'/setlists',
+		'/practice',
+		'/rig',
+		'/bands',
+		'/settings',
+		'/help'
+	];
 
 	test('every page runs full width with even gutters', async ({ page }) => {
 		await page.setViewportSize({ width: 1800, height: 900 });

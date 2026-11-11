@@ -38,7 +38,7 @@ test.describe('Practice on the main menu', () => {
 		await page.setViewportSize({ width: 320, height: 568 });
 		await page.goto('/dashboard');
 		const items = page.locator('nav a:visible');
-		await expect(items).toHaveCount(6);
+		await expect(items).toHaveCount(7);
 		const boxes = await items.evaluateAll((links) =>
 			links.map((link) => {
 				const { left, right, height } = link.getBoundingClientRect();

@@ -276,6 +276,7 @@
 		<a
 			bind:this={addLink}
 			href="/songs/new"
+			data-tour="add-song"
 			class="focus-live order-2 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-accent-500 px-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-600 sm:order-3 pointer-coarse:h-11"
 		>
 			<svg

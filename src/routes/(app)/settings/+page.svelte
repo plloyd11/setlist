@@ -3,6 +3,8 @@
 	import { enhance } from '$app/forms';
 	import ThemeToggle from '#lib/components/layout/ThemeToggle.svelte';
 	import LogoUpload from '#lib/components/ui/LogoUpload.svelte';
+	import { secondaryButton } from '#lib/components/practice/practiceStyles.js';
+	import { startTour } from '#lib/stores/tour.svelte.js';
 
 	let { data } = $props();
 	let signingOut = $state(false);
@@ -146,12 +148,15 @@
 		</div>
 	</div>
 
-	<p class="mt-8 text-sm text-surface-500 dark:text-surface-300">
-		New here or need a refresher? Read the
-		<a
-			href="/help"
-			class="focus-live rounded font-medium text-accent-600 hover:underline dark:text-accent-300"
-			>getting started guide</a
-		>.
-	</p>
+	<div class="mt-8 flex flex-wrap items-center gap-x-4 gap-y-3">
+		<p class="text-sm text-surface-500 dark:text-surface-300">
+			New here or need a refresher? Read the
+			<a
+				href="/help"
+				class="focus-live rounded font-medium text-accent-600 hover:underline dark:text-accent-300"
+				>getting started guide</a
+			>, or walk through the app again.
+		</p>
+		<button type="button" class={secondaryButton} onclick={startTour}>Take the tour</button>
+	</div>
 </div>

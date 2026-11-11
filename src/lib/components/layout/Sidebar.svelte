@@ -9,6 +9,7 @@
 		setSidebarMode,
 		type SidebarMode
 	} from '#lib/stores/sidebar.svelte.js';
+	import { startTour } from '#lib/stores/tour.svelte.js';
 
 	interface Props {
 		user: { email?: string; user_metadata?: { full_name?: string; avatar_url?: string } } | null;
@@ -36,6 +37,12 @@
 			href: '/practice',
 			label: 'Practice',
 			icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664zM21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+		},
+		{
+			// An amp head: the control strip over the grille
+			href: '/rig',
+			label: 'Rig',
+			icon: 'M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z M3 10h18 M7 7.5h.01 M11 7.5h.01 M15 7.5h.01'
 		},
 		{
 			href: '/bands',
@@ -234,7 +241,7 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 			{/each}
 		</nav>
 
-		<!-- Bottom section: user info + theme toggle -->
+		<!-- Bottom section: user info, theme toggle, tour replay, sidebar control -->
 		<div class="shrink-0 border-t border-surface-200 px-2 py-2 dark:border-surface-800">
 			{#if user}
 				<div class="flex h-10 items-center">
@@ -257,6 +264,31 @@ right when hover-expanded. In pinned-expanded mode the spacer widens so content 
 				</div>
 			{/if}
 			<ThemeToggle showLabel />
+			<button
+				onclick={startTour}
+				title="Take the tour"
+				data-tour="replay-tour"
+				class="focus-live flex h-10 w-full items-center rounded-lg text-sm font-medium text-surface-600 transition-colors hover:bg-surface-100 hover:text-accent-600 dark:text-surface-300 dark:hover:bg-surface-800 dark:hover:text-accent-300"
+			>
+				<span class="flex h-10 w-10 shrink-0 items-center justify-center">
+					<!-- compass glyph -->
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<circle cx="12" cy="12" r="10"></circle>
+						<path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"></path>
+					</svg>
+				</span>
+				<span class="nav-label whitespace-nowrap">Take the tour</span>
+			</button>
 			<button
 				bind:this={triggerEl}
 				onclick={() => (menuOpen = !menuOpen)}

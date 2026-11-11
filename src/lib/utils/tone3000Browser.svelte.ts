@@ -1,4 +1,4 @@
-import { rig } from './rig.svelte.js';
+import { rig, type IrSlot } from './rig.svelte.js';
 import type { RigFile, RigFileSource } from './rigStore.js';
 import {
 	creatorName,
@@ -49,6 +49,8 @@ function sourceFor(tone: T3kTone, model: T3kModel): RigFileSource {
 class Tone3000Browser {
 	/** Which picker the pick belongs to */
 	kind = $state<T3kKind | null>(null);
+	/** For an IR, whether it's the first or the second: the pick goes where it was asked for */
+	slot = $state<IrSlot>(0);
 	status = $state<Status>('idle');
 	tone = $state<T3kTone | null>(null);
 	models = $state<T3kModel[]>([]);
@@ -60,12 +62,13 @@ class Tone3000Browser {
 	#abort: AbortController | null = null;
 
 	/** Straight from a click: the window has to open before anything is awaited */
-	async browse(kind: T3kKind) {
+	async browse(kind: T3kKind, slot: IrSlot = 0) {
 		this.#abort?.abort();
 		const abort = new AbortController();
 		this.#abort = abort;
 		this.#reset();
 		this.kind = kind;
+		this.slot = slot;
 		this.status = 'choosing';
 
 		try {
@@ -92,6 +95,7 @@ class Tone3000Browser {
 			if (this.#abort !== abort) return;
 			this.#reset();
 			this.kind = kind;
+			this.slot = slot;
 			this.error =
 				e instanceof Tone3000Error ? e.message : "Couldn't reach TONE3000. Check you're online.";
 		}
@@ -113,7 +117,8 @@ class Tone3000Browser {
 	isChosen(model: T3kModel): boolean {
 		const file = this.saved(model);
 		if (!file) return false;
-		return this.kind === 'ir' ? rig.setup.irId === file.id : rig.settings.modelId === file.id;
+		if (this.kind !== 'ir') return rig.settings.modelId === file.id;
+		return (this.slot === 0 ? rig.setup.irId : rig.setup.irId2) === file.id;
 	}
 
 	/** Download, check and keep one of the tone's files, then choose it */
@@ -127,7 +132,7 @@ class Tone3000Browser {
 		// Picking the same capture again just chooses the copy already here
 		const existing = this.saved(model);
 		if (existing) {
-			await (kind === 'ir' ? rig.selectIr(existing.id) : rig.selectModel(existing.id));
+			await (kind === 'ir' ? rig.selectIr(existing.id, this.slot) : rig.selectModel(existing.id));
 			return;
 		}
 
@@ -139,7 +144,7 @@ class Tone3000Browser {
 			const source = sourceFor(tone, model);
 			const problem =
 				kind === 'ir'
-					? await rig.keepIr(bytes, name, name, source)
+					? await rig.keepIr(bytes, name, name, source, true, this.slot)
 					: await rig.keepModel(bytes, name, name, source);
 			if (problem && session === this.#session) this.error = problem;
 		} catch (e) {
@@ -155,6 +160,7 @@ class Tone3000Browser {
 	#reset() {
 		this.#session = null;
 		this.kind = null;
+		this.slot = 0;
 		this.status = 'idle';
 		this.tone = null;
 		this.models = [];
