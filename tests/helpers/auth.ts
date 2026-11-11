@@ -6,8 +6,11 @@ import { faker } from '@faker-js/faker';
  * Email format: test-worker{N}-{timestamp}-{random}@setlist.test
  * The random suffix prevents collisions when two users are created in the
  * same millisecond (e.g. parallel createSecondUser calls).
+ *
+ * Test users are marked as having seen the onboarding tour, or it would open over
+ * every new account's dashboard. Pass `tourSeen: false` to get a real first visit.
  */
-export async function createTestUser(workerIndex: number) {
+export async function createTestUser(workerIndex: number, { tourSeen = true } = {}) {
 	const suffix = faker.string.alphanumeric(8).toLowerCase();
 	const email = `test-worker${workerIndex}-${Date.now()}-${suffix}@setlist.test`;
 	const password = faker.internet.password({ length: 20 });
@@ -15,7 +18,8 @@ export async function createTestUser(workerIndex: number) {
 	const { data, error } = await adminClient.auth.admin.createUser({
 		email,
 		password,
-		email_confirm: true
+		email_confirm: true,
+		user_metadata: { tour_seen: tourSeen }
 	});
 
 	if (error) {

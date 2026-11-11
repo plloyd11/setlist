@@ -35,6 +35,7 @@
 			onclick={toggleCreate}
 			class="flex items-center justify-center rounded-lg bg-accent-500 p-2 text-white shadow-sm hover:bg-accent-600 pointer-coarse:h-11 pointer-coarse:w-11"
 			aria-label="Create band"
+			data-tour="new-band"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"

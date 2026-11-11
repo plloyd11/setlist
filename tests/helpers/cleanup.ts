@@ -93,3 +93,35 @@ export async function cleanupSongAudio(songId: string) {
 		console.warn(`Cleanup warning [song-audio storage/${songId}]:`, e);
 	}
 }
+
+/**
+ * Remove every IR a user has synced to their account: the rig_irs rows and the
+ * objects in the 'rig-irs' bucket. Tests in a worker share one user, and a synced IR
+ * would otherwise turn up in the next test's library. Warn-not-throw, like all
+ * cleanup helpers.
+ */
+export async function cleanupRigIrs(userId: string) {
+	const prefix = `users/${userId}`;
+	try {
+		const { error } = await adminClient.from('rig_irs').delete().eq('user_id', userId);
+		if (error) console.warn(`Cleanup warning [rig_irs/${userId}]:`, error.message);
+
+		const { data: objects, error: listError } = await adminClient.storage
+			.from('rig-irs')
+			.list(prefix);
+		if (listError) {
+			console.warn(`Cleanup warning [rig-irs storage/${userId}]:`, listError.message);
+			return;
+		}
+		if (objects?.length) {
+			const { error: removeError } = await adminClient.storage
+				.from('rig-irs')
+				.remove(objects.map((o) => `${prefix}/${o.name}`));
+			if (removeError) {
+				console.warn(`Cleanup warning [rig-irs storage/${userId}]:`, removeError.message);
+			}
+		}
+	} catch (e) {
+		console.warn(`Cleanup warning [rig_irs/${userId}]:`, e);
+	}
+}

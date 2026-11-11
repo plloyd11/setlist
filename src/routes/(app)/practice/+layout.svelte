@@ -19,6 +19,7 @@
 	     overflow-x: auto turns vertical scrolling on too: a stray scrollbar. -->
 	<nav
 		aria-label="Practice"
+		data-tour="practice-tabs"
 		class="mt-4 flex overflow-x-auto shadow-[inset_0_-1px_0_var(--color-surface-200)] dark:shadow-[inset_0_-1px_0_var(--color-surface-700)]"
 	>
 		{#each tabs as tab (tab.href)}

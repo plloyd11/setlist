@@ -65,16 +65,18 @@
      phone. Getting ready comes straight after the board there, so it's first in the source
      and placed into the rail from lg up. -->
 <div class="page-frame">
-	{#if data.hero}
-		<NextGigBoard
-			set={data.hero}
-			isUpcoming={data.heroIsUpcoming}
-			bandName={bandNameOf(data.hero)}
-			today={data.today}
-		/>
-	{:else}
-		<FirstRunBoard songCount={data.songCount} librarySeconds={data.librarySeconds} />
-	{/if}
+	<div data-tour="home-board">
+		{#if data.hero}
+			<NextGigBoard
+				set={data.hero}
+				isUpcoming={data.heroIsUpcoming}
+				bandName={bandNameOf(data.hero)}
+				today={data.today}
+			/>
+		{:else}
+			<FirstRunBoard songCount={data.songCount} librarySeconds={data.librarySeconds} />
+		{/if}
+	</div>
 
 	<div
 		class="mt-8 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_1fr] lg:items-start"

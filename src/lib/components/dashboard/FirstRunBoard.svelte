@@ -7,7 +7,7 @@
 	let hasSongs = $derived(songCount > 0);
 </script>
 
-<!-- One step in the signal chain: a lamp reports its state -->
+<!-- One step in the signal chain: a lamp reports its state (lamp-live is in layout.css) -->
 {#snippet chainStep(state: 'done' | 'live' | 'next', label: string, sub: string)}
 	<li class="flex items-start gap-2.5">
 		{#if state === 'done'}
@@ -111,25 +111,3 @@
 		</a>
 	</div>
 </div>
-
-<style>
-	/* Powered-On Rule: the current step is live, so its lamp glows */
-	.lamp-live {
-		box-shadow:
-			0 0 6px rgba(187, 201, 42, 0.5),
-			0 0 14px rgba(187, 201, 42, 0.2);
-		animation: lamp-pulse 2.4s ease-in-out infinite;
-	}
-	@keyframes lamp-pulse {
-		50% {
-			box-shadow:
-				0 0 3px rgba(187, 201, 42, 0.3),
-				0 0 8px rgba(187, 201, 42, 0.1);
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.lamp-live {
-			animation: none;
-		}
-	}
-</style>

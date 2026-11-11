@@ -12,6 +12,7 @@
 		files,
 		selected,
 		disabled = false,
+		removable = true,
 		onselect,
 		onadd,
 		onremove
@@ -27,9 +28,11 @@
 		files: RigFile[];
 		selected: string | null;
 		disabled?: boolean;
+		/** False where removing lives somewhere else, like the Rig page's library */
+		removable?: boolean;
 		onselect: (id: string | null) => void;
 		onadd: (file: File) => void;
-		onremove: (id: string) => void;
+		onremove?: (id: string) => void;
 	} = $props();
 
 	let fileInput: HTMLInputElement | undefined = $state();
@@ -58,11 +61,11 @@
 			<option value={file.id}>{file.name}</option>
 		{/each}
 	</select>
-	{#if selected}
+	{#if selected && removable}
 		{@const current = selected}
 		<button
 			type="button"
-			onclick={() => onremove(current)}
+			onclick={() => onremove?.(current)}
 			aria-label="Remove this {noun}"
 			title="Remove this {noun}"
 			class="focus-live flex h-11 w-9 shrink-0 items-center justify-center rounded-lg text-surface-500 transition-colors duration-150 hover:bg-surface-100 hover:text-surface-700 dark:text-surface-300 dark:hover:bg-surface-700 dark:hover:text-surface-100"

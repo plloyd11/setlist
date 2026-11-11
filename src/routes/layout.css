@@ -263,6 +263,24 @@ h6 {
 		touch-action: manipulation;
 	}
 
+	/* Tailwind v4 preflight leaves buttons on the default arrow. Anything you can
+	   press gets the hand; disabled ones keep the arrow. Utilities (cursor-grab,
+	   cursor-ns-resize…) still win, since they sit in a later layer. */
+	button:not(:disabled),
+	[role='button']:not([aria-disabled='true']),
+	a[href],
+	summary,
+	select:not(:disabled),
+	label:has(input[type='checkbox']:not(:disabled)),
+	label:has(input[type='radio']:not(:disabled)),
+	input[type='checkbox']:not(:disabled),
+	input[type='radio']:not(:disabled),
+	input[type='range']:not(:disabled),
+	input[type='file']:not(:disabled),
+	input[type='submit']:not(:disabled) {
+		cursor: pointer;
+	}
+
 	h1,
 	h2,
 	h3 {
@@ -341,6 +359,27 @@ h6 {
 	.focus-inset:focus-visible {
 		outline: 2px solid var(--focus-live-color);
 		outline-offset: -2px;
+	}
+
+	/* Powered-On Rule: the current step is live, so its lamp glows. Shared by the
+	   first-run board's signal chain and the tour's step marker. */
+	.lamp-live {
+		box-shadow:
+			0 0 6px rgba(187, 201, 42, 0.5),
+			0 0 14px rgba(187, 201, 42, 0.2);
+		animation: lamp-pulse 2.4s ease-in-out infinite;
+	}
+	@keyframes lamp-pulse {
+		50% {
+			box-shadow:
+				0 0 3px rgba(187, 201, 42, 0.3),
+				0 0 8px rgba(187, 201, 42, 0.1);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.lamp-live {
+			animation: none;
+		}
 	}
 
 	/* 1ch is the width of a 0, and Klima's is wide: 65ch runs to about 90 characters

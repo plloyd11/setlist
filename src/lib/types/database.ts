@@ -250,3 +250,13 @@ export interface Exercise {
 
 export type ExerciseAudio = Omit<SongAudio, 'song_id'> & { exercise_id: string };
 export type ExerciseFile = Omit<SongFile, 'song_id'> & { exercise_id: string };
+
+/** A cab IR a musician uploaded, kept with their account (the rig plays its browser copy) */
+export interface RigIr {
+	id: string;
+	user_id: string;
+	name: string;
+	storage_path: string;
+	file_size_bytes: number;
+	created_at: string;
+}
