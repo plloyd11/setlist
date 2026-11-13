@@ -236,6 +236,10 @@ test.describe('Rig', () => {
 			await expect(panel.getByText('Test Creator')).toBeVisible();
 			await expect(panel.getByText('Amp head · NAM · CC BY')).toBeVisible();
 			await expect(panel.getByRole('link', { name: 'Powered by TONE3000' })).toBeVisible();
+			// Whose TONE3000 login the window used: it's the browser's, so it gets said
+			const signedIn = panel.getByText('Signed in to TONE3000 as window-login');
+			await expect(signedIn).toBeVisible();
+			await expect(panel.getByRole('link', { name: /^Not you\?/ })).toHaveAttribute('href', T3K);
 
 			const model = panel.getByRole('combobox', { name: 'Amp model', exact: true });
 			await expect(card.getByRole('listitem')).toHaveCount(2);
@@ -246,10 +250,15 @@ test.describe('Rig', () => {
 			);
 			expect(fake.downloadAuth).toEqual(['Bearer access-1']);
 
-			// A cab tone with one IR goes straight in, for the mode that's on
+			// A cab tone with one IR goes straight in, for the mode that's on. TONE3000
+			// not saying who's signed in costs the line, never the pick.
+			fake.user = null;
 			await browseIrs.click();
 			const ir = panel.getByRole('combobox', { name: 'Cab IR', exact: true });
 			await expect(ir.locator('option:checked')).toHaveText('V30 Test – SM57');
+			await expect(panel.getByRole('link', { name: 'V30 Test' })).toBeVisible();
+			await expect(panel.getByText('Signed in to TONE3000 as')).toHaveCount(0);
+			fake.user = { username: 'window-login' };
 			const cabAuthorize = fake.authorized.at(-1)!;
 			expect(cabAuthorize.get('format')).toBe('ir');
 			expect(cabAuthorize.get('gears')).toBe('cab');

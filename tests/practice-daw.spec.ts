@@ -1,6 +1,7 @@
 /**
  * DAW practice controls E2E tests (volume/speed knobs, A/B loop, saved
- * sections, persistence).
+ * sections, persistence). The section map itself (marking, stepping, trimming)
+ * is in practice-sections.spec.ts, which needs a longer file.
  *
  * Audio playback itself is never asserted (suite philosophy) — these tests
  * drive the chrome: knob ARIA state, the loop region element rendered inside
@@ -36,7 +37,7 @@ test.describe('DAW practice controls', () => {
 			await expect(page.getByRole('button', { name: 'Forward 5 seconds' })).toBeVisible();
 
 			// No loop yet — the loop cluster is parked
-			const loopButton = page.getByRole('button', { name: /Loop/ });
+			const loopButton = page.getByRole('button', { name: 'Loop', exact: true });
 			await expect(loopButton).toBeDisabled();
 			await expect(loopButton).toHaveAttribute('aria-pressed', 'false');
 
@@ -83,7 +84,7 @@ test.describe('DAW practice controls', () => {
 			await expect(volumeKnob).toHaveAttribute('aria-valuenow', '0.9');
 
 			// Clear removes the region and parks the cluster again
-			await page.getByRole('button', { name: 'Clear' }).click();
+			await page.getByRole('button', { name: 'Clear loop' }).click();
 			await expect(region).not.toBeVisible();
 			await expect(loopButton).toBeDisabled();
 		} finally {
@@ -104,7 +105,7 @@ test.describe('DAW practice controls', () => {
 			await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 10_000 });
 
 			// Saving needs a loop first
-			const saveButton = page.getByRole('button', { name: '+ Save section' });
+			const saveButton = page.getByRole('button', { name: 'Save loop' });
 			await expect(saveButton).toBeDisabled();
 
 			await page.getByRole('heading', { name: 'Section Song' }).click();
@@ -112,12 +113,15 @@ test.describe('DAW practice controls', () => {
 			await page.keyboard.press(']');
 			await expect(saveButton).toBeEnabled();
 
-			// Inline input: Enter commits, the chip appears
+			// Inline input: Enter commits, and the section lands in the lane and the list
 			await saveButton.click();
-			await page.getByLabel('Section name').fill('solo');
+			await page.getByLabel('New section name').fill('solo');
 			await page.keyboard.press('Enter');
 			const chip = page.getByRole('button', { name: 'solo', exact: true });
 			await expect(chip).toBeVisible();
+			await expect(page.getByRole('button', { name: 'Loop solo' })).toBeVisible();
+			// The loop is that section now, so there's nothing left to save
+			await expect(saveButton).toBeDisabled();
 
 			// Survives a reload
 			await page.reload();
@@ -127,13 +131,15 @@ test.describe('DAW practice controls', () => {
 			// Recall re-creates the region and arms the loop
 			await chip.click();
 			await expect(page.locator('[part~="region"]')).toBeVisible();
-			await expect(page.getByRole('button', { name: /Loop/ })).toHaveAttribute(
+			await expect(page.getByRole('button', { name: 'Loop', exact: true })).toHaveAttribute(
 				'aria-pressed',
 				'true'
 			);
+			await expect(chip).toHaveAttribute('aria-pressed', 'true');
 
-			// Delete sticks
-			await page.getByRole('button', { name: 'Delete section solo' }).click();
+			// Delete is inside the row's editor, and it sticks
+			await page.getByRole('button', { name: 'Edit solo' }).click();
+			await page.getByRole('button', { name: 'Delete', exact: true }).click();
 			await expect(chip).not.toBeVisible();
 			await page.reload();
 			await expect(page.getByRole('heading', { name: 'Section Song' })).toBeVisible();
@@ -157,7 +163,7 @@ test.describe('DAW practice controls', () => {
 
 			const seek = page.getByRole('slider', { name: 'Seek' });
 			const volumeKnob = page.getByRole('slider', { name: 'Volume' });
-			const loopButton = page.getByRole('button', { name: /Loop/ });
+			const loopButton = page.getByRole('button', { name: 'Loop', exact: true });
 
 			// Clicking the waveform leaves focus on the seek slider. Its own arrow keys
 			// must seek once (not also fire the page shortcut), and `]` must still pin.
@@ -185,11 +191,13 @@ test.describe('DAW practice controls', () => {
 			await expect(loopButton).toHaveAttribute('aria-pressed', 'false');
 
 			// Typing in a field never triggers shortcuts
-			await page.getByRole('button', { name: '+ Save section' }).click();
-			await page.getByLabel('Section name').fill('');
+			await page.getByRole('button', { name: 'Save loop' }).click();
+			await page.getByLabel('New section name').fill('');
 			await page.keyboard.press('l');
-			await expect(page.getByLabel('Section name')).toHaveValue('l');
+			await page.keyboard.press('s');
+			await expect(page.getByLabel('New section name')).toHaveValue('ls');
 			await expect(loopButton).toHaveAttribute('aria-pressed', 'false');
+			await expect(page.getByRole('group', { name: 'Section map' })).toHaveCount(0);
 		} finally {
 			await cleanupSongAudio(song.id);
 			await safeDelete('songs', song.id);
@@ -215,10 +223,12 @@ test.describe('DAW practice controls', () => {
 			await page.reload();
 			await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 10_000 });
 
-			const loopButton = page.getByRole('button', { name: /Loop/ });
+			const loopButton = page.getByRole('button', { name: 'Loop', exact: true });
 
-			// The fixture is ~1s: a section starting at 0:30 can't exist on this mix
-			await page.getByRole('button', { name: 'Outro', exact: true }).click();
+			// The fixture is ~1s: a section starting at 0:30 can't exist on this mix, so
+			// the lane leaves it out and the list says why it won't loop
+			await expect(page.getByRole('button', { name: 'Outro', exact: true })).toHaveCount(0);
+			await page.getByRole('button', { name: 'Loop Outro' }).click();
 			await expect(page.getByText('"Outro" runs past the end of this mix.')).toBeVisible();
 			await expect(page.locator('[part~="region"]')).toHaveCount(0);
 			await expect(loopButton).toHaveAttribute('aria-pressed', 'false');
@@ -234,7 +244,7 @@ test.describe('DAW practice controls', () => {
 				(songId) => JSON.parse(localStorage.getItem('practice:prefs:v1') ?? '{}')[songId],
 				song.id
 			);
-			expect(saved.sections[1].end).toBe(40);
+			expect(saved.sections.find((s: { id: string }) => s.id === 'overlaps').end).toBe(40);
 			expect(saved.loop.end).toBeLessThan(5);
 		} finally {
 			await cleanupSongAudio(song.id);

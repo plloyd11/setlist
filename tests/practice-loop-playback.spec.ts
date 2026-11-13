@@ -32,9 +32,9 @@ async function waitForWrap(page: Page, deadlineMs = 15_000): Promise<number> {
 	throw new Error('loop never wrapped');
 }
 
-test('armed loop wraps to A, pre-roll wraps and resumes at A-2s', async ({ page, testUser }) => {
-	test.setTimeout(120_000);
-	const song = await createSong(page, testUser.id, { title: 'Loop Engine Song' });
+/** A song with a 30s mix, served from a local server so it can really play. */
+async function openPlayable(page: Page, userId: string, title: string) {
+	const song = await createSong(page, userId, { title });
 	const wav = makeWav(30);
 	const storagePath = `songs/${song.id}/${crypto.randomUUID()}.wav`;
 	const { error: upErr } = await adminClient.storage
@@ -54,26 +54,41 @@ test('armed loop wraps to A, pre-roll wraps and resumes at A-2s', async ({ page,
 	if (insErr) throw new Error(insErr.message);
 	const { port, close } = await serveWav(wav);
 
+	await page.addInitScript(
+		({ port }) => {
+			const desc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src')!;
+			Object.defineProperty(HTMLMediaElement.prototype, 'src', {
+				get() {
+					return desc.get!.call(this);
+				},
+				set(v: string) {
+					desc.set!.call(
+						this,
+						v.includes('/storage/v1/object/sign/song-audio/')
+							? `http://localhost:${port}/loop.wav`
+							: v
+					);
+				}
+			});
+		},
+		{ port }
+	);
+
+	return {
+		song,
+		async cleanup() {
+			close();
+			await cleanupSongAudio(song.id);
+			await safeDelete('songs', song.id);
+		}
+	};
+}
+
+test('armed loop wraps to A, pre-roll wraps and resumes at A-2s', async ({ page, testUser }) => {
+	test.setTimeout(120_000);
+	const { song, cleanup } = await openPlayable(page, testUser.id, 'Loop Engine Song');
+
 	try {
-		await page.addInitScript(
-			({ port }) => {
-				const desc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src')!;
-				Object.defineProperty(HTMLMediaElement.prototype, 'src', {
-					get() {
-						return desc.get!.call(this);
-					},
-					set(v: string) {
-						desc.set!.call(
-							this,
-							v.includes('/storage/v1/object/sign/song-audio/')
-								? `http://localhost:${port}/loop.wav`
-								: v
-						);
-					}
-				});
-			},
-			{ port }
-		);
 		await page.goto(`/songs/${song.id}/practice`);
 		await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 15_000 });
 
@@ -94,7 +109,7 @@ test('armed loop wraps to A, pre-roll wraps and resumes at A-2s', async ({ page,
 			.toBeGreaterThanOrEqual(6);
 		await page.getByRole('heading', { name: 'Loop Engine Song' }).click();
 		await page.keyboard.press('l');
-		await expect(page.getByRole('button', { name: /Loop/ })).toHaveAttribute(
+		await expect(page.getByRole('button', { name: 'Loop', exact: true })).toHaveAttribute(
 			'aria-pressed',
 			'true'
 		);
@@ -127,8 +142,70 @@ test('armed loop wraps to A, pre-roll wraps and resumes at A-2s', async ({ page,
 		expect(resumed).toBeGreaterThanOrEqual(2);
 		expect(resumed).toBeLessThanOrEqual(5);
 	} finally {
-		close();
-		await cleanupSongAudio(song.id);
-		await safeDelete('songs', song.id);
+		await cleanup();
+	}
+});
+
+test('a stop stays put, or goes back to where the pass started', async ({ page, testUser }) => {
+	test.setTimeout(120_000);
+	const { song, cleanup } = await openPlayable(page, testUser.id, 'Stop Mode Song');
+
+	try {
+		await page.goto(`/songs/${song.id}/practice`);
+		await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 15_000 });
+		const seek = page.getByRole('slider', { name: 'Seek' });
+		const position = async () => Number(await seek.getAttribute('aria-valuenow'));
+		const heading = page.getByRole('heading', { name: 'Stop Mode Song' });
+		const returnOnStop = page.getByRole('button', { name: 'Return on stop' });
+		const playTo = async (seconds: number) => {
+			await page.keyboard.press(' ');
+			await expect.poll(position, { timeout: 15_000 }).toBeGreaterThanOrEqual(seconds);
+		};
+
+		// As it comes: Space pauses, and the playhead stays where it stopped
+		await heading.click();
+		await expect(returnOnStop).toHaveAttribute('aria-pressed', 'false');
+		await playTo(2);
+		await page.keyboard.press(' ');
+		await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+		await page.waitForTimeout(300);
+		const paused = await position();
+		expect(paused).toBeGreaterThanOrEqual(2);
+
+		// Shift+Space is the other kind of stop: back to where this pass started
+		await playTo(paused + 2);
+		await page.keyboard.press('Shift+Space');
+		await expect(seek).toHaveAttribute('aria-valuenow', String(paused));
+
+		// Switched on, every stop goes back, and the key says Stop
+		await returnOnStop.click();
+		await expect(returnOnStop).toHaveAttribute('aria-pressed', 'true');
+		await heading.click();
+		await playTo(paused + 2);
+		await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeVisible();
+		await page.keyboard.press(' ');
+		await expect(seek).toHaveAttribute('aria-valuenow', String(paused));
+
+		// Moving the playhead by hand moves the place it goes back to
+		await page.keyboard.press('ArrowRight');
+		await page.keyboard.press('ArrowRight');
+		await expect(seek).toHaveAttribute('aria-valuenow', String(paused + 10));
+		await playTo(paused + 12);
+		await page.keyboard.press(' ');
+		await expect(seek).toHaveAttribute('aria-valuenow', String(paused + 10));
+
+		// And Shift+Space now stays put
+		await playTo(paused + 12);
+		await page.keyboard.press('Shift+Space');
+		await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+		await page.waitForTimeout(300);
+		expect(await position()).toBeGreaterThanOrEqual(paused + 12);
+
+		// It's the musician's habit, not the song's: still on after a reload
+		await page.reload();
+		await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled({ timeout: 15_000 });
+		await expect(returnOnStop).toHaveAttribute('aria-pressed', 'true');
+	} finally {
+		await cleanup();
 	}
 });

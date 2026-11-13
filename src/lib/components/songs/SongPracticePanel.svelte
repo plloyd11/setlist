@@ -4,17 +4,31 @@
 	import { refreshAll } from '$app/navigation';
 	import WaveformPlayer from '#lib/components/tracks/WaveformPlayer.svelte';
 	import PracticeControls from '#lib/components/songs/PracticeControls.svelte';
+	import SectionLane from '#lib/components/practice/SectionLane.svelte';
+	import TransportBar from '#lib/components/practice/TransportBar.svelte';
 	import { getRememberedVariant, rememberVariant } from '#lib/utils/variantChoice.js';
 	import {
 		fitLoop,
 		loadPracticePrefs,
+		loadReturnOnStop,
 		savePracticePrefs,
+		saveReturnOnStop,
 		MAX_SECTIONS,
 		MIN_LOOP_SECONDS,
 		type LoopRange,
 		type SavedSection
 	} from '#lib/utils/practicePrefs.js';
 	import type { PracticeAction } from '#lib/utils/practiceKeys.js';
+	import {
+		markAt,
+		moveBoundary,
+		nextSection,
+		previousSection,
+		sameRange,
+		sectionAt,
+		sortSections,
+		type Boundary
+	} from '#lib/utils/sections.js';
 	import { formatDuration } from '#lib/utils/duration.js';
 	import type { SongAudio } from '#lib/types/database.js';
 
@@ -32,8 +46,8 @@
 		arrange,
 		autoplay = false,
 		media,
-		transport = true,
 		compactStrip = false,
+		tall = false,
 		versioned = false,
 		loadPeaks,
 		onfinish,
@@ -47,16 +61,16 @@
 		variants: Variant[];
 		/** Shown when the song has no audio at all */
 		empty?: Snippet;
-		/** Lay out the readout strip, player and controls. Defaults to stacking them. */
-		arrange?: Snippet<[Snippet, Snippet, Snippet]>;
+		/** Lay out the readout strip, player, controls and transport. Defaults to stacking them. */
+		arrange?: Snippet<[Snippet, Snippet, Snippet, Snippet]>;
 		/** Start playing as soon as the player is ready */
 		autoplay?: boolean;
 		/** See WaveformPlayer: required for playing on without a tap on iOS */
 		media?: HTMLMediaElement;
-		/** False when the caller renders its own transport */
-		transport?: boolean;
 		/** One quiet line, for screens that already have a loud reading and need the room */
 		compactStrip?: boolean;
+		/** See WaveformPlayer: a taller waveform when the screen has the room */
+		tall?: boolean;
 		/**
 		 * The variants are takes of one recording, newest first, not mixes of a song. So
 		 * each has its own length, and this always opens on the newest: nobody should
@@ -94,12 +108,32 @@
 	let speed = $state(1);
 	let loop = $state<LoopRange | null>(null);
 	let preRoll = $state(false);
+	// One setting for every song: a stop goes back to where the pass started
+	let returnOnStop = $state(false);
 	let sections = $state<SavedSection[]>([]);
 	// Deliberately not persisted: restoring an armed loop trap on load is
 	// surprising — the region comes back muted and `L` re-arms it
 	let loopEnabled = $state(false);
 	let playerReady = $state(false);
 	let sectionNotice = $state('');
+	// The playhead, a few times a second: enough to say which section it's in
+	let currentTime = $state(0);
+	let duration = $state(0);
+
+	// A section that starts past the end of this mix isn't on it
+	let playableSections = $derived(
+		sections.filter((s) => !duration || s.start < duration - MIN_LOOP_SECONDS)
+	);
+	let currentSection = $derived(sectionAt(playableSections, currentTime));
+	// The section the loop is sitting on. Worked out by comparing, so dragging the
+	// loop off it lets go of the section without any bookkeeping.
+	let loopedSection = $derived.by(() => {
+		const range = loop;
+		return range ? (sections.find((s) => sameRange(s, range)) ?? null) : null;
+	});
+	let canStepForward = $derived(
+		nextSection(playableSections, loopEnabled && loop ? loop.start : currentTime) !== null
+	);
 
 	$effect(() => onreadychange?.(playerReady));
 
@@ -152,16 +186,20 @@
 		speed = prefs.speed;
 		loop = prefs.loop;
 		preRoll = prefs.preRoll;
-		sections = prefs.sections;
+		sections = sortSections(prefs.sections);
+		returnOnStop = loadReturnOnStop();
 	});
 
 	// Push everything onto the fresh wavesurfer instance. A loop from another
 	// variant (or a stale store) may overshoot this file — clamp or drop it.
 	async function applySettings() {
 		playerReady = true;
+		currentTime = 0;
+		duration = player?.getDuration() ?? 0;
 		player?.setVolume(volume);
 		player?.setPlaybackRate(speed);
 		player?.setPreRoll(preRoll);
+		player?.setReturnOnStop(returnOnStop);
 		if (loop) {
 			const fitted = fitLoop(loop, player?.getDuration() ?? 0);
 			if (fitted) {
@@ -242,6 +280,12 @@
 		persist();
 	}
 
+	function toggleReturnOnStop() {
+		returnOnStop = !returnOnStop;
+		player?.setReturnOnStop(returnOnStop);
+		saveReturnOnStop(returnOnStop);
+	}
+
 	function setVolume(v: number) {
 		volume = v;
 		player?.setVolume(v);
@@ -278,12 +322,18 @@
 		persist();
 	}
 
+	// ---- Sections ----
+
 	function saveSection(label: string) {
 		if (!loop || sections.length >= MAX_SECTIONS) return;
-		sections = [...sections, { id: crypto.randomUUID(), label, start: loop.start, end: loop.end }];
+		sections = sortSections([
+			...sections,
+			{ id: crypto.randomUUID(), label, start: loop.start, end: loop.end }
+		]);
 		persist();
 	}
 
+	/** Loop a section and go to the top of it */
 	function recallSection(s: SavedSection) {
 		// Sections are saved per song, but this mix may be shorter than the one
 		// the section was saved on
@@ -297,6 +347,8 @@
 		loopEnabled = true;
 		player?.setLoop(loop);
 		player?.setLoopEnabled(true);
+		// Arming only jumps in from outside. Picking a section always starts it over.
+		player?.seekToLoopStart();
 		persist();
 	}
 
@@ -305,17 +357,81 @@
 		persist();
 	}
 
+	function renameSection(id: string, label: string) {
+		sections = sections.map((s) => (s.id === id ? { ...s, label } : s));
+		persist();
+	}
+
+	/** Drop a boundary at the playhead (see markAt) */
+	function markSection() {
+		if (!player || !playerReady) return;
+		const result = markAt(sections, player.getCurrentTime(), player.getDuration());
+		if (result.ok) {
+			sections = result.sections;
+			sectionNotice = '';
+			persist();
+		} else {
+			sectionNotice =
+				result.reason === 'limit'
+					? `That's all ${MAX_SECTIONS} sections. Delete one to mark another.`
+					: 'Too close to the edge of a section to mark here.';
+		}
+	}
+
+	/** Move a section to where the loop is: the way to trim one without a mouse */
+	function sectionToLoop(id: string) {
+		if (!loop) return;
+		const { start, end } = loop;
+		sections = sortSections(sections.map((s) => (s.id === id ? { ...s, start, end } : s)));
+		persist();
+	}
+
+	// Dragging an edge in the lane. The loop follows the section it's sitting on,
+	// so trimming the section you're looping changes what you hear straight away.
+	function dragBoundary(boundary: Boundary, time: number) {
+		const followId = loopedSection?.id;
+		sections = moveBoundary(sections, boundary, time);
+		if (followId !== boundary.endOf && followId !== boundary.startOf) return;
+		const followed = sections.find((s) => s.id === followId);
+		if (followed) {
+			loop = { start: followed.start, end: followed.end };
+			player?.setLoop(loop);
+		}
+	}
+
+	/**
+	 * Step to the section before or after. With the loop armed the loop moves with
+	 * you, so drilling a song section by section is one key. Otherwise it's a seek.
+	 */
+	function stepSection(direction: 1 | -1) {
+		if (!player || !playerReady) return;
+		const now = player.getCurrentTime();
+		const target =
+			direction === 1
+				? nextSection(playableSections, loopEnabled && loop ? loop.start : now)
+				: previousSection(playableSections, now);
+		if (!target) {
+			if (direction === -1) player.seekTo(0);
+			return;
+		}
+		if (loopEnabled) recallSection(target);
+		else player.seekTo(target.start);
+	}
+
 	/** Back to the top of the track and play */
 	export function restart() {
 		player?.seekTo(0);
 		void player?.play();
 	}
 
-	/** Run a keyboard shortcut (see practiceShortcut) */
-	export function perform(action: PracticeAction) {
+	/**
+	 * Run a keyboard shortcut (see practiceShortcut). `shift` turns a stop into the
+	 * other kind: stay put when stops go back, go back when they stay put.
+	 */
+	export function perform(action: PracticeAction, shift = false) {
 		switch (action) {
 			case 'playPause':
-				player?.playPause();
+				player?.playPause(shift);
 				break;
 			case 'toggleLoop':
 				toggleLoop();
@@ -332,6 +448,30 @@
 			case 'forward':
 				skip(5);
 				break;
+			case 'markSection':
+				markSection();
+				break;
+			case 'previousSection':
+				stepSection(-1);
+				break;
+			case 'nextSection':
+				stepSection(1);
+				break;
+			case 'zoomIn':
+				player?.zoomBy(1.5);
+				break;
+			case 'zoomOut':
+				player?.zoomBy(1 / 1.5);
+				break;
+			case 'zoomFit':
+				player?.zoomFit();
+				break;
+			default:
+				// 1 to 9: loop that section
+				if (action.startsWith('section')) {
+					const section = sections[Number(action.slice('section'.length)) - 1];
+					if (section) recallSection(section);
+				}
 		}
 	}
 </script>
@@ -438,8 +578,12 @@
 					duration={currentVariant.duration_seconds}
 					practice={true}
 					{media}
-					{transport}
+					transport={false}
+					readout={false}
+					{tall}
+					{lane}
 					onready={applySettings}
+					ontimeupdate={(t) => (currentTime = t)}
 					onregionchange={handleRegionChange}
 					onloaderror={handlePlayerError}
 					onplaystatechange={(p) => {
@@ -490,16 +634,21 @@
 			{loop}
 			{loopEnabled}
 			{preRoll}
+			{returnOnStop}
 			{sections}
+			currentSectionId={currentSection?.id ?? null}
 			disabled={!playerReady}
 			onvolumechange={setVolume}
 			onspeedchange={setSpeed}
-			onlooptoggle={toggleLoop}
 			onloopclear={clearLoop}
 			onprerolltoggle={togglePreRoll}
+			onreturnonstoptoggle={toggleReturnOnStop}
+			onmark={markSection}
 			onsavesection={saveSection}
 			onrecallsection={recallSection}
+			onrenamesection={renameSection}
 			ondeletesection={deleteSection}
+			onsectiontoloop={sectionToLoop}
 		/>
 		{#if sectionNotice}
 			<p role="status" class="mt-2 text-sm text-surface-600 dark:text-surface-300">
@@ -509,12 +658,55 @@
 	{/if}
 {/snippet}
 
+{#snippet lane()}
+	<SectionLane
+		{sections}
+		{duration}
+		{currentTime}
+		{loop}
+		{loopEnabled}
+		disabled={!playerReady}
+		onselect={(id) => {
+			const section = sections.find((s) => s.id === id);
+			if (section) recallSection(section);
+		}}
+		onboundarymove={dragBoundary}
+		onboundaryend={persist}
+	/>
+{/snippet}
+
+{#snippet transportBlock()}
+	{#if variants.length > 0}
+		<TransportBar
+			{playing}
+			{returnOnStop}
+			disabled={!playerReady}
+			{currentTime}
+			duration={duration || shownLength}
+			section={currentSection?.label ?? null}
+			hasSections={sections.length > 0}
+			canNext={canStepForward}
+			canMark={sections.length < MAX_SECTIONS}
+			{loop}
+			{loopEnabled}
+			onplaypause={() => player?.playPause()}
+			onback={() => skip(-5)}
+			onforward={() => skip(5)}
+			onprevious={() => stepSection(-1)}
+			onnext={() => stepSection(1)}
+			onlooptoggle={toggleLoop}
+			onmark={markSection}
+		/>
+	{/if}
+{/snippet}
+
 {#if arrange}
-	{@render arrange(stripBlock, playerBlock, controlsBlock)}
+	{@render arrange(stripBlock, playerBlock, controlsBlock, transportBlock)}
 {:else}
 	<div class="mt-5">{@render stripBlock()}</div>
-	<div class="mt-6">
+	<div class="mt-6 space-y-3">
 		{@render playerBlock()}
+		{@render transportBlock()}
 		{@render controlsBlock()}
 	</div>
 {/if}

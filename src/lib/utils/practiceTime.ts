@@ -7,6 +7,24 @@ export function formatPracticeTime(totalSeconds: number): string {
 	return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
 }
 
+/** Under a minute isn't practice, it's a screen that was opened: it's never logged */
+export const MIN_LOGGED_SECONDS = 60;
+
+/**
+ * Whether an item belongs in the log. One rule for the tracker, the server and every
+ * screen that adds time up, so they all show the same number. A timed run always counts.
+ */
+export function isLogged(item: { practice_seconds: number; run_seconds?: number | null }): boolean {
+	return item.practice_seconds >= MIN_LOGGED_SECONDS || !!item.run_seconds;
+}
+
+/** The time a session's logged items add up to */
+export function loggedSeconds(
+	items: { practice_seconds: number; run_seconds?: number | null }[]
+): number {
+	return items.reduce((sum, item) => sum + (isLogged(item) ? item.practice_seconds : 0), 0);
+}
+
 /** Mon-based start of the week containing a date, at local midnight */
 export function startOfWeek(date: Date): Date {
 	const start = new Date(date);

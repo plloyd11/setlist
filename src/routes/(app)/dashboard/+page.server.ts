@@ -10,6 +10,7 @@ import {
 	type StatusCounts
 } from '#lib/components/dashboard/shared.js';
 import { TIME_ZONE_COOKIE, isTimeZone, todayInZone } from '#lib/utils/gigDate.js';
+import { loggedSeconds } from '#lib/utils/practiceTime.js';
 import { memberName } from '#lib/utils/memberName.js';
 import { summarizeSetlistRows } from '#lib/utils/setlistTiming.js';
 
@@ -65,7 +66,7 @@ export const load: PageServerLoad = async ({
 			// Eight days covers this week in any time zone; WeekStrip works out which days count
 			supabase
 				.from('practice_sessions')
-				.select('started_at, practice_session_items(practice_seconds)')
+				.select('started_at, practice_session_items(practice_seconds, run_seconds)')
 				.gte('started_at', new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()),
 			supabase
 				.from('tracks')
@@ -246,7 +247,7 @@ export const load: PageServerLoad = async ({
 		prep,
 		week: (sessionsRes.data ?? []).map((row) => ({
 			startedAt: row.started_at,
-			seconds: row.practice_session_items.reduce((sum, item) => sum + item.practice_seconds, 0)
+			seconds: loggedSeconds(row.practice_session_items)
 		})),
 		demos,
 		bands,

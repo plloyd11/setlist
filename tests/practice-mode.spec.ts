@@ -281,7 +281,7 @@ test.describe('Shed demos', () => {
 			// Time counts toward the log, and belongs to the person who played
 			await member.page.clock.install();
 			await member.page.goto(`/demos/${demo.id}/practice`);
-			await expect(member.page.getByTestId('practice-clock')).toBeVisible();
+			await member.page.getByRole('button', { name: 'Start clock' }).click();
 			await member.page.clock.runFor(65_000);
 			await expect
 				.poll(async () => {

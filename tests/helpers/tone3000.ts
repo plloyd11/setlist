@@ -65,6 +65,13 @@ export function fakeTone3000() {
 	const fake = {
 		/** Leave the picker open, as if they're still browsing */
 		holdPicker: false,
+		/** Who the picker's window is signed in as; null for a key that isn't let ask */
+		user: {
+			username: 'window-login',
+			display_name: null,
+			avatar_url: null,
+			url: `${T3K}/window-login`
+		} as { username: string } | null,
 		authorized: [] as URLSearchParams[],
 		tokenRequests: [] as URLSearchParams[],
 		toneQueries: new Map<string, URLSearchParams>(),
@@ -98,6 +105,11 @@ export function fakeTone3000() {
 						scope: 'read'
 					}
 				});
+			}
+			if (url.pathname === '/api/v1/user') {
+				return fake.user
+					? route.fulfill({ headers: CORS, json: fake.user })
+					: route.fulfill({ status: 403, headers: CORS, json: { error: 'forbidden' } });
 			}
 			const tone = url.pathname.match(/^\/api\/v1\/tones\/(\d+)$/)?.[1];
 			if (tone && tone in tones) {

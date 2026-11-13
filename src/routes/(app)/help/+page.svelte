@@ -220,9 +220,26 @@
 					before every pass, so your hands are ready when the section lands.
 				</p>
 				<p>
+					Stopping leaves the playhead where it is. Turn on
+					<span class="font-medium text-surface-700 dark:text-surface-200">Return on stop</span> and it
+					goes back to where you started instead, so every pass begins at the same spot. Shift+Space does
+					the other one, whichever is set.
+				</p>
+				<p>
 					The <span class="font-medium text-surface-700 dark:text-surface-200">Speed</span> knob slows
-					the track to half speed without dropping the pitch. Save the loop as a named section ("solo",
-					"bridge") and it's waiting next session. Knobs, loop, and sections are all remembered per song.
+					the track to half speed without dropping the pitch. Knobs, loop, and sections are all remembered
+					per song.
+				</p>
+				<p>
+					Map the song as it plays: press
+					<span class="font-medium text-surface-700 dark:text-surface-200">Mark</span> at each change
+					and the sections line up over the waveform, ready to name. Tap one to loop it, or step through
+					them from the transport; with the loop on, it moves with you. Drag a section's edge to trim
+					it, or save any loop as a section of its own ("the sweep lick").
+				</p>
+				<p>
+					<span class="font-medium text-surface-700 dark:text-surface-200">Big waveform</span> puts the
+					chart away and gives the room to the waveform. Scroll over it to zoom in for placing an edge.
 				</p>
 				<figure class="rounded-lg bg-surface-100/70 p-3 dark:bg-surface-950/40">
 					<div aria-hidden="true">
@@ -338,6 +355,42 @@
 							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
 							>→</kbd
 						> skip 5s
+					</span>
+					<span class="flex items-center gap-1">
+						<kbd
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							>S</kbd
+						> mark a section
+					</span>
+					<span class="flex items-center gap-1">
+						<kbd
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							>,</kbd
+						>
+						<kbd
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							>.</kbd
+						> previous, next section
+					</span>
+					<span class="flex items-center gap-1">
+						<kbd
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							>1&ndash;9</kbd
+						> loop that section
+					</span>
+					<span class="flex items-center gap-1">
+						<kbd
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							>+</kbd
+						>
+						<kbd
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							>&minus;</kbd
+						>
+						<kbd
+							class="rounded border border-surface-300 bg-surface-100 px-1 py-px text-label font-medium text-surface-600 dark:border-surface-600 dark:bg-surface-800 dark:text-surface-300"
+							>0</kbd
+						> zoom
 					</span>
 				</p>
 			</div>

@@ -357,9 +357,11 @@
 			Drag across the tab to choose a section, then Loop to repeat it.
 		</p>
 
+		<!-- isolate: alphaTab puts its cursors at z-index 1000, which would otherwise
+		     draw them over the side nav when it opens across the page -->
 		<div
 			bind:this={viewport}
-			class="tab-viewport relative mt-2 h-[58dvh] overflow-auto rounded-xl border border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-900"
+			class="tab-viewport relative isolate mt-2 h-[58dvh] overflow-auto rounded-xl border border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-900"
 		>
 			{#if status === 'loading'}
 				<div

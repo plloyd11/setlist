@@ -5,6 +5,13 @@ export type PracticeAction =
 	| 'pinLoopEnd'
 	| 'back'
 	| 'forward'
+	| 'markSection'
+	| 'previousSection'
+	| 'nextSection'
+	| 'zoomIn'
+	| 'zoomOut'
+	| 'zoomFit'
+	| `section${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`
 	| 'nextSong'
 	| 'previousSong'
 	| 'toggleMetronome';
@@ -36,6 +43,31 @@ export function practiceShortcut(e: KeyboardEvent): PracticeAction | null {
 			return 'back';
 		case 'ArrowRight':
 			return 'forward';
+		case 's':
+		case 'S':
+			return 'markSection';
+		case ',':
+			return 'previousSection';
+		case '.':
+			return 'nextSection';
+		case '+':
+		case '=':
+			return 'zoomIn';
+		case '-':
+		case '_':
+			return 'zoomOut';
+		case '0':
+			return 'zoomFit';
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			return `section${e.key}`;
 		case 'n':
 		case 'N':
 			return 'nextSong';

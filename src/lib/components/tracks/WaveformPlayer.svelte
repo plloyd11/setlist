@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack, type Snippet } from 'svelte';
 	import Digits from '#lib/components/ui/Digits.svelte';
 	import type WaveSurfer from 'wavesurfer.js';
 	import type RegionsPlugin from 'wavesurfer.js/plugins/regions';
@@ -23,6 +24,9 @@
 		practice = false,
 		media,
 		transport = true,
+		readout = true,
+		tall = false,
+		lane,
 		ontimeupdate,
 		onmarkerclick,
 		onloaderror,
@@ -45,6 +49,13 @@
 		media?: HTMLMediaElement;
 		/** False when the caller renders its own transport: only the time readout stays */
 		transport?: boolean;
+		/** False when the caller shows the position itself */
+		readout?: boolean;
+		/** A taller waveform that zooms, for placing loop points and section edges by
+		 * eye. Not on phones. */
+		tall?: boolean;
+		/** Drawn above the waveform at the same width, so it shares its timeline */
+		lane?: Snippet;
 		ontimeupdate?: (time: number) => void;
 		onmarkerclick?: (id: string) => void;
 		onloaderror?: () => void;
@@ -61,12 +72,40 @@
 	let loopRegion: Region | null = null;
 	let loopEnabled = $state(false);
 	let preRollOn = false;
+	// Where this pass set off from, or where the playhead was last put by hand: a
+	// DAW's start marker. With return-on-stop, stopping goes back to it. The loop's
+	// own wraps go through jump(), so they never move it.
+	let returnOnStop = false;
+	let startPoint = 0;
 	let lastTick = 0;
 	let ready = $state(false);
 	let playing = $state(false);
 	let currentTime = $state(0);
 	let totalDuration = $state(0);
 	let lastEmitted = 0;
+	// Zoom, as a multiple of "the whole file fits". Only the tall waveform zooms.
+	// Stored peaks are 1500 points a file, so past about 5x the bars stop gaining
+	// detail: the extra room is for placing an edge, not for reading transients.
+	const MAX_ZOOM = 12;
+	let zoom = $state(1);
+	// What wavesurfer is showing: the lane above is drawn to the same width and
+	// slid by the same scroll, so its sections stay over their audio
+	let contentWidth = $state(0);
+	let scrollLeft = $state(0);
+	let zoomed = $derived(zoom > 1 && contentWidth > 0);
+
+	// wavesurfer parks a seek made while the media isn't ready to play, which
+	// includes the moment another seek is in flight, and then drops it when that
+	// first seek reports in. So a quick second tap on "forward 5", or on a section,
+	// was lost. The media element takes overlapping seeks fine: hand it the time.
+	function jump(time: number) {
+		if (!ws) return;
+		ws.setTime(time);
+		const element = ws.getMediaElement();
+		if (element && element.readyState >= 1 && element.readyState < 3) {
+			element.currentTime = Math.max(0, Math.min(time, element.duration || time));
+		}
+	}
 
 	function themeColor(name: string, fallback: string): string {
 		const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -80,6 +119,76 @@
 			? themeColor('--color-neon-400', '#bbc92a') + '2e'
 			: themeColor('--color-surface-400', '#5a7190') + '26';
 	}
+
+	function waveHeight(): number {
+		const phone = window.matchMedia('(max-width: 767px)').matches;
+		// A page with its own transport is short of room on a phone
+		if (phone) return transport ? 80 : 56;
+		return tall ? Math.max(160, Math.min(360, Math.round(window.innerHeight * 0.4))) : 80;
+	}
+
+	// The height can change under a live player: wavesurfer redraws in place, and
+	// the loop region and playhead stay where they are
+	$effect(() => {
+		const big = tall;
+		if (!ready) return;
+		// Only `tall` and `ready` bring this back: zoomTo reads the playhead
+		untrack(() => {
+			ws?.setOptions({ height: waveHeight() });
+			if (!big) zoomTo(1);
+		});
+	});
+
+	/** Zoom to a level, keeping the point under `anchorX` (px from the left) still. */
+	function zoomTo(level: number, anchorX?: number) {
+		if (!ws || !ready || !totalDuration) return;
+		const next = Math.min(MAX_ZOOM, Math.max(1, level));
+		if (Math.abs(next - zoom) < 0.001) return;
+		const width = container.clientWidth;
+		const pxPerSecond = (width * zoom) / totalDuration;
+		const scroll = ws.getScroll();
+		let x = anchorX;
+		if (x === undefined) {
+			// From the keys or the buttons: hold the playhead still if it's in view
+			const head = currentTime * pxPerSecond - scroll;
+			x = head >= 0 && head <= width ? head : width / 2;
+		}
+		const time = (scroll + x) / pxPerSecond;
+		const nextPxPerSecond = (width * next) / totalDuration;
+		try {
+			// 0 hands the width back to "fill the container"
+			ws.zoom(next === 1 ? 0 : nextPxPerSecond);
+		} catch {
+			return;
+		}
+		zoom = next;
+		ws.setScroll(Math.max(0, time * nextPxPerSecond - x));
+	}
+
+	export function zoomBy(factor: number) {
+		if (tall) zoomTo(zoom * factor);
+	}
+
+	export function zoomFit() {
+		zoomTo(1);
+	}
+
+	// Wheel over the tall waveform zooms around the pointer. A sideways swipe is left
+	// alone, so it scrolls. Svelte's onwheel is passive, and this has to preventDefault.
+	$effect(() => {
+		if (!practice) return;
+		const target = container;
+		const onwheel = (e: WheelEvent) => {
+			if (!tall || !ready) return;
+			const pinch = e.ctrlKey || e.metaKey;
+			if (!pinch && Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+			e.preventDefault();
+			const x = e.clientX - target.getBoundingClientRect().left;
+			zoomTo(zoom * Math.exp(-e.deltaY * (pinch ? 0.01 : 0.002)), x);
+		};
+		target.addEventListener('wheel', onwheel, { passive: false });
+		return () => target.removeEventListener('wheel', onwheel);
+	});
 
 	function loopJumpTarget(): number {
 		if (!loopRegion) return 0;
@@ -97,6 +206,10 @@
 		ready = false;
 		playing = false;
 		currentTime = 0;
+		startPoint = 0;
+		zoom = 1;
+		contentWidth = 0;
+		scrollLeft = 0;
 		totalDuration = sourceDuration ?? 0;
 
 		let cancelled = false;
@@ -119,8 +232,7 @@
 				// decoding the whole file.
 				peaks: sourcePeaks ? [sourcePeaks] : undefined,
 				duration: sourceDuration ?? undefined,
-				// A page with its own transport is short of room on a phone
-				height: !transport && window.matchMedia('(max-width: 767px)').matches ? 56 : 80,
+				height: waveHeight(),
 				normalize: true,
 				barWidth: 2,
 				barGap: 1,
@@ -152,6 +264,19 @@
 				});
 			}
 
+			const syncView = () => {
+				if (!instance) return;
+				contentWidth = instance.getWrapper().scrollWidth;
+				scrollLeft = instance.getScroll();
+			};
+			// A click on the waveform puts the playhead somewhere by hand
+			instance.on('interaction', (t: number) => {
+				startPoint = t;
+			});
+			instance.on('scroll', syncView);
+			instance.on('zoom', syncView);
+			instance.on('redrawcomplete', syncView);
+
 			instance.on('ready', (d: number) => {
 				ready = true;
 				if (d > 0) totalDuration = d;
@@ -170,11 +295,13 @@
 				// media 'ended' event before the tick check below, and a seek past B plays
 				// on to the end: either way, re-trap instead of stopping.
 				if (loopEnabled && loopRegion) {
-					instance?.setTime(loopJumpTarget());
+					jump(loopJumpTarget());
 					void instance?.play().catch(() => {});
 					return;
 				}
 				playing = false;
+				// Running off the end is a stop like any other
+				if (returnOnStop) seekTo(startPoint);
 				onfinish?.();
 			});
 			instance.on('timeupdate', (t: number) => {
@@ -189,7 +316,7 @@
 					lastTick < loopRegion.end &&
 					t - lastTick < 0.35
 				) {
-					instance?.setTime(loopJumpTarget());
+					jump(loopJumpTarget());
 				}
 				lastTick = t;
 				currentTime = t;
@@ -221,7 +348,8 @@
 	});
 
 	export function seekTo(time: number) {
-		ws?.setTime(time);
+		jump(time);
+		startPoint = time;
 		currentTime = time;
 		ontimeupdate?.(time);
 	}
@@ -238,11 +366,22 @@
 			currentTime >= loopRegion.start &&
 			currentTime <= loopRegion.end
 		) {
-			ws?.setTime(loopJumpTarget());
+			jump(loopJumpTarget());
 		}
 	}
 
-	export function playPause() {
+	/**
+	 * Start, or stop. A stop either stays where it is or goes back to where the pass
+	 * started (see setReturnOnStop); `other` asks for whichever one isn't set.
+	 */
+	export function playPause(other = false) {
+		if (ws?.isPlaying()) {
+			ws.pause();
+			if (returnOnStop !== other) seekTo(startPoint);
+			return;
+		}
+		// Before the pre-roll: the lead-in is on the way to this point, not the point
+		startPoint = currentTime;
 		applyPreRollOnPlayStart();
 		void ws?.playPause();
 	}
@@ -250,6 +389,7 @@
 	/** Returns false when playback was blocked (browser autoplay policy). */
 	export async function play(): Promise<boolean> {
 		try {
+			if (!ws?.isPlaying()) startPoint = currentTime;
 			applyPreRollOnPlayStart();
 			await ws?.play();
 			return true;
@@ -311,8 +451,18 @@
 		}
 	}
 
+	/** To the top of the loop, lead-in included: for jumping between sections */
+	export function seekToLoopStart() {
+		if (loopRegion) seekTo(loopJumpTarget());
+	}
+
 	export function setPreRoll(enabled: boolean) {
 		preRollOn = enabled;
+	}
+
+	/** Practice: a stop sends the playhead back to where the pass started */
+	export function setReturnOnStop(enabled: boolean) {
+		returnOnStop = enabled;
 	}
 
 	// Keyboard seek for the slider — wavesurfer's canvas is click-only
@@ -337,7 +487,7 @@
 			case ' ':
 			case 'Enter':
 				e.preventDefault();
-				playPause();
+				playPause(e.shiftKey);
 				return;
 		}
 		if (next !== null) {
@@ -345,6 +495,9 @@
 			seekTo(next);
 		}
 	}
+
+	const zoomKey =
+		'focus-live flex h-8 w-8 items-center justify-center rounded-lg border border-surface-300 text-base leading-none text-surface-700 hover:border-accent-400 hover:text-accent-600 disabled:opacity-40 dark:border-surface-600 dark:text-surface-200 dark:hover:border-accent-600 dark:hover:text-accent-400';
 
 	// Deterministic pseudo-waveform for the loading skeleton (stable across SSR/hydration)
 	const skeletonBars = Array.from({ length: 48 }, (_, i) => 20 + 55 * Math.abs(Math.sin(i * 1.7)));
@@ -355,6 +508,18 @@
 		? 'p-4'
 		: 'p-2 md:p-4'}"
 >
+	{#if lane}
+		<div class="lane-clip">
+			<div
+				style="width: {zoomed ? `${contentWidth}px` : '100%'}; transform: translateX({zoomed
+					? -scrollLeft
+					: 0}px)"
+			>
+				{@render lane()}
+			</div>
+		</div>
+	{/if}
+
 	<!-- Waveform + comment markers -->
 	<div class="relative">
 		<!-- Click-to-seek is wavesurfer's; arrow keys + Space come from the slider role -->
@@ -415,85 +580,135 @@
 		{/if}
 	</div>
 
+	{#if practice && tall}
+		<!-- Zoom: wider screens only, like the tall waveform itself -->
+		<div class="mt-2 hidden items-center justify-between gap-3 md:flex">
+			<p class="text-xs text-surface-500 dark:text-surface-300">
+				Scroll to zoom. Drag across the waveform to set a loop.
+			</p>
+			<div class="flex items-center gap-1">
+				<button
+					type="button"
+					onclick={() => zoomBy(1 / 1.5)}
+					disabled={!ready || zoom <= 1}
+					aria-label="Zoom out"
+					title="Zoom out (-)"
+					class={zoomKey}
+				>
+					&minus;
+				</button>
+				<button
+					type="button"
+					onclick={zoomFit}
+					disabled={!ready || zoom <= 1}
+					aria-label="Zoom to fit"
+					title="Fit the whole song (0)"
+					class="{zoomKey} w-auto min-w-12 px-2 text-xs font-medium"
+				>
+					<span data-testid="zoom-level">{zoom <= 1 ? 'Fit' : `${zoom.toFixed(1)}×`}</span>
+				</button>
+				<button
+					type="button"
+					onclick={() => zoomBy(1.5)}
+					disabled={!ready || zoom >= MAX_ZOOM}
+					aria-label="Zoom in"
+					title="Zoom in (+)"
+					class={zoomKey}
+				>
+					+
+				</button>
+			</div>
+		</div>
+	{/if}
+
 	<!-- Transport -->
-	<div class="flex items-center gap-3 {transport ? 'mt-3' : 'mt-1 md:mt-2'}">
-		{#if practice && transport}
-			<button
-				type="button"
-				onclick={() => seekTo(Math.max(0, currentTime - 5))}
-				disabled={!ready}
-				class="focus-live flex h-11 w-11 items-center justify-center rounded-full text-surface-600 hover:bg-surface-100 disabled:opacity-50 dark:text-surface-300 dark:hover:bg-surface-800"
-				aria-label="Back 5 seconds"
-			>
-				<svg
-					width="18"
-					height="18"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
+	{#if transport || readout}
+		<div class="flex items-center gap-3 {transport ? 'mt-3' : 'mt-1 md:mt-2'}">
+			{#if practice && transport}
+				<button
+					type="button"
+					onclick={() => seekTo(Math.max(0, currentTime - 5))}
+					disabled={!ready}
+					class="focus-live flex h-11 w-11 items-center justify-center rounded-full text-surface-600 hover:bg-surface-100 disabled:opacity-50 dark:text-surface-300 dark:hover:bg-surface-800"
+					aria-label="Back 5 seconds"
 				>
-					<path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.8L3 8" />
-					<path d="M3 3v5h5" />
-				</svg>
-			</button>
-		{/if}
-		{#if transport}
-			<button
-				type="button"
-				onclick={playPause}
-				disabled={!ready}
-				class="focus-live flex h-11 w-11 items-center justify-center rounded-full bg-accent-500 text-white shadow-sm hover:bg-accent-600 disabled:opacity-50"
-				aria-label={playing ? 'Pause' : 'Play'}
-			>
-				{#if playing}
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-						<rect x="6" y="4" width="4" height="16" rx="1" />
-						<rect x="14" y="4" width="4" height="16" rx="1" />
+					<svg
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.8L3 8" />
+						<path d="M3 3v5h5" />
 					</svg>
-				{:else}
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-						<path
-							d="M8 5.14v13.72a1 1 0 001.5.86l11-6.86a1 1 0 000-1.72l-11-6.86a1 1 0 00-1.5.86z"
-						/>
-					</svg>
-				{/if}
-			</button>
-		{/if}
-		{#if practice && transport}
-			<button
-				type="button"
-				onclick={() => seekTo(Math.min(totalDuration, currentTime + 5))}
-				disabled={!ready}
-				class="focus-live flex h-11 w-11 items-center justify-center rounded-full text-surface-600 hover:bg-surface-100 disabled:opacity-50 dark:text-surface-300 dark:hover:bg-surface-800"
-				aria-label="Forward 5 seconds"
-			>
-				<svg
-					width="18"
-					height="18"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
+				</button>
+			{/if}
+			{#if transport}
+				<button
+					type="button"
+					onclick={() => playPause()}
+					disabled={!ready}
+					class="focus-live flex h-11 w-11 items-center justify-center rounded-full bg-accent-500 text-white shadow-sm hover:bg-accent-600 disabled:opacity-50"
+					aria-label={playing ? 'Pause' : 'Play'}
 				>
-					<path d="M21 12a9 9 0 1 1-9-9 9.7 9.7 0 0 1 6.7 2.8L21 8" />
-					<path d="M21 3v5h-5" />
-				</svg>
-			</button>
-		{/if}
-		<span class="text-sm text-surface-600 dark:text-surface-300">
-			<Digits value={formatDuration(Math.round(currentTime))} />
-			<span class="text-surface-400 dark:text-surface-300">/</span>
-			<Digits value={formatDuration(Math.round(totalDuration))} />
-		</span>
-	</div>
+					{#if playing}
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+							<rect x="6" y="4" width="4" height="16" rx="1" />
+							<rect x="14" y="4" width="4" height="16" rx="1" />
+						</svg>
+					{:else}
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+							<path
+								d="M8 5.14v13.72a1 1 0 001.5.86l11-6.86a1 1 0 000-1.72l-11-6.86a1 1 0 00-1.5.86z"
+							/>
+						</svg>
+					{/if}
+				</button>
+			{/if}
+			{#if practice && transport}
+				<button
+					type="button"
+					onclick={() => seekTo(Math.min(totalDuration, currentTime + 5))}
+					disabled={!ready}
+					class="focus-live flex h-11 w-11 items-center justify-center rounded-full text-surface-600 hover:bg-surface-100 disabled:opacity-50 dark:text-surface-300 dark:hover:bg-surface-800"
+					aria-label="Forward 5 seconds"
+				>
+					<svg
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M21 12a9 9 0 1 1-9-9 9.7 9.7 0 0 1 6.7 2.8L21 8" />
+						<path d="M21 3v5h-5" />
+					</svg>
+				</button>
+			{/if}
+			{#if readout}
+				<span class="text-sm text-surface-600 dark:text-surface-300">
+					<Digits value={formatDuration(Math.round(currentTime))} />
+					<span class="text-surface-400 dark:text-surface-300">/</span>
+					<Digits value={formatDuration(Math.round(totalDuration))} />
+				</span>
+			{/if}
+		</div>
+	{/if}
 </div>
 
 <style>
+	/* Clips the zoomed lane sideways only: the time bubble over a dragged edge
+	   still shows above it */
+	.lane-clip {
+		overflow-x: clip;
+	}
 	/* Region resize handles ship with inline rgba(0,0,0,.5) borders — invisible
 	   on navy. The shadow root is open, so ::part can restyle them (inline
 	   styles need !important). Armed loop lights the handles chartreuse. */

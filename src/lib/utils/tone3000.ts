@@ -233,15 +233,29 @@ export class T3kSession {
 	}
 
 	/** Paths only: whatever the API hands back, the token goes nowhere but TONE3000 */
-	async #fetch(path: string): Promise<Response> {
+	async #fetch(path: string, retry = true): Promise<Response> {
 		const url = `${T3K_ORIGIN}${path}`;
 		let res = await fetch(url, { headers: { Authorization: `Bearer ${await this.#token()}` } });
-		if (res.status === 401) {
+		if (res.status === 401 && retry) {
 			res = await fetch(url, { headers: { Authorization: `Bearer ${await this.#refresh()}` } });
 		}
 		if (res.status === 429) throw new Tone3000Error('TONE3000 is busy. Try again in a minute.');
 		if (!res.ok) throw new Tone3000Error("Couldn't get that from TONE3000. Try again.");
 		return res;
+	}
+
+	/**
+	 * Whose TONE3000 login the window used. That login is a cookie TONE3000 keeps in the
+	 * browser, so it outlasts the pick and the Setlist account: this is how it gets seen.
+	 * No retry, so a refusal here never spends the refresh token the pick needs.
+	 */
+	async user(): Promise<T3kUser> {
+		const res = await this.#fetch('/api/v1/user', false);
+		const user = (await res.json()) as T3kUser | null;
+		if (typeof user?.username !== 'string' || !user.username) {
+			throw new Tone3000Error("TONE3000 didn't say who's signed in.");
+		}
+		return user;
 	}
 
 	async tone(id: string, kind: T3kKind): Promise<T3kTone> {

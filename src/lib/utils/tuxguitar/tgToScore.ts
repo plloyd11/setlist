@@ -12,6 +12,7 @@ import {
 	type TgTrack,
 	type TgVoice
 } from './readTg.js';
+import { repeatMarks } from './repeats.js';
 
 type Model = typeof AlphaTabModel;
 
@@ -343,14 +344,14 @@ export function tgToScore(song: TgSong, model: Model, settings: Settings): Alpha
 	const measureStarts: number[] = [];
 	let start = SONG_START_TICKS;
 	let tempo = 0;
-	for (const header of song.headers) {
+	const repeats = repeatMarks(song.headers);
+	for (const [i, header] of song.headers.entries()) {
 		const bar = new model.MasterBar();
 		bar.timeSignatureNumerator = header.numerator;
 		bar.timeSignatureDenominator = header.denominator;
 		bar.isRepeatStart = header.repeatOpen;
-		// alphaTab counts plays, TuxGuitar counts repeats
-		if (header.repeatClose > 0) bar.repeatCount = header.repeatClose + 1;
-		bar.alternateEndings = header.alternatives;
+		bar.repeatCount = repeats[i].repeatCount;
+		bar.alternateEndings = repeats[i].alternateEndings;
 		if (header.marker !== null) {
 			const section = new model.Section();
 			section.text = header.marker;

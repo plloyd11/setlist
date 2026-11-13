@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Digits from '#lib/components/ui/Digits.svelte';
 	import { onMount } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
@@ -20,8 +19,8 @@
 	} from '#lib/components/practice/practiceStyles.js';
 	import PlanBar from '#lib/components/practice/PlanBar.svelte';
 	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
+	import PracticeClock from '#lib/components/practice/PracticeClock.svelte';
 	import { PracticeTracker } from '#lib/components/practice/practiceTracker.svelte.js';
-	import { formatDuration } from '#lib/utils/duration.js';
 	import { formatPracticeTime } from '#lib/utils/practiceTime.js';
 	import { startPlan } from '#lib/utils/practicePlan.js';
 
@@ -84,14 +83,7 @@
 	<div class="flex min-w-0 items-center gap-3">
 		<PlanBar />
 		{#if tracker}
-			<p
-				data-testid="practice-clock"
-				class="font-display text-lg font-bold text-accent-600 dark:text-accent-hot"
-			>
-				<span class="sr-only">Practiced </span><Digits
-					value={formatDuration(Math.floor(tracker.seconds))}
-				/>
-			</p>
+			<PracticeClock {tracker} />
 		{/if}
 	</div>
 </div>

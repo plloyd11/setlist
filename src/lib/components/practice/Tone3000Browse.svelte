@@ -28,6 +28,8 @@
 	let tone = $derived(mine ? tone3000.tone : null);
 	let image = $derived(httpsUrl(tone?.images?.[0]));
 	let avatar = $derived(httpsUrl(tone?.user.avatar_url));
+	let account = $derived(mine ? tone3000.account : null);
+	let accountAvatar = $derived(httpsUrl(account?.avatar_url));
 	// Sizes only matter when a tone has more than one
 	let showSizes = $derived(new Set(tone3000.models.map((model) => model.size)).size > 1);
 
@@ -169,6 +171,42 @@
 							</li>
 						{/each}
 					</ul>
+				{/if}
+
+				{#if account}
+					<!-- TONE3000 keeps its login in the browser, so it may not be this musician's -->
+					<div
+						class="flex flex-wrap items-center gap-x-2 gap-y-0.5 border-t border-surface-200 px-2.5 py-1.5 {muted} dark:border-surface-700"
+					>
+						<p class="flex min-w-0 items-center gap-1.5">
+							{#if accountAvatar}
+								<img
+									src={accountAvatar}
+									alt=""
+									width="16"
+									height="16"
+									loading="lazy"
+									class="h-4 w-4 shrink-0 rounded-full object-cover"
+								/>
+							{/if}
+							<span class="truncate">
+								Signed in to TONE3000 as
+								<span class="font-medium text-surface-700 dark:text-surface-100">
+									{account.username}
+								</span>
+							</span>
+						</p>
+						<a
+							href={T3K_ORIGIN}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="{link} ml-auto shrink-0"
+							aria-label="Not you? Sign out at TONE3000, then browse again"
+							title="Sign out at TONE3000, then browse again"
+						>
+							Not you?
+						</a>
+					</div>
 				{/if}
 
 				<div

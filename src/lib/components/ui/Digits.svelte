@@ -21,6 +21,8 @@
 <style>
 	.slot {
 		display: inline-block;
+		/* A slot holding a space would collapse to nothing: "1h 05m" came out "1h05m" */
+		white-space: pre;
 	}
 	.slot::before {
 		content: attr(data-ch);

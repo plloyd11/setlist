@@ -6,9 +6,11 @@
 	let { data } = $props();
 
 	// Updated locally when a timed run is applied: reloading would re-sign the audio
-	// and stop the player
-	// svelte-ignore state_referenced_locally
-	let lengthSeconds = $state(data.song.duration_seconds);
+	// and stop the player. Belongs to one song: the next one starts from its own.
+	let applied = $state<{ songId: string; seconds: number } | null>(null);
+	let lengthSeconds = $derived(
+		applied && applied.songId === data.song.id ? applied.seconds : data.song.duration_seconds
+	);
 </script>
 
 <svelte:head>
@@ -28,29 +30,32 @@
 	</div>
 {/snippet}
 
-<ShedScreen
-	item={{ kind: 'song', refId: data.song.id, label: data.song.title }}
-	title={data.song.title}
-	{lengthSeconds}
-	variants={data.variants}
-	charts={data.charts}
-	notes={data.song.notes}
-	backHref={data.backHref}
-	emptyAudio={noAudio}
-	sideLabel="Progress"
->
-	{#snippet side(tracker)}
-		<div class="flex flex-col gap-4">
-			<SongStatus status={data.practice?.status ?? null} note={data.practice?.note ?? null} />
-			<RunTimer
-				{lengthSeconds}
-				isShared={data.isShared}
-				onrun={(seconds) => tracker?.setRun(seconds, 'stopwatch')}
-				onapplied={(seconds, previous) => {
-					lengthSeconds = seconds;
-					tracker?.setLengthApplied(previous);
-				}}
-			/>
-		</div>
-	{/snippet}
-</ShedScreen>
+<!-- Going straight to the next song is a new screen: its own clock, plan step and player -->
+{#key data.song.id}
+	<ShedScreen
+		item={{ kind: 'song', refId: data.song.id, label: data.song.title }}
+		title={data.song.title}
+		{lengthSeconds}
+		variants={data.variants}
+		charts={data.charts}
+		notes={data.song.notes}
+		backHref={data.backHref}
+		emptyAudio={noAudio}
+		sideLabel="Progress"
+	>
+		{#snippet side(tracker)}
+			<div class="flex flex-col gap-4">
+				<SongStatus status={data.practice?.status ?? null} note={data.practice?.note ?? null} />
+				<RunTimer
+					{lengthSeconds}
+					isShared={data.isShared}
+					onrun={(seconds) => tracker?.setRun(seconds, 'stopwatch')}
+					onapplied={(seconds, previous) => {
+						applied = { songId: data.song.id, seconds };
+						tracker?.setLengthApplied(previous);
+					}}
+				/>
+			</div>
+		{/snippet}
+	</ShedScreen>
+{/key}

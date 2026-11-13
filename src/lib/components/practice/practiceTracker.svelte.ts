@@ -1,10 +1,9 @@
 import { browser } from '$app/env';
+import { isLogged, loggedSeconds } from '#lib/utils/practiceTime.js';
 
 const STORE_PREFIX = 'practice:session:v1:';
 /** A gap this long means the next thing you practice is a new session */
 const NEW_SESSION_AFTER_MS = 30 * 60 * 1000;
-/** Opening a page and leaving isn't practice */
-const MIN_SECONDS_TO_SAVE = 30;
 /** Forgot it was running: stop counting, unless audio or the metronome is going */
 const IDLE_PAUSE_MS = 10 * 60 * 1000;
 const HEARTBEAT_MS = 60 * 1000;
@@ -12,6 +11,13 @@ const JOURNAL_MS = 5 * 1000;
 /** A larger jump is a laptop waking up, not practice */
 const MAX_TICK_SECONDS = 5;
 const MAX_UNSENT = 5;
+/** Going straight from one practice screen to the next keeps a running clock running */
+const CARRY_MS = 3000;
+/** The clock's own button (PracticeClock): a press there is a decision, not just a sign of life */
+const CLOCK_BUTTON = '[data-practice-clock-button]';
+
+/** When a screen was last left with its clock running */
+let leftRunningAt = 0;
 
 export interface PracticeItemRef {
 	kind: 'song' | 'exercise' | 'skill';
@@ -47,11 +53,7 @@ interface Store {
 }
 
 function worthSaving(session: StoredSession): boolean {
-	const items = Object.values(session.items);
-	return (
-		items.some((item) => item.run_seconds || item.note) ||
-		items.reduce((sum, item) => sum + item.practice_seconds, 0) >= MIN_SECONDS_TO_SAVE
-	);
+	return Object.values(session.items).some(isLogged);
 }
 
 /** Only a real JSON success counts: an expired login redirects to a page that's "ok" too */
@@ -67,7 +69,8 @@ async function send(session: StoredSession, keepalive = false): Promise<boolean>
 					started_at: session.started_at,
 					last_active_at: session.last_active_at
 				},
-				items: Object.values(session.items)
+				// Under a minute stays in the journal, in case it grows into practice
+				items: Object.values(session.items).filter(isLogged)
 			})
 		});
 		return response.ok && (await response.json()).saved === true;
@@ -81,11 +84,19 @@ async function send(session: StoredSession, keepalive = false): Promise<boolean>
  * tab closes or the phone dies. Everything is journaled to localStorage first, and
  * sends carry running totals under stable ids, so a replay can't double-count. Sessions
  * span screens: moving from a warm-up to a song within 30 minutes is one session.
+ *
+ * The clock waits to be started: opening a screen to look something up isn't practice.
+ * The one exception is going straight on from a screen where it was running.
  */
 export class PracticeTracker {
 	/** Seconds on this item in this session, including earlier visits */
 	seconds = $state(0);
-	paused = $state(false);
+	paused = $state(true);
+
+	/** Today's time on everything else: other sessions, and this session's other items */
+	#elsewhereToday = $state<number | null>(null);
+	/** Local midnight, ms: a session counts toward the day it started, as in the log */
+	#dayStart = 0;
 
 	#storeKey: string;
 	#ref: PracticeItemRef;
@@ -105,11 +116,24 @@ export class PracticeTracker {
 		this.#isBusy = isBusy;
 	}
 
+	/** Seconds practiced today on everything, this included. Null until it's known. */
+	get today(): number | null {
+		const seconds = this.seconds;
+		if (this.#elsewhereToday === null) return null;
+		const session = this.#store.current;
+		const countsToday = !!session && Date.parse(session.started_at) >= this.#dayStart;
+		return this.#elsewhereToday + (countsToday ? seconds : 0);
+	}
+
 	start() {
 		if (!browser || this.#interval) return;
 		this.#read();
 		this.#rollOverIfStale();
 		this.#ensureItem();
+		this.paused = Date.now() - leftRunningAt > CARRY_MS;
+		leftRunningAt = 0;
+		// Before the replay: it reads what's unsent, which the replay empties
+		void this.#loadToday();
 		void this.#replay();
 
 		this.#lastTick = this.#lastActivity = this.#lastJournal = this.#lastSend = Date.now();
@@ -128,13 +152,22 @@ export class PracticeTracker {
 		window.removeEventListener('pagehide', this.#handleLeave);
 		window.removeEventListener('pointerdown', this.#handleActivity);
 		window.removeEventListener('keydown', this.#handleActivity);
+		if (!this.paused) leftRunningAt = Date.now();
 		this.#write();
 		void this.#flush(true);
 	}
 
 	togglePause() {
 		this.paused = !this.paused;
-		this.#lastActivity = Date.now();
+		this.#autoPaused = false;
+		const now = Date.now();
+		this.#lastActivity = now;
+		// A session starts when its clock does, not when the screen opened. One with
+		// nothing logged has never been sent, so its start is still free to move.
+		const session = this.#store.current;
+		if (!this.paused && session && !worthSaving(session)) {
+			session.started_at = session.last_active_at = new Date(now).toISOString();
+		}
 	}
 
 	/** Record a timed full run of this item */
@@ -155,9 +188,11 @@ export class PracticeTracker {
 		void this.#flush();
 	}
 
-	#handleActivity = () => {
+	#handleActivity = (event: Event) => {
 		this.#lastActivity = Date.now();
-		if (this.paused && this.#autoPaused) {
+		// The clock's button says what it'll do: waking the clock first would flip that
+		const onClockButton = event.target instanceof Element && !!event.target.closest(CLOCK_BUTTON);
+		if (this.paused && this.#autoPaused && !onClockButton) {
 			this.paused = false;
 			this.#autoPaused = false;
 		}
@@ -262,6 +297,50 @@ export class PracticeTracker {
 		this.seconds = this.#item.practice_seconds;
 	}
 
+	/**
+	 * The rest of today: the account's sessions, with this browser's own copies standing
+	 * in for any it holds, since those are the newer. Offline, it's what this browser has.
+	 */
+	async #loadToday() {
+		const midnight = new Date();
+		midnight.setHours(0, 0, 0, 0);
+		this.#dayStart = midnight.getTime();
+		const startedToday = (session: StoredSession) =>
+			Date.parse(session.started_at) >= this.#dayStart;
+
+		const local = new Map<string, number>();
+		for (const session of this.#store.unsent) {
+			if (startedToday(session)) local.set(session.id, loggedSeconds(Object.values(session.items)));
+		}
+		const current = this.#store.current;
+		if (current && startedToday(current)) {
+			const others = Object.values(current.items).filter((item) => item !== this.#item);
+			local.set(current.id, loggedSeconds(others));
+		}
+
+		let elsewhere = 0;
+		try {
+			const response = await fetch(
+				`/practice/session?since=${encodeURIComponent(midnight.toISOString())}`,
+				{ cache: 'no-store' }
+			);
+			if (response.ok) {
+				const { sessions } = (await response.json()) as {
+					sessions?: { id: string; seconds: number }[];
+				};
+				for (const session of sessions ?? []) {
+					if (!local.has(session.id) && Number.isFinite(session.seconds)) {
+						elsewhere += session.seconds;
+					}
+				}
+			}
+		} catch {
+			// Offline, or signed out: this browser's own time is still worth showing
+		}
+		for (const seconds of local.values()) elsewhere += seconds;
+		this.#elsewhereToday = elsewhere;
+	}
+
 	/** Anything the last visit couldn't send */
 	async #replay() {
 		const unsent = this.#store.unsent;
@@ -282,5 +361,33 @@ export class PracticeTracker {
 		if (!saved) session.dirty = true;
 		this.#sending = false;
 		this.#write();
+	}
+}
+
+/**
+ * Brings this browser's journal into line with an edit made in the log. Sends carry
+ * running totals, so without this the next one would put the old time back.
+ */
+export function amendJournal(
+	userId: string,
+	edit: { changed: { id: string; seconds: number }[]; removed: string[] }
+) {
+	if (!browser) return;
+	try {
+		const key = STORE_PREFIX + userId;
+		const store = JSON.parse(localStorage.getItem(key) ?? 'null') as Store | null;
+		if (!store || typeof store !== 'object') return;
+		const sessions = [store.current, ...(Array.isArray(store.unsent) ? store.unsent : [])];
+		for (const session of sessions) {
+			if (!session?.items) continue;
+			for (const [itemKey, item] of Object.entries(session.items)) {
+				const change = edit.changed.find((changed) => changed.id === item.id);
+				if (change) item.practice_seconds = change.seconds;
+				if (edit.removed.includes(item.id)) delete session.items[itemKey];
+			}
+		}
+		localStorage.setItem(key, JSON.stringify(store));
+	} catch {
+		// Blocked or corrupt storage: there's no journal to put the old time back
 	}
 }

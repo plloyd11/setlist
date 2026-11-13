@@ -159,10 +159,29 @@ test.describe('TuxGuitar files', () => {
 		}
 		const [old, current] = seen;
 		expect(old).toEqual(current);
-		expect(current.length).toContain('1:20');
+		// Its repeat with endings "1. 3." and "2. 4." goes round as TuxGuitar plays it:
+		// four passes, and the opening bar once more. That's 1:32, not 1:20.
+		expect(current.length).toContain('1:32');
 		// The song's chords, markers, repeats and tempo all made it across
 		for (const expected of ['C6add9', 'testMarker', 'testText', 'x4', ' = 100']) {
 			expect(current.texts).toContain(expected);
+		}
+	});
+
+	// TuxGuitar goes back at every close sign inside an ending, whatever its count
+	// says. Read alphaTab's way, this one is over after the second pass, at 0:14.
+	test('a repeat with alternate endings plays every pass, as TuxGuitar does', async ({
+		page,
+		testUser
+	}) => {
+		const song = await createSong(page, testUser.id, { title: 'Endings' });
+		try {
+			await attachTab(song.id, fixture('endings_handmade.tg'), 'endings_handmade.tg');
+			await openTab(page, song.id);
+			// Ten bars of two seconds: 1, then 2-3, 2-4, 2-3, 2-5, then 6
+			await expect(page.getByText(/\d:\d\d \/ \d:\d\d/)).toContainText('/ 0:20');
+		} finally {
+			await safeDelete('songs', song.id);
 		}
 	});
 

@@ -234,8 +234,7 @@ test.describe('Techniques', () => {
 
 			await page.clock.install();
 			await page.reload();
-			// The clock appears once the tracker has started counting
-			await expect(page.getByTestId('practice-clock')).toBeVisible();
+			await page.getByRole('button', { name: 'Start clock' }).click();
 			await page.clock.runFor(65_000);
 			await expect
 				.poll(async () => {

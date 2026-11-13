@@ -1,6 +1,28 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { parseProgress, saveProgress } from '#lib/server/practice.js';
+import {
+	parseDayStart,
+	parseProgress,
+	saveProgress,
+	sessionTotalsSince
+} from '#lib/server/practice.js';
+
+/**
+ * Today's sessions, for the day's total beside the practice clock. The browser says
+ * when its day started, since the server runs on UTC. Here and not in a page load,
+ * because every practice screen shows it.
+ */
+export const GET: RequestHandler = async ({ url, locals: { supabase, safeGetSession } }) => {
+	const { session } = await safeGetSession();
+	if (!session) throw error(401, 'Not authenticated');
+
+	const since = parseDayStart(url.searchParams.get('since'));
+	if (!since) throw error(400, 'Invalid day');
+
+	const sessions = await sessionTotalsSince(supabase, session.user.id, since);
+	if (!sessions) throw error(500, 'Could not load practice time');
+	return Response.json({ sessions }, { headers: { 'cache-control': 'private, no-store' } });
+};
 
 /**
  * Saves practice progress from any screen, including as the page closes (keepalive),

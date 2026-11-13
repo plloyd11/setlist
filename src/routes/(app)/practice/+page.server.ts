@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import type { SessionItem } from '#lib/utils/sessionPlan.js';
+import { loggedSeconds } from '#lib/utils/practiceTime.js';
 
 /** More than any session uses, so a long list doesn't load for nothing */
 const MAX_PER_POOL = 10;
@@ -49,7 +50,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		// Eight days covers this week in any time zone; the page works out which days count
 		supabase
 			.from('practice_sessions')
-			.select('started_at, practice_session_items(practice_seconds)')
+			.select('started_at, practice_session_items(practice_seconds, run_seconds)')
 			.gte('started_at', new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString())
 	]);
 	if (gigError) throw error(500, 'Could not load your session. Please try again.');
@@ -132,7 +133,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		},
 		week: (recentSessions ?? []).map((session) => ({
 			startedAt: session.started_at,
-			seconds: session.practice_session_items.reduce((sum, item) => sum + item.practice_seconds, 0)
+			seconds: loggedSeconds(session.practice_session_items)
 		})),
 		gig: gig
 			? {

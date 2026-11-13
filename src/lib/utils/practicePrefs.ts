@@ -7,7 +7,7 @@ const STORAGE_KEY = 'practice:prefs:v1';
 
 export const SPEED_DETENTS = [0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1] as const;
 export const PRE_ROLL_SECONDS = 2;
-export const MAX_SECTIONS = 20;
+export const MAX_SECTIONS = 40;
 export const MIN_LOOP_SECONDS = 0.5;
 const MAX_LABEL_LENGTH = 40;
 const MAX_SONGS = 100;
@@ -132,5 +132,27 @@ export function savePracticePrefs(songId: string, prefs: PracticePrefs): void {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
 	} catch {
 		// Quota/blocked storage — settings still apply for this session
+	}
+}
+
+// How the transport stops is the musician's habit, not the song's, so it's one
+// setting for every song.
+const RETURN_ON_STOP_KEY = 'practice:return-on-stop:v1';
+
+export function loadReturnOnStop(): boolean {
+	if (!browser) return false;
+	try {
+		return localStorage.getItem(RETURN_ON_STOP_KEY) === '1';
+	} catch {
+		return false;
+	}
+}
+
+export function saveReturnOnStop(on: boolean): void {
+	if (!browser) return;
+	try {
+		localStorage.setItem(RETURN_ON_STOP_KEY, on ? '1' : '0');
+	} catch {
+		// Blocked storage: it still applies for this visit
 	}
 }

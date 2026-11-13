@@ -9,7 +9,8 @@ import {
 	type T3kKind,
 	type T3kModel,
 	type T3kSession,
-	type T3kTone
+	type T3kTone,
+	type T3kUser
 } from './tone3000.js';
 
 /**
@@ -54,6 +55,11 @@ class Tone3000Browser {
 	status = $state<Status>('idle');
 	tone = $state<T3kTone | null>(null);
 	models = $state<T3kModel[]>([]);
+	/**
+	 * The TONE3000 account the window was signed in to. TONE3000 remembers that in the
+	 * browser, not us, so on a shared machine it can be someone else's: say whose it is.
+	 */
+	account = $state<T3kUser | null>(null);
 	/** The TONE3000 file on its way down */
 	adding = $state<number | null>(null);
 	error = $state<string | null>(null);
@@ -80,14 +86,17 @@ class Tone3000Browser {
 				this.#reset();
 				return;
 			}
-			const [tone, models] = await Promise.all([
+			const [tone, models, account] = await Promise.all([
 				picked.session.tone(picked.toneId, kind),
-				picked.session.models(picked.toneId, kind)
+				picked.session.models(picked.toneId, kind),
+				// Only there to be shown: the pick goes ahead without it
+				picked.session.user().catch(() => null)
 			]);
 			if (this.#abort !== abort) return;
 			this.#session = picked.session;
 			this.tone = tone;
 			this.models = models;
+			this.account = account;
 			this.status = 'ready';
 			// Nothing to choose between: straight in
 			if (models.length === 1 && !this.saved(models[0])) await this.add(models[0]);
@@ -164,6 +173,7 @@ class Tone3000Browser {
 		this.status = 'idle';
 		this.tone = null;
 		this.models = [];
+		this.account = null;
 		this.adding = null;
 		this.error = null;
 	}

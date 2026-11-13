@@ -226,6 +226,10 @@ Practice borrows the instrument idiom for the time you have, not the time the se
 
 Every Practice tab shares one skeleton: the work on the left, a 20rem rail of instruments and side lists on the right, stacking to one column on a phone. Adding to a list happens in the footer of that list's panel. The metronome's lamps run the panel's full width and light only while it's running.
 
+### The Practice Log
+
+The Session Board turned to face backwards: the same panel, readings and heat ramp, for time already spent. The period's total is the copper peak, with Days, Average day and Longest day beside it in the quiet reading style. Under them, one sentence on how the period stands, which gives way to the bar being pointed at. The chart is bars only, 24px at most, stacked cold to hot from the baseline, with three gridlines on round times. Week, Month and Year are the same chart at three zooms, never three layouts. The **By type** strip is drawn to scale, and its legend is the filter: a pressed type takes a copper border, and everything below follows it. Most practiced, in the rail, is a list that is its own bar chart: each row's bar is measured against the top row.
+
 ### The Song Library
 
 Rows, not a card: hairline dividers on the page, with titles aligned to the heading, the same as Recent setlists on the dashboard. Columns are shared by the head and every row, so attachments read straight down in fixed slots rather than trailing each title. The column heads use the Label idiom and double as the sort controls. The length is the brightest thing in a row. Search and the length filter stay visible, and every row has a visible way to its actions.

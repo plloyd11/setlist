@@ -1,15 +1,14 @@
 <script lang="ts">
-	import Digits from '#lib/components/ui/Digits.svelte';
 	import { onMount, type Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import SongPracticePanel from '#lib/components/songs/SongPracticePanel.svelte';
 	import ChartList from '#lib/components/songs/ChartList.svelte';
 	import Metronome from '#lib/components/practice/Metronome.svelte';
 	import PlanBar from '#lib/components/practice/PlanBar.svelte';
+	import PracticeClock from '#lib/components/practice/PracticeClock.svelte';
 	import RigPanel from '#lib/components/practice/RigPanel.svelte';
 	import { PracticeTracker, type PracticeItemRef } from './practiceTracker.svelte.js';
 	import { rig } from '#lib/utils/rig.svelte.js';
-	import { formatDuration } from '#lib/utils/duration.js';
 	import { formatPracticeTime } from '#lib/utils/practiceTime.js';
 	import { practiceShortcut } from '#lib/utils/practiceKeys.js';
 	import { createWakeLock } from '#lib/utils/wakeLock.js';
@@ -52,10 +51,12 @@
 
 	let panel: SongPracticePanel | undefined = $state();
 	let metronome: Metronome | undefined = $state();
-	let playerReady = $state(false);
 	let playing = $state(false);
 	let metronomeRunning = $state(false);
 	let chosenPane = $state<Pane | null>(null);
+	// Wider screens: put the chart away and give its room to the waveform, for
+	// mapping sections and placing loop points. A phone already shows one or the other.
+	let chartHidden = $state(false);
 	let tracker = $state<PracticeTracker | null>(null);
 
 	let hasAudio = $derived(variants.length > 0);
@@ -104,14 +105,14 @@
 		if (action === 'toggleMetronome') {
 			metronome?.toggle();
 		} else {
-			panel?.perform(action);
+			panel?.perform(action, e.shiftKey);
 		}
 	}
 </script>
 
 <svelte:window onkeydown={handlePageKeydown} />
 
-{#snippet stage(strip: Snippet, player: Snippet, controls: Snippet)}
+{#snippet stage(strip: Snippet, player: Snippet, controls: Snippet, transport: Snippet)}
 	<div class="stage">
 		<!-- Left: what you're playing and what you're reading -->
 		<div class="stage-column">
@@ -122,7 +123,37 @@
 					>
 						{title}
 					</h1>
-					<div class="shrink-0">{@render strip()}</div>
+					<div class="flex shrink-0 items-center gap-3">
+						{#if hasAudio && charts.length > 0}
+							<button
+								type="button"
+								onclick={() => (chartHidden = !chartHidden)}
+								aria-pressed={chartHidden}
+								title={chartHidden
+									? 'Bring the chart back'
+									: 'Put the chart away and make the waveform bigger'}
+								class="focus-live hidden min-h-9 items-center gap-2 rounded-lg border px-3 text-sm font-medium md:flex {chartHidden
+									? 'border-accent-500 bg-accent-500 text-white shadow-sm'
+									: 'border-surface-300 text-surface-700 hover:border-accent-400 hover:text-accent-600 dark:border-surface-600 dark:text-surface-300 dark:hover:border-accent-600 dark:hover:text-accent-400'}"
+							>
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									aria-hidden="true"
+								>
+									<path d="M2 12h2M6 7v10M10 4v16M14 8v8M18 6v12M22 12h0" />
+								</svg>
+								Big waveform
+							</button>
+						{/if}
+						{@render strip()}
+					</div>
 				</div>
 			</div>
 
@@ -151,7 +182,12 @@
 			{/if}
 
 			{#if charts.length > 0}
-				<div class="stage-pane {pane === 'chart' ? '' : 'hidden md:block'}">
+				<!-- Hidden, not unmounted: a tab keeps its place and its settings -->
+				<div
+					class="stage-pane {pane === 'chart' ? '' : 'hidden'} {chartHidden
+						? 'md:hidden'
+						: 'md:block'}"
+				>
 					<ChartList {charts} autoOpen compact tabKeyboard={!hasAudio} />
 				</div>
 			{/if}
@@ -191,6 +227,8 @@
 			{/if}
 		</div>
 	</div>
+
+	{@render transport()}
 {/snippet}
 
 <div class="flex h-full min-h-0 flex-col">
@@ -218,24 +256,7 @@
 		<div class="ml-auto flex min-w-0 items-center gap-2">
 			<PlanBar />
 			{#if tracker}
-				<p class="text-right" aria-live="off">
-					<span class="sr-only">Practiced </span>
-					<span
-						data-testid="practice-clock"
-						class="font-display text-lg leading-tight font-bold text-accent-600 md:text-xl dark:text-accent-hot"
-					>
-						<Digits value={formatDuration(Math.floor(tracker.seconds))} />
-					</span>
-				</p>
-				<button
-					type="button"
-					onclick={() => tracker?.togglePause()}
-					aria-pressed={tracker.paused}
-					title="Pause the practice clock"
-					class="focus-live min-h-11 rounded-lg px-3 text-sm font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800"
-				>
-					{tracker.paused ? 'Resume' : 'Pause clock'}
-				</button>
+				<PracticeClock {tracker} />
 			{/if}
 		</div>
 	</header>
@@ -246,88 +267,13 @@
 		{lengthSeconds}
 		{variants}
 		{versioned}
-		transport={false}
 		compactStrip
+		tall={chartHidden || charts.length === 0}
 		empty={emptyAudio}
 		arrange={stage}
-		onreadychange={(ready) => (playerReady = ready)}
 		onplaystatechange={(p) => (playing = p)}
 		onfinish={() => (playing = false)}
 	/>
-
-	<!-- Transport: big targets at the bottom, within reach of a hand off the strings -->
-	{#if hasAudio}
-		<div
-			class="shrink-0 border-t border-surface-200 bg-surface-50 pb-[env(safe-area-inset-bottom)] dark:border-surface-700 dark:bg-surface-900"
-		>
-			<div class="flex items-center justify-center gap-3 px-3 py-2 md:gap-4">
-				<button
-					type="button"
-					onclick={() => panel?.perform('back')}
-					disabled={!playerReady}
-					class="focus-live flex h-11 w-11 items-center justify-center rounded-full text-surface-600 hover:bg-surface-200 disabled:opacity-40 dark:text-surface-300 dark:hover:bg-surface-700"
-					aria-label="Back 5 seconds"
-				>
-					<svg
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						aria-hidden="true"
-					>
-						<path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.8L3 8" />
-						<path d="M3 3v5h5" />
-					</svg>
-				</button>
-				<button
-					type="button"
-					onclick={() => panel?.perform('playPause')}
-					disabled={!playerReady}
-					class="focus-live flex h-14 w-14 items-center justify-center rounded-full bg-accent-500 text-white shadow-sm hover:bg-accent-600 disabled:opacity-50"
-					aria-label={playing ? 'Pause' : 'Play'}
-				>
-					{#if playing}
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-							<rect x="6" y="4" width="4" height="16" rx="1" />
-							<rect x="14" y="4" width="4" height="16" rx="1" />
-						</svg>
-					{:else}
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-							<path
-								d="M8 5.14v13.72a1 1 0 001.5.86l11-6.86a1 1 0 000-1.72l-11-6.86a1 1 0 00-1.5.86z"
-							/>
-						</svg>
-					{/if}
-				</button>
-				<button
-					type="button"
-					onclick={() => panel?.perform('forward')}
-					disabled={!playerReady}
-					class="focus-live flex h-11 w-11 items-center justify-center rounded-full text-surface-600 hover:bg-surface-200 disabled:opacity-40 dark:text-surface-300 dark:hover:bg-surface-700"
-					aria-label="Forward 5 seconds"
-				>
-					<svg
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						aria-hidden="true"
-					>
-						<path d="M21 12a9 9 0 1 1-9-9 9.7 9.7 0 0 1 6.7 2.8L21 8" />
-						<path d="M21 3v5h-5" />
-					</svg>
-				</button>
-			</div>
-		</div>
-	{/if}
 </div>
 
 <style>
